@@ -24,9 +24,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, CheckCircle, Clock, XCircle } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2 } from "lucide-react"
 
-type ReservationStatus = "Confirmado" | "Pendiente" | "Cancelado";
+type ReservationStatus = "Confirmado" | "Pendiente";
 
 type Reservation = {
     id: string;
@@ -41,7 +41,7 @@ const initialReservations: Reservation[] = [
     { id: "R001", trip: "Bariloche, Patagonia", passenger: "Juan Pérez", seats: "2", status: "Confirmado" },
     { id: "R002", trip: "Cataratas del Iguazú, Misiones", passenger: "María García", seats: "1", status: "Pendiente" },
     { id: "R003", trip: "Bariloche, Patagonia", passenger: "Carlos López", seats: "4", status: "Confirmado" },
-    { id: "R004", trip: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seats: "2", status: "Cancelado" },
+    { id: "R004", trip: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seats: "2", status: "Pendiente" },
     { id: "R005", trip: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seats: "3", status: "Confirmado" },
 ]
 
@@ -54,12 +54,14 @@ export default function ReservationsPage() {
     ))
   }
 
+  const handleDelete = (reservationId: string) => {
+    setReservations(reservations.filter(res => res.id !== reservationId));
+  }
+
   const getStatusVariant = (status: ReservationStatus) => {
     switch (status) {
       case "Confirmado":
         return "secondary"
-      case "Cancelado":
-        return "destructive"
       case "Pendiente":
         return "outline"
       default:
@@ -109,19 +111,20 @@ export default function ReservationsPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Cambiar Estado</DropdownMenuLabel>
+                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Confirmado')}>
                                   <CheckCircle className="mr-2 h-4 w-4" />
-                                  Confirmado
+                                  Confirmar
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Pendiente')}>
                                   <Clock className="mr-2 h-4 w-4" />
-                                  Pendiente
+                                  Marcar como Pendiente
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Cancelado')} className="text-destructive">
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Cancelado
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDelete(res.id)} className="text-destructive">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Eliminar
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
