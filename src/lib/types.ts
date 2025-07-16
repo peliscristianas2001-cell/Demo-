@@ -31,6 +31,7 @@ export type VoucherStatus = "Activo" | "Canjeado" | "Expirado";
 
 export type Voucher = {
     id: string;
+    title: string;
     code: string;
     value: number;
     status: VoucherStatus;

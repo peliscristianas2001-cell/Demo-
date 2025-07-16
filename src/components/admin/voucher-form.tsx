@@ -35,6 +35,7 @@ interface VoucherFormProps {
 const defaultVoucherImage = "https://placehold.co/600x400.png"
 
 export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFormProps) {
+  const [title, setTitle] = useState("Voucher de Descuento")
   const [code, setCode] = useState("")
   const [value, setValue] = useState<string | number>("")
   const [quantity, setQuantity] = useState<string | number>(1);
@@ -49,6 +50,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
   useEffect(() => {
     if (voucher) {
+      setTitle(voucher.title || "Voucher de Descuento")
       setCode(voucher.code)
       setValue(voucher.value)
       setQuantity(voucher.quantity)
@@ -59,6 +61,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
       setMessage(voucher.message || "")
     } else {
       // Reset form for new voucher
+      setTitle("Voucher de Descuento")
       setCode(generateVoucherCode())
       setValue("")
       setQuantity(1)
@@ -106,6 +109,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
     onSave({
       id: voucher?.id || "",
+      title,
       code,
       value: parseFloat(String(value)),
       quantity: parseInt(String(quantity)),
@@ -124,13 +128,17 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>{voucher ? "Editar Voucher" : "Crear Nuevo Voucher"}</DialogTitle>
           <DialogDescription>
-            {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y previsualiza cómo se verá la Gift Card."}
+            {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y previsualiza cómo se verá la tarjeta."}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-1 px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
             {/* Form Fields */}
             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="title">Título del Voucher</Label>
+                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Voucher de Descuento" />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="code">Código del Voucher</Label>
                     <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} />
@@ -186,7 +194,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
             {/* Voucher Preview */}
             <div className="space-y-4">
-              <Label>Vista Previa de la Gift Card</Label>
+              <Label>Vista Previa de la Tarjeta</Label>
               <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white bg-gray-900">
                   <Image 
                       src={imageUrl} 
@@ -198,7 +206,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                   />
                   
                   <div className="relative z-10 flex justify-between items-start">
-                      <div className="font-headline text-2xl tracking-wider">GIFT CARD</div>
+                      <div className="font-headline text-2xl tracking-wider uppercase">{title}</div>
                       <Gift className="w-8 h-8 opacity-80"/>
                   </div>
 

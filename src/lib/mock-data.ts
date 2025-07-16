@@ -79,6 +79,7 @@ export const mockReservations: Reservation[] = [
 export const mockVouchers: Voucher[] = [
   { 
     id: "V001", 
+    title: "Voucher de Verano",
     code: "VERANO2025", 
     value: 10000, 
     status: "Activo", 
@@ -91,6 +92,7 @@ export const mockVouchers: Voucher[] = [
   },
   { 
     id: "V002", 
+    title: "GIFT CARD",
     code: "REGALOESPECIAL", 
     value: 25000, 
     status: "Canjeado", 
@@ -103,6 +105,7 @@ export const mockVouchers: Voucher[] = [
   },
   { 
     id: "V003", 
+    title: "15% OFF AVENTURA",
     code: "AVENTURA15", 
     value: 15000, 
     status: "Activo", 
@@ -112,6 +115,7 @@ export const mockVouchers: Voucher[] = [
   },
   { 
     id: "V004", 
+    title: "Voucher Expirado",
     code: "EXPIRADO01", 
     value: 5000, 
     status: "Expirado", 

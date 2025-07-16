@@ -24,7 +24,7 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => (
     />
     
     <div className="relative z-10 flex justify-between items-start">
-      <div className="font-headline text-2xl tracking-wider uppercase">{voucher.senderName || "YO TE LLEVO"}</div>
+      <div className="font-headline text-2xl tracking-wider uppercase">{voucher.title}</div>
       <Gift className="w-8 h-8 opacity-80"/>
     </div>
 
