@@ -85,6 +85,7 @@ export const mockVouchers: Voucher[] = [
     status: "Activo", 
     expiryDate: new Date("2025-03-31T23:59:59"),
     quantity: 10,
+    layout: "classic",
     imageUrl: "https://placehold.co/600x400.png",
     recipientName: "Ana",
     senderName: "Carlos",
@@ -98,6 +99,7 @@ export const mockVouchers: Voucher[] = [
     status: "Canjeado", 
     expiryDate: new Date("2025-12-31T23:59:59"),
     quantity: 0,
+    layout: "modern",
     imageUrl: "https://placehold.co/600x400.png",
     recipientName: "Juan Pérez",
     senderName: "Admin",
@@ -111,6 +113,7 @@ export const mockVouchers: Voucher[] = [
     status: "Activo", 
     expiryDate: new Date("2025-10-31T23:59:59"),
     quantity: 1,
+    layout: "minimal",
     imageUrl: "https://placehold.co/600x400.png" 
   },
   { 
@@ -121,6 +124,7 @@ export const mockVouchers: Voucher[] = [
     status: "Expirado", 
     expiryDate: new Date("2024-01-01T23:59:59"),
     quantity: 0,
+    layout: "classic",
     imageUrl: "https://placehold.co/600x400.png" 
   },
 ];

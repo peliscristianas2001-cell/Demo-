@@ -28,6 +28,7 @@ export type Reservation = {
 }
 
 export type VoucherStatus = "Activo" | "Canjeado" | "Expirado";
+export type VoucherLayout = "classic" | "modern" | "minimal";
 
 export type Voucher = {
     id: string;
@@ -37,6 +38,7 @@ export type Voucher = {
     status: VoucherStatus;
     expiryDate: Date;
     quantity: number; // Number of times this voucher can be used
+    layout: VoucherLayout;
     imageUrl?: string;
     recipientName?: string;
     senderName?: string;

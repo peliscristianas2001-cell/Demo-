@@ -11,8 +11,22 @@ import { Button } from "@/components/ui/button"
 import { Gift, ArrowRight, Tag } from "lucide-react"
 import { mockVouchers } from "@/lib/mock-data"
 import type { Voucher, VoucherSettings } from "@/lib/types"
+import { Logo } from "@/components/logo"
+import { cn } from "@/lib/utils"
 
-const VoucherCard = ({ voucher }: { voucher: Voucher }) => (
+const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
+    switch (voucher.layout) {
+        case "modern":
+            return <ModernVoucherCard voucher={voucher} />;
+        case "minimal":
+            return <MinimalVoucherCard voucher={voucher} />;
+        case "classic":
+        default:
+            return <ClassicVoucherCard voucher={voucher} />;
+    }
+};
+
+const ClassicVoucherCard = ({ voucher }: { voucher: Voucher }) => (
   <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white bg-gray-900">
     <Image 
       src={voucher.imageUrl || "https://placehold.co/600x400.png"}
@@ -37,11 +51,45 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => (
     
     <div className="relative z-10 text-right">
       <p className="text-xs opacity-70">
-        Válido hasta: {format(voucher.expiryDate, "dd/MM/yyyy", { locale: es })}
+        Válido hasta: {format(voucher.expiryDate, "dd 'de' LLLL 'de' yyyy", { locale: es })}
       </p>
     </div>
   </div>
 );
+
+const ModernVoucherCard = ({ voucher }: { voucher: Voucher }) => (
+    <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-2xl group flex bg-gradient-to-br from-primary/80 to-accent/90">
+        <div className="w-2/3 p-6 flex flex-col justify-between text-white">
+            <div>
+                <h3 className="font-headline text-2xl uppercase tracking-wider">{voucher.title}</h3>
+                <p className="text-sm opacity-80">De: {voucher.senderName || "YO TE LLEVO"}</p>
+            </div>
+            <div>
+                 <p className="font-mono text-xl tracking-widest bg-black/20 px-4 py-2 rounded-lg inline-block">{voucher.code}</p>
+                 <p className="text-xs opacity-70 mt-2">
+                    Vence: {format(voucher.expiryDate, "dd/MM/yyyy", { locale: es })}
+                </p>
+            </div>
+        </div>
+         <div className="w-1/3 bg-white/90 flex flex-col items-center justify-center text-center text-primary p-4">
+            <p className="text-sm">Valor</p>
+            <p className="text-4xl font-bold">${voucher.value.toLocaleString('es-AR')}</p>
+            {voucher.recipientName && <p className="text-xs mt-2">Para: {voucher.recipientName}</p>}
+        </div>
+    </div>
+);
+
+const MinimalVoucherCard = ({ voucher }: { voucher: Voucher }) => (
+     <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-center items-center p-6 text-center bg-secondary/30 border-2 border-dashed border-primary/50">
+        <h3 className="font-headline text-2xl uppercase tracking-wider text-primary">{voucher.title}</h3>
+        <p className="text-5xl font-bold my-4 text-foreground">${voucher.value.toLocaleString('es-AR')}</p>
+        <p className="font-mono text-lg tracking-widest bg-background px-4 py-2 rounded-lg border">{voucher.code}</p>
+         <p className="text-xs text-muted-foreground mt-4">
+            Válido hasta: {format(voucher.expiryDate, "dd/MM/yyyy", { locale: es })}
+        </p>
+    </div>
+);
+
 
 export default function VouchersPage() {
   const [settings, setSettings] = useState<VoucherSettings | null>(null);
