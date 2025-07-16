@@ -85,14 +85,14 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     const previewStyle = {
         width: `${width}px`,
         height: `${height}px`,
-        maxWidth: 'none', // Allow it to be wider than container
-        ...backgroundStyles,
-        ...borderStyles
+        maxWidth: '100%', 
+        transform: 'scale(var(--preview-scale, 1))',
+        transformOrigin: 'top center',
     };
 
     return (
         <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white max-w-full max-h-[400px] mx-auto flex-shrink-0"
+            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white max-w-full mx-auto flex-shrink-0 transition-transform duration-300"
             style={previewStyle}
         >
              {background.type === 'image' && background.imageUrl && (
@@ -253,11 +253,17 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y personaliza el diseño de la tarjeta."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 p-6">
-                {/* Form Fields */}
-                <div className="space-y-4">
-                     <div className="space-y-3 p-4 border rounded-lg">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 md:overflow-hidden">
+            <ScrollArea className="flex-1 md:pr-6">
+                <div className="p-6 md:p-0 md:py-6 space-y-6">
+                    {/* Form Fields */}
+                    <div className="space-y-4 md:hidden">
+                        <Label>Vista Previa de la Tarjeta</Label>
+                        <div className="w-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto [--preview-scale:0.7]">
+                            <VoucherPreview voucherData={formData} />
+                        </div>
+                    </div>
+                    <div className="space-y-3 p-4 border rounded-lg">
                         <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
                          <div className="space-y-2">
                             <Label htmlFor="width">Dimensiones (Ancho x Alto en px)</Label>
@@ -436,7 +442,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                     <div className="space-y-3 p-4 border rounded-lg">
                          <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="recipientName">Para (Destinatario)</Label>
                                 <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
@@ -457,16 +463,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         Generar nuevo código
                     </Button>
                 </div>
+            </ScrollArea>
 
-                {/* Voucher Preview */}
-                <div className="space-y-4">
+            {/* Voucher Preview */}
+            <div className="hidden md:flex flex-col space-y-4 p-6">
                 <Label>Vista Previa de la Tarjeta</Label>
-                    <div className="w-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto sticky top-4">
-                        <VoucherPreview voucherData={formData} />
-                    </div>
+                <div className="w-full h-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto sticky top-4">
+                    <VoucherPreview voucherData={formData} />
                 </div>
             </div>
-        </ScrollArea>
+        </div>
         <DialogFooter className="p-6 pt-4 mt-auto border-t bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit}>
@@ -478,5 +484,3 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
-
-    

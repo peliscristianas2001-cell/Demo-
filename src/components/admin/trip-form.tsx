@@ -66,8 +66,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       price: parseFloat(price),
       totalSeats: parseInt(totalSeats) || 40,
       busCount: parseInt(busCount) || 1,
-      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
-      occupiedSeats: tour?.occupiedSeats || [],
     })
   }
 
@@ -81,25 +79,25 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="destination" className="text-right">Destino</Label>
-            <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} className="col-span-3" />
+          <div className="space-y-2">
+            <Label htmlFor="destination">Destino</Label>
+            <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="date" className="text-right">Fecha</Label>
-            <DatePicker date={date} setDate={setDate} className="col-span-3 h-10" />
+          <div className="space-y-2">
+            <Label htmlFor="date">Fecha</Label>
+            <DatePicker date={date} setDate={setDate} className="h-10 w-full" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price" className="text-right">Precio</Label>
-            <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="col-span-3" placeholder="0"/>
+          <div className="space-y-2">
+            <Label htmlFor="price">Precio</Label>
+            <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0"/>
           </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="busCount" className="text-right">Micros</Label>
-            <Input id="busCount" type="number" value={busCount} onChange={(e) => setBusCount(e.target.value)} className="col-span-3" placeholder="1"/>
+           <div className="space-y-2">
+            <Label htmlFor="busCount">Micros</Label>
+            <Input id="busCount" type="number" value={busCount} onChange={(e) => setBusCount(e.target.value)} placeholder="1"/>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="totalSeats" className="text-right">Asientos (por micro)</Label>
-            <Input id="totalSeats" type="number" value={totalSeats} onChange={(e) => setTotalSeats(e.target.value)} className="col-span-3" placeholder="40"/>
+          <div className="space-y-2">
+            <Label htmlFor="totalSeats">Asientos (por micro)</Label>
+            <Input id="totalSeats" type="number" value={totalSeats} onChange={(e) => setTotalSeats(e.target.value)} placeholder="40"/>
           </div>
         </div>
         <DialogFooter>
