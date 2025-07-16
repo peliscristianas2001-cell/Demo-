@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { VoucherForm } from "@/components/admin/voucher-form"
 import { mockVouchers } from "@/lib/mock-data"
-import type { Voucher } from "@/lib/types"
+import type { Voucher, VoucherStatus } from "@/lib/types"
 
 
 export default function VouchersAdminPage() {
@@ -35,7 +35,7 @@ export default function VouchersAdminPage() {
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
-    return vouchers.filter(v => v.expiryDate >= now && v.status !== "Expirado");
+    return vouchers.filter(v => new Date(v.expiryDate) >= now && v.status !== "Expirado");
   }, [vouchers]);
 
   const getStatusVariant = (status: string) => {
@@ -59,8 +59,20 @@ export default function VouchersAdminPage() {
 
   const handleSave = (voucherData: Voucher) => {
     if (selectedVoucher) {
-      setVouchers(vouchers.map(v => v.id === voucherData.id ? voucherData : v));
+      // Update existing voucher
+      setVouchers(vouchers.map(v => {
+        if (v.id === voucherData.id) {
+          let newStatus: VoucherStatus = voucherData.status;
+          // If a redeemed voucher gets more quantity, make it active again.
+          if (newStatus === "Canjeado" && voucherData.quantity > 0) {
+            newStatus = "Activo";
+          }
+          return { ...voucherData, status: newStatus };
+        }
+        return v;
+      }));
     } else {
+      // Create new voucher
       const newVoucher = { ...voucherData, id: `V${Date.now()}`, status: "Activo" as const };
       setVouchers([...vouchers, newVoucher]);
     }
@@ -118,7 +130,7 @@ export default function VouchersAdminPage() {
                   <TableCell>${voucher.value.toLocaleString("es-AR")}</TableCell>
                   <TableCell>{voucher.quantity}</TableCell>
                   <TableCell>
-                    {voucher.expiryDate.toLocaleDateString("es-AR")}
+                    {new Date(voucher.expiryDate).toLocaleDateString("es-AR")}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(voucher.status)}>
