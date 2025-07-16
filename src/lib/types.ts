@@ -28,7 +28,6 @@ export type Reservation = {
 }
 
 export type VoucherStatus = "Activo" | "Canjeado" | "Expirado";
-export type VoucherLayout = "custom"; // Simplified to just custom for now
 
 export type Voucher = {
     id: string;
@@ -40,7 +39,6 @@ export type Voucher = {
     quantity: number; // Number of times this voucher can be used
     
     // Design properties
-    layout: VoucherLayout;
     width: number;
     height: number;
     backgroundColor: string;
@@ -50,9 +48,8 @@ export type Voucher = {
     recipientName?: string;
     senderName?: string;
     message?: string;
-}
 
-export type VoucherSettings = {
-  visibility: "all" | "registered";
-  minTrips: number;
+    // Visibility properties
+    visibility: "all" | "registered";
+    minTrips?: number; // Minimum number of trips for registered users
 }

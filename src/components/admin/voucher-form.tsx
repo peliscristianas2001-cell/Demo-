@@ -17,12 +17,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Voucher, VoucherLayout } from "@/lib/types"
-import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Ruler } from "lucide-react"
+import type { Voucher } from "@/lib/types"
+import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Ruler, UserCheck, Ticket, Users } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 
 interface VoucherFormProps {
@@ -31,8 +32,6 @@ interface VoucherFormProps {
   onSave: (voucher: Voucher) => void
   voucher: Voucher | null
 }
-
-const defaultVoucherImage = "https://placehold.co/600x400.png"
 
 const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     const { 
@@ -107,14 +106,15 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     value: "",
     quantity: 1,
     expiryDate: undefined,
-    layout: "custom",
     width: 500,
     height: 300,
     backgroundColor: "#3b82f6", // tailwind's blue-500
     imageUrl: "",
     recipientName: "",
     senderName: "YO TE LLEVO",
-    message: "¡Válido para tu próxima gran aventura!"
+    message: "¡Válido para tu próxima gran aventura!",
+    visibility: "all",
+    minTrips: 1,
   }
 
   useEffect(() => {
@@ -159,8 +159,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   }
 
   const handleSubmit = () => {
-    const { code, expiryDate, value, quantity, layout } = formData;
-    if (!code || !expiryDate || !value || !quantity || !layout || parseFloat(String(value)) <= 0 || parseInt(String(quantity)) < 0) {
+    const { code, expiryDate, value, quantity } = formData;
+    if (!code || !expiryDate || !value || quantity === undefined || parseFloat(String(value)) <= 0 || parseInt(String(quantity)) < 0) {
       toast({
         title: "Faltan datos",
         description: "Por favor, completa código, valor, cantidad, y fecha de vencimiento.",
@@ -172,6 +172,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     onSave({
       id: voucher?.id || "",
       status: voucher?.status || "Activo",
+      ...defaultValues, // ensure all fields are present
       ...formData
     } as Voucher)
   }
@@ -220,44 +221,84 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Título del Voucher</Label>
-                        <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="code">Código del Voucher</Label>
-                        <Input id="code" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="value">Valor ($)</Label>
-                        <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="quantity">Cantidad</Label>
-                        <Input id="quantity" type="text" value={String(formData.quantity || "")} onChange={(e) => handleInputChange('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 10" />
-                    </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
-                        <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="recipientName">Para (Destinatario)</Label>
-                        <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="senderName">De (Remitente)</Label>
-                        <Input id="senderName" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
-                    </div>
+                    <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Título del Voucher</Label>
+                            <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="code">Código del Voucher</Label>
+                            <Input id="code" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="value">Valor ($)</Label>
+                            <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="quantity">Cantidad</Label>
+                            <Input id="quantity" type="text" value={String(formData.quantity || "")} onChange={(e) => handleInputChange('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 10" />
+                        </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
+                            <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
+                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="message">Mensaje</Label>
-                        <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
+                    <div className="space-y-3 p-4 border rounded-lg">
+                         <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Visibilidad y Condiciones</Label>
+                         <RadioGroup 
+                            value={formData.visibility} 
+                            onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)}
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="all" id="r1" />
+                                <Label htmlFor="r1">Mostrar a todos los visitantes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="registered" id="r2" />
+                                <Label htmlFor="r2">Mostrar solo a clientes registrados</Label>
+                            </div>
+                        </RadioGroup>
+                         {formData.visibility === 'registered' && (
+                            <div className="p-4 space-y-3 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
+                                <Label htmlFor="minTrips" className="flex items-center gap-2 font-semibold">
+                                    <UserCheck className="w-5 h-5"/>
+                                    Condición para Clientes
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Mínimo de viajes completados para ver este voucher:
+                                </p>
+                                <Input
+                                    id="minTrips"
+                                    type="number"
+                                    value={formData.minTrips}
+                                    onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)}
+                                    className="w-48"
+                                    min="1"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-3 p-4 border rounded-lg">
+                         <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="recipientName">Para (Destinatario)</Label>
+                                <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="senderName">De (Remitente)</Label>
+                                <Input id="senderName" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="message">Mensaje</Label>
+                            <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
+                        </div>
                     </div>
 
                     <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">

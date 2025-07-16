@@ -1,6 +1,6 @@
 
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Gift, Tag } from "lucide-react"
 import { mockVouchers } from "@/lib/mock-data"
-import type { Voucher, VoucherSettings } from "@/lib/types"
+import type { Voucher } from "@/lib/types"
 
 const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
     const cardStyle = {
@@ -44,7 +44,7 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
                 {voucher.recipientName && <p className="text-sm opacity-80">Para: {voucher.recipientName}</p>}
                 <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${voucher.value.toLocaleString('es-AR')}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{voucher.code}</p>
-                {voucher.message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
+                {message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
             </div>
             
             <div className="relative z-10 text-right">
@@ -57,58 +57,29 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
 };
 
 export default function VouchersPage() {
-  const [settings, setSettings] = useState<VoucherSettings | null>(null);
+  // In a real app with user authentication, you would check the user's status here.
+  // For now, we will assume a mock user status.
+  const mockUser = {
+      isLoggedIn: true,
+      completedTrips: 5 
+  };
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
-    return mockVouchers.filter(v => 
-      v.status === "Activo" && 
-      new Date(v.expiryDate) >= now
-    );
-  }, []);
+    return mockVouchers.filter(v => {
+      const isExpired = new Date(v.expiryDate) < now;
+      if (v.status !== "Activo" || isExpired) return false;
 
-  useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem("ytl_voucher_settings")
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings))
-      } else {
-        setSettings({ visibility: 'all', minTrips: 1 }); // Default if no settings found
+      if (v.visibility === "all") return true;
+
+      // Logic for registered users. Replace mockUser with real user data in a real app.
+      if (v.visibility === "registered" && mockUser.isLoggedIn) {
+          return mockUser.completedTrips >= (v.minTrips || 1);
       }
-    } catch (error) {
-      console.error("Failed to load voucher settings", error)
-      setSettings({ visibility: 'all', minTrips: 1 });
-    }
+      
+      return false;
+    });
   }, []);
-
-  // In a real app with user authentication, you would check the user's status here.
-  const showVouchers = settings?.visibility === 'all'; 
-  // A real implementation would be:
-  // const showVouchers = settings?.visibility === 'all' || (isUserLoggedIn && user.completedTrips >= settings.minTrips);
-
-  if (!showVouchers) {
-     return (
-        <div className="flex flex-col min-h-screen bg-muted/20">
-            <SiteHeader />
-            <main className="flex-1 flex items-center justify-center">
-                <div className="container py-12 md:py-24 text-center">
-                    <Card className="max-w-2xl mx-auto">
-                        <CardHeader>
-                            <CardTitle>Vouchers Exclusivos</CardTitle>
-                            <CardDescription className="text-lg">
-                                ¡Tenemos sorpresas para nuestros viajeros frecuentes! Inicia sesión para ver si tienes vouchers disponibles.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button>Iniciar Sesión</Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </main>
-            <SiteFooter />
-        </div>
-     )
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/20">
@@ -133,8 +104,18 @@ export default function VouchersPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">Por el momento no hay vouchers disponibles. ¡Vuelve a consultar pronto!</p>
+             <div className="text-center py-12">
+                <Card className="max-w-2xl mx-auto">
+                    <CardHeader>
+                        <CardTitle>No hay vouchers para ti... por ahora</CardTitle>
+                        <CardDescription className="text-lg">
+                            No encontramos vouchers que coincidan con tu perfil en este momento. ¡Sigue viajando con nosotros para desbloquear ofertas exclusivas!
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild><a href="/tours">Ver próximos viajes</a></Button>
+                    </CardContent>
+                </Card>
             </div>
           )}
         </div>

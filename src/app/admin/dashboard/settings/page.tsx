@@ -7,31 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Ticket, UserCheck, CheckCircle } from "lucide-react"
-import type { VoucherSettings } from "@/lib/types"
+import { Upload, Settings as SettingsIcon } from "lucide-react"
 
 export default function SettingsPage() {
     const { toast } = useToast()
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
-    
-    const [voucherSettings, setVoucherSettings] = useState<VoucherSettings>({
-      visibility: "all",
-      minTrips: 1
-    })
-
-    useEffect(() => {
-        try {
-            const savedSettings = localStorage.getItem("ytl_voucher_settings")
-            if (savedSettings) {
-                setVoucherSettings(JSON.parse(savedSettings))
-            }
-        } catch (error) {
-            console.error("Failed to load voucher settings from local storage", error)
-        }
-    }, [])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -71,22 +53,6 @@ export default function SettingsPage() {
         }
     }
     
-    const handleSettingsSave = () => {
-      try {
-        localStorage.setItem("ytl_voucher_settings", JSON.stringify(voucherSettings))
-        toast({
-          title: "¡Configuración Guardada!",
-          description: "Las reglas de visibilidad de vouchers han sido actualizadas.",
-        })
-      } catch (error) {
-        toast({
-          title: "Error al guardar",
-          description: "No se pudo guardar la configuración de vouchers.",
-          variant: "destructive"
-        })
-      }
-    }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -128,55 +94,6 @@ export default function SettingsPage() {
                     Guardar Logo
                 </Button>
             </div>
-            
-             <Card className="bg-secondary/30">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Ticket className="w-6 h-6"/> Configuración de Vouchers</CardTitle>
-                    <CardDescription>Define quién puede ver y acceder a los vouchers de regalo en el sitio.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-3">
-                        <Label className="text-base font-semibold">Visibilidad de Vouchers</Label>
-                        <RadioGroup 
-                            value={voucherSettings.visibility} 
-                            onValueChange={(value: "all" | "registered") => setVoucherSettings(prev => ({...prev, visibility: value}))}
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="all" id="r1" />
-                                <Label htmlFor="r1">Mostrar a todos los visitantes (público general)</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="registered" id="r2" />
-                                <Label htmlFor="r2">Mostrar solo a clientes registrados que cumplan una condición</Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
-
-                    {voucherSettings.visibility === 'registered' && (
-                        <div className="p-4 space-y-3 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-                            <Label htmlFor="minTrips" className="flex items-center gap-2 text-base font-semibold">
-                                <UserCheck className="w-5 h-5"/>
-                                Condición para Clientes
-                            </Label>
-                             <p className="text-sm text-muted-foreground">
-                                Mostrar vouchers solo a clientes que hayan completado al menos esta cantidad de viajes:
-                            </p>
-                            <Input
-                                id="minTrips"
-                                type="number"
-                                value={voucherSettings.minTrips}
-                                onChange={(e) => setVoucherSettings(prev => ({...prev, minTrips: parseInt(e.target.value) || 1}))}
-                                className="w-48"
-                                min="1"
-                            />
-                        </div>
-                    )}
-                     <Button onClick={handleSettingsSave}>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Guardar Configuración de Vouchers
-                    </Button>
-                </CardContent>
-            </Card>
         </CardContent>
       </Card>
     </div>
