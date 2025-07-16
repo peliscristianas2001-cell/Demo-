@@ -67,12 +67,10 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
      const formattedDate = expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'dd/mm/aaaa'
 
     const backgroundStyles: React.CSSProperties = {};
-    if (background.type === 'solid') {
+    if (background?.type === 'solid') {
         backgroundStyles.backgroundColor = background.color;
-    } else if (background.type === 'gradient') {
+    } else if (background?.type === 'gradient') {
         backgroundStyles.background = `linear-gradient(to bottom right, ${background.color1}, ${background.color2})`;
-    } else if (background.type === 'image' && background.imageUrl) {
-        // Image is rendered separately
     }
 
     const borderStyles: React.CSSProperties = {};
@@ -82,22 +80,22 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
     const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
 
-    const previewStyle = {
+    const cardStyle = {
         width: `${width}px`,
         height: `${height}px`,
-        maxWidth: '100%', 
-        transform: 'scale(var(--preview-scale, 1))',
-        transformOrigin: 'top center',
+        maxWidth: 'none', // Allow it to be wider than container
+        ...backgroundStyles,
+        ...borderStyles
     };
 
     return (
-        <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white max-w-full mx-auto flex-shrink-0 transition-transform duration-300"
-            style={previewStyle}
+        <div 
+            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white shrink-0"
+            style={cardStyle}
         >
-             {background.type === 'image' && background.imageUrl && (
-                <Image 
-                    src={background.imageUrl} 
+            {background?.type === 'image' && background.imageUrl && (
+                 <Image 
+                    src={background.imageUrl}
                     alt="Fondo del voucher" 
                     layout="fill" 
                     objectFit="cover" 
@@ -111,22 +109,27 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
                     <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
                 </>
             )}
+            
             <div className="relative z-10 flex justify-between items-start">
                 <div className="font-headline text-2xl tracking-wider uppercase">{title}</div>
                 <Gift className="w-8 h-8 opacity-80"/>
             </div>
+
             <div className="relative z-10 flex flex-col items-center text-center">
                 {recipientName && <p className="text-sm opacity-80">Para: {recipientName}</p>}
-                <p className="text-4xl lg:text-5xl font-bold mt-1 text-amber-300 drop-shadow-lg">{formattedValue}</p>
+                <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
                 {message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
             </div>
+            
             <div className="relative z-10 text-right">
-                <p className="text-xs opacity-70">Válido hasta: {formattedDate}</p>
+                <p className="text-xs opacity-70">
+                    Válido hasta: {expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : "dd/mm/aaaa"}
+                </p>
             </div>
         </div>
-    )
-}
+    );
+};
 
 const generateVoucherCode = () => {
     return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
@@ -254,15 +257,18 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 md:overflow-hidden">
-            <ScrollArea className="flex-1 md:pr-6">
-                <div className="p-6 md:p-0 md:py-6 space-y-6">
-                    {/* Form Fields */}
-                    <div className="space-y-4 md:hidden">
-                        <Label>Vista Previa de la Tarjeta</Label>
-                        <div className="w-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto [--preview-scale:0.7]">
-                            <VoucherPreview voucherData={formData} />
-                        </div>
+            <div className="flex flex-col md:overflow-hidden">
+                {/* Preview for mobile */}
+                <div className="md:hidden p-4 space-y-2">
+                    <Label>Vista Previa de la Tarjeta</Label>
+                    <div className="w-full p-4 bg-muted rounded-lg flex items-center justify-start overflow-auto">
+                        <VoucherPreview voucherData={formData} />
                     </div>
+                </div>
+
+                <ScrollArea className="flex-1 md:pr-6">
+                    <div className="p-6 md:p-0 md:py-6 space-y-6">
+                    
                     <div className="space-y-3 p-4 border rounded-lg">
                         <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
                          <div className="space-y-2">
@@ -463,9 +469,11 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         Generar nuevo código
                     </Button>
                 </div>
-            </ScrollArea>
+                </ScrollArea>
+            </div>
 
-            {/* Voucher Preview */}
+
+            {/* Voucher Preview for Desktop */}
             <div className="hidden md:flex flex-col space-y-4 p-6">
                 <Label>Vista Previa de la Tarjeta</Label>
                 <div className="w-full h-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto sticky top-4">
