@@ -11,7 +11,7 @@ import { Upload } from "lucide-react"
 
 export default function SettingsPage() {
     const { toast } = useToast()
-    const [logoPreview, setLogoPreview] = useState("https://instagram.fepa9-2.fna.fbcdn.net/v/t51.2885-19/478145482_2050373918705456_5085497722998866930_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fepa9-2.fna.fbcdn.net&_nc_cat=108&_nc_oc=Q6cZ2QFzjVvSlHCf0Z2hstJHws97y0Q1b3iIKZskWlJOzKkzsXA5d7w5jeqV3MF8EUnkXK0&_nc_ohc=0kFfIMnvmBwQ7kNvwHJGNkB&_nc_gid=9W3okjmGr8DgZuyMHj14tg&edm=AEYEu-QBAAAA&ccb=7-5&oh=00_AfSWH7AGXQ1um0uq2Vfz-d6jjRHQIyOiIFf90fiE8TXyiA&oe=687DAD20&_nc_sid=ead929")
+    const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,10 +27,7 @@ export default function SettingsPage() {
     }
 
     const handleSave = () => {
-        // In a real app, you would upload `selectedFile` to a storage service
-        // and get back a permanent URL to save.
-        // For now, we'll just show a success message.
-        if (!selectedFile) {
+        if (!selectedFile || !logoPreview) {
              toast({
                 title: "No se seleccionó ningún archivo",
                 description: "Por favor, elige un archivo para subir.",
@@ -39,11 +36,21 @@ export default function SettingsPage() {
             return
         }
 
-        console.log("Simulating upload for:", selectedFile.name);
-        toast({
-            title: "¡Éxito!",
-            description: "El logo se ha actualizado en la vista previa. El guardado permanente se habilitará con un backend.",
-        })
+        try {
+          localStorage.setItem("ytl_logo_url", logoPreview);
+          toast({
+              title: "¡Éxito!",
+              description: "El nuevo logo se ha guardado. Se reflejará en todo el sitio.",
+          })
+          // Optionally trigger a window event to notify other components like the header
+          window.dispatchEvent(new Event('storage'));
+        } catch (error) {
+            toast({
+                title: "Error al guardar",
+                description: "No se pudo guardar el logo en el almacenamiento local.",
+                variant: "destructive"
+            })
+        }
     }
 
   return (
@@ -68,7 +75,7 @@ export default function SettingsPage() {
             </div>
             {logoPreview && (
                 <div className="space-y-2">
-                    <Label>Vista previa del logo actual</Label>
+                    <Label>Vista previa del nuevo logo</Label>
                     <div className="flex items-center gap-4 p-4 border rounded-md bg-muted">
                          <Image
                             src={logoPreview}
@@ -83,7 +90,7 @@ export default function SettingsPage() {
                     </div>
                 </div>
             )}
-           <Button onClick={handleSave}>
+           <Button onClick={handleSave} disabled={!logoPreview}>
                 <Upload className="mr-2 h-4 w-4" />
                 Guardar Logo
             </Button>
