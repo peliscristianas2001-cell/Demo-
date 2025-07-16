@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -13,39 +13,36 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour } from "@/lib/types"
+import type { Tour, Reservation, Passenger } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Armchair, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, Bus } from "lucide-react"
-
-interface Passenger {
-  fullName: string
-  dni: string
-  dob?: Date
-  nationality: string
-}
+import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
 
 export default function BookingPage() {
   const params = useParams()
+  const router = useRouter();
   const { id } = params
   const { toast } = useToast()
 
   const [tour, setTour] = useState<Tour | null>(null)
+  const [reservations, setReservations] = useState<Reservation[]>([])
   const [adults, setAdults] = useState(1)
   const [children, setChildren] = useState(0)
   const [passengers, setPassengers] = useState<Passenger[]>([])
   const [isClient, setIsClient] = useState(false)
   
-  const occupiedSeats = useMemo(() => {
-    if (!tour) return [];
-    return mockReservations
-      .filter(r => r.tripId === tour.id)
-      .flatMap(r => r.assignedSeats.map(s => s.seatId)); // Simplified for client view
-  }, [tour]);
-
-
   useEffect(() => {
     setIsClient(true)
-    const foundTour = mockTours.find((t) => t.id === id)
+    const storedTours = localStorage.getItem("ytl_tours")
+    const tours: Tour[] = storedTours ? JSON.parse(storedTours, (key, value) => {
+        if (key === 'date') return new Date(value);
+        return value;
+      }) : mockTours;
+    
+    const storedReservations = localStorage.getItem("ytl_reservations");
+    const currentReservations: Reservation[] = storedReservations ? JSON.parse(storedReservations) : mockReservations;
+    setReservations(currentReservations);
+    
+    const foundTour = tours.find((t) => t.id === id)
     if (foundTour && new Date(foundTour.date) >= new Date()) {
         setTour(foundTour)
     } else {
@@ -81,11 +78,32 @@ export default function BookingPage() {
     }
 
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    
+    // Create new reservation
+    const newReservation: Reservation = {
+        id: reservationId,
+        tripId: tour!.id,
+        tripDestination: tour!.destination,
+        passenger: passengers[0].fullName,
+        seatsCount: passengers.length,
+        assignedSeats: [], // Seats are assigned in admin panel
+        status: "Pendiente"
+    };
+
+    // Update reservations in localStorage
+    const updatedReservations = [...reservations, newReservation];
+    localStorage.setItem('ytl_reservations', JSON.stringify(updatedReservations));
+
     toast({
       title: "¡Reserva Recibida!",
       description: `Tu solicitud para ${tour?.destination} fue enviada. Un administrador te contactará para confirmar. N°: ${reservationId}`,
       duration: 9000,
     })
+
+    // Optionally redirect user after reservation
+    setTimeout(() => {
+        router.push('/');
+    }, 3000);
   }
   
   const totalPassengers = adults + children;
@@ -258,3 +276,5 @@ export default function BookingPage() {
     </div>
   )
 }
+
+    

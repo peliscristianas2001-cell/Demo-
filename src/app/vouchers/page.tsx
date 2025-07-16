@@ -1,6 +1,6 @@
 
 "use client"
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -57,18 +57,33 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
 };
 
 export default function VouchersPage() {
+  const [vouchers, setVouchers] = useState<Voucher[]>([])
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    const storedVouchers = localStorage.getItem("ytl_vouchers")
+    if (storedVouchers) {
+      setVouchers(JSON.parse(storedVouchers, (key, value) => {
+        if (key === 'expiryDate') return new Date(value);
+        return value;
+      }));
+    } else {
+      setVouchers(mockVouchers)
+    }
+  }, [])
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
-    // For now, we assume the user is not logged in.
     // In a real app with auth, you would check user status here.
+    // For now, we simulate a non-registered user.
     const isUserRegistered = false; 
     const userTripCount = 0;
 
-    return mockVouchers.filter(v => {
+    return vouchers.filter(v => {
       const isExpired = new Date(v.expiryDate) < now;
       if (v.status !== "Activo" || isExpired) {
-        return false; // Always filter out inactive or expired vouchers first.
+        return false;
       }
       
       // If visibility is for everyone, show it.
@@ -77,7 +92,6 @@ export default function VouchersPage() {
       }
 
       // If visibility is for registered users, check conditions.
-      // This part will become relevant when a user login system is implemented.
       if (v.visibility === "registered" && isUserRegistered) {
         return userTripCount >= (v.minTrips || 0);
       }
@@ -85,7 +99,11 @@ export default function VouchersPage() {
       // By default, if none of the above conditions are met, don't show it.
       return false;
     });
-  }, []);
+  }, [vouchers]);
+
+  if (!isClient) {
+    return null; // Or a loading skeleton
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/20">
@@ -130,3 +148,5 @@ export default function VouchersPage() {
     </div>
   )
 }
+
+    

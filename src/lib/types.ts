@@ -7,7 +7,6 @@ export interface Tour {
   flyerUrl: string;
   totalSeats: number; // Seats per bus
   busCount: number;
-  occupiedSeats: { seatId: string; bus: number }[]; // This will be derived from reservations
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";
@@ -16,6 +15,13 @@ export type AssignedSeat = {
   seatId: string; 
   bus: number;
 };
+
+export interface Passenger {
+  fullName: string
+  dni: string
+  dob?: Date
+  nationality: string
+}
 
 export type Reservation = {
     id: string;
@@ -53,3 +59,5 @@ export type Voucher = {
     visibility: "all" | "registered";
     minTrips?: number; // Minimum number of trips for registered users
 }
+
+    

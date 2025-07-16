@@ -1,15 +1,36 @@
 
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { mockTours } from "@/lib/mock-data"
 import { Card, CardContent } from "@/components/ui/card"
+import type { Tour } from "@/lib/types"
 
 export default function FlyersPage() {
-  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  const [tours, setTours] = useState<Tour[]>([])
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    const storedTours = localStorage.getItem("ytl_tours")
+    if (storedTours) {
+      setTours(JSON.parse(storedTours, (key, value) => {
+        if (key === 'date') return new Date(value);
+        return value;
+      }));
+    } else {
+      setTours(mockTours)
+    }
+  }, [])
+
+  const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
+
+  if (!isClient) {
+    return null; // Or a loading skeleton
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,3 +69,5 @@ export default function FlyersPage() {
     </div>
   )
 }
+
+    

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -59,9 +59,41 @@ import type { Tour, Reservation, ReservationStatus, AssignedSeat } from "@/lib/t
 
 
 export default function ReservationsPage() {
-  const [reservations, setReservations] = useState(mockReservations)
-  const [tours, setTours] = useState(mockTours);
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [tours, setTours] = useState<Tour[]>([]);
   const [activeBus, setActiveBus] = useState(1);
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    const storedReservations = localStorage.getItem("ytl_reservations")
+    const storedTours = localStorage.getItem("ytl_tours")
+    
+    if (storedReservations) {
+        setReservations(JSON.parse(storedReservations, (key, value) => {
+            if (key === 'date') return new Date(value);
+            return value;
+        }));
+    } else {
+        setReservations(mockReservations)
+    }
+
+    if (storedTours) {
+        setTours(JSON.parse(storedTours, (key, value) => {
+             if (key === 'date') return new Date(value);
+            return value;
+        }));
+    } else {
+        setTours(mockTours);
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isClient) {
+        localStorage.setItem("ytl_reservations", JSON.stringify(reservations));
+    }
+  }, [reservations, isClient])
+
 
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
   
@@ -134,6 +166,10 @@ export default function ReservationsPage() {
       default:
         return "default"
     }
+  }
+
+  if (!isClient) {
+    return null; // Don't render server-side
   }
 
   return (
@@ -272,3 +308,5 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    

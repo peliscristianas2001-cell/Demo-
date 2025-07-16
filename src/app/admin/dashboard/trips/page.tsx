@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -24,18 +24,47 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour } from "@/lib/types"
+import type { Tour, Reservation } from "@/lib/types"
 import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
-  const [tours, setTours] = useState<Tour[]>(mockTours)
+  const [tours, setTours] = useState<Tour[]>([])
+  const [reservations, setReservations] = useState<Reservation[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    const storedTours = localStorage.getItem("ytl_tours")
+    const storedReservations = localStorage.getItem("ytl_reservations")
+    
+    if (storedTours) {
+      setTours(JSON.parse(storedTours, (key, value) => {
+        if (key === 'date') return new Date(value);
+        return value;
+      }));
+    } else {
+      setTours(mockTours)
+    }
+
+    if (storedReservations) {
+      setReservations(JSON.parse(storedReservations))
+    } else {
+      setReservations(mockReservations)
+    }
+  }, [])
+  
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("ytl_tours", JSON.stringify(tours));
+    }
+  }, [tours, isClient])
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
   
   const getOccupiedSeatCount = (tourId: string) => {
-    return mockReservations
+    return reservations
         .filter(r => r.tripId === tourId)
         .reduce((acc, r) => acc + r.assignedSeats.length, 0);
   }
@@ -68,6 +97,10 @@ export default function TripsPage() {
 
   const handleDelete = (tourId: string) => {
     setTours(tours.filter(t => t.id !== tourId))
+  }
+
+  if (!isClient) {
+    return null; // Don't render server-side
   }
 
   return (
@@ -163,3 +196,5 @@ export default function TripsPage() {
     </div>
   )
 }
+
+    

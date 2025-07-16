@@ -29,9 +29,30 @@ import type { Voucher, VoucherStatus } from "@/lib/types"
 
 
 export default function VouchersAdminPage() {
-  const [vouchers, setVouchers] = useState<Voucher[]>(mockVouchers);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+    const storedVouchers = localStorage.getItem("ytl_vouchers")
+    if (storedVouchers) {
+      setVouchers(JSON.parse(storedVouchers, (key, value) => {
+        if (key === 'expiryDate') return new Date(value);
+        return value;
+      }));
+    } else {
+      setVouchers(mockVouchers)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("ytl_vouchers", JSON.stringify(vouchers));
+    }
+  }, [vouchers, isClient])
+
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
@@ -82,6 +103,10 @@ export default function VouchersAdminPage() {
 
   const handleDelete = (voucherId: string) => {
     setVouchers(vouchers.filter(v => v.id !== voucherId));
+  }
+
+  if (!isClient) {
+    return null; // Don't render server-side
   }
 
   return (
@@ -166,3 +191,5 @@ export default function VouchersAdminPage() {
     </div>
   )
 }
+
+    
