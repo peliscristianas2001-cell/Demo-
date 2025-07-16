@@ -27,18 +27,18 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
         value,
         recipientName,
         expiryDate,
-        width,
-        height,
-        background,
-        border,
-        stripes,
+        width = 500,
+        height = 300,
+        background = { type: 'solid', color: '#3b82f6' },
+        border = { enabled: false },
+        stripes = { enabled: false },
         message
      } = voucher;
 
     const backgroundStyles: React.CSSProperties = {};
-    if (background.type === 'solid') {
+    if (background?.type === 'solid') {
         backgroundStyles.backgroundColor = background.color;
-    } else if (background.type === 'gradient') {
+    } else if (background?.type === 'gradient') {
         backgroundStyles.background = `linear-gradient(to bottom right, ${background.color1}, ${background.color2})`;
     }
 
@@ -59,10 +59,10 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
 
     return (
         <div 
-            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white"
+            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto"
             style={cardStyle}
         >
-            {background.type === 'image' && background.imageUrl && (
+            {background?.type === 'image' && background.imageUrl && (
                  <Image 
                     src={background.imageUrl}
                     alt="Fondo del voucher" 
@@ -88,7 +88,7 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
                 {recipientName && <p className="text-sm opacity-80">Para: {recipientName}</p>}
                 <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${value.toLocaleString('es-AR')}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-                {message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
+                {voucher.message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
             </div>
             
             <div className="relative z-10 text-right">
