@@ -137,7 +137,13 @@ export default function ReservationsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-                {activeReservations.map((res) => {
+                {activeReservations.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                            No hay reservas activas.
+                        </TableCell>
+                    </TableRow>
+                ) : activeReservations.map((res) => {
                     const tour = tours.find(t => t.id === res.tripId);
                     if (!tour) return null; // Should not happen with filtered reservations
 

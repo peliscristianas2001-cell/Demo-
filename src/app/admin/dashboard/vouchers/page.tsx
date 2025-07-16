@@ -35,30 +35,24 @@ type Voucher = {
 // Mock data for vouchers
 const mockVouchers: Voucher[] = [
   { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31T23:59:59") },
-  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2024-12-31T23:59:59") },
-  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2024-10-31T23:59:59") },
+  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2025-12-31T23:59:59") },
+  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2025-10-31T23:59:59") },
   { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado", expiryDate: new Date("2024-01-01T23:59:59") },
 ];
 
 export default function VouchersAdminPage() {
-  const [activeVouchers, setActiveVouchers] = useState<Voucher[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   useEffect(() => {
-    // Filter out vouchers that have expired on the client-side to avoid hydration errors
-    const filtered = mockVouchers.filter(v => {
-        const now = new Date();
-        // If status is "Expirado", only show if it has not actually expired yet (edge case for manual setting)
-        if(v.status === "Expirado") {
-            return v.expiryDate >= now;
-        }
-        // Always show "Canjeado"
-        if(v.status === "Canjeado") {
-            return true;
-        }
-        // Show "Activo" only if not expired
-        return v.expiryDate >= now;
+    // This logic now correctly runs on the client, avoiding hydration errors.
+    const now = new Date();
+    const updatedVouchers = mockVouchers.map(v => {
+      if (v.status === "Activo" && v.expiryDate < now) {
+        return { ...v, status: "Expirado" as const };
+      }
+      return v;
     });
-    setActiveVouchers(filtered);
+    setVouchers(updatedVouchers);
   }, []);
 
   const getStatusVariant = (status: string) => {
@@ -76,7 +70,7 @@ export default function VouchersAdminPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vouchers</h2>
           <p className="text-muted-foreground">
-            Crea, edita y administra los vouchers de regalo. Los vouchers expirados se ocultan.
+            Crea, edita y administra los vouchers de regalo.
           </p>
         </div>
         <Button>
@@ -97,7 +91,13 @@ export default function VouchersAdminPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeVouchers.map((voucher) => (
+              {vouchers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Cargando vouchers...
+                  </TableCell>
+                </TableRow>
+              ) : vouchers.map((voucher) => (
                 <TableRow key={voucher.id}>
                   <TableCell className="font-medium font-mono">{voucher.code}</TableCell>
                   <TableCell>${voucher.value.toLocaleString("es-AR")}</TableCell>

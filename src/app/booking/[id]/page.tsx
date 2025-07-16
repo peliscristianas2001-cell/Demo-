@@ -34,8 +34,10 @@ export default function BookingPage() {
   const [adults, setAdults] = useState(1)
   const [children, setChildren] = useState(0)
   const [passengers, setPassengers] = useState<Passenger[]>([])
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    setIsClient(true)
     const foundTour = mockTours.find((t) => t.id === id)
     if (foundTour && new Date(foundTour.date) >= new Date()) {
         setTour(foundTour)
@@ -81,6 +83,10 @@ export default function BookingPage() {
   
   const totalPassengers = adults + children;
   const totalPrice = tour ? totalPassengers * tour.price : 0
+
+  if (!isClient) {
+    return null; // Don't render anything on the server
+  }
 
   if (!tour) {
     return (

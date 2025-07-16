@@ -25,27 +25,35 @@ export default function FlyersPage() {
           Subir Nuevo Flyer
         </Button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {activeTours.map((tour) => (
-          <Card key={tour.id} className="overflow-hidden group">
-            <CardContent className="p-0">
-              <div className="relative aspect-[4/5] w-full">
-                <Image
-                  src={tour.flyerUrl}
-                  alt={tour.destination}
-                  layout="fill"
-                  objectFit="cover"
-                  className="transition-transform duration-300 group-hover:scale-105"
-                  data-ai-hint="travel flyer"
-                />
-              </div>
+      {activeTours.length === 0 ? (
+         <Card>
+            <CardContent className="p-12 text-center">
+                <p className="text-muted-foreground">No hay flyers de viajes activos para mostrar.</p>
             </CardContent>
-            <CardFooter className="p-3 bg-muted/50">
-                <p className="font-semibold truncate text-sm">{tour.destination}</p>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {activeTours.map((tour) => (
+            <Card key={tour.id} className="overflow-hidden group">
+                <CardContent className="p-0">
+                <div className="relative aspect-[4/5] w-full">
+                    <Image
+                    src={tour.flyerUrl}
+                    alt={tour.destination}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transition-transform duration-300 group-hover:scale-105"
+                    data-ai-hint="travel flyer"
+                    />
+                </div>
+                </CardContent>
+                <CardFooter className="p-3 bg-muted/50">
+                    <p className="font-semibold truncate text-sm">{tour.destination}</p>
+                </CardFooter>
+            </Card>
+            ))}
+        </div>
+      )}
     </div>
   )
 }

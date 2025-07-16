@@ -56,7 +56,13 @@ export default function TripsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeTours.map((tour) => (
+              {activeTours.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    No hay viajes activos.
+                  </TableCell>
+                </TableRow>
+              ) : activeTours.map((tour) => (
                 <TableRow key={tour.id}>
                   <TableCell className="font-medium">{tour.destination}</TableCell>
                   <TableCell>
