@@ -35,6 +35,7 @@ export type Voucher = {
     value: number;
     status: VoucherStatus;
     expiryDate: Date;
+    quantity: number; // Number of times this voucher can be used
     imageUrl?: string;
     recipientName?: string;
     senderName?: string;

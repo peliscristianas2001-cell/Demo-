@@ -37,6 +37,7 @@ const defaultVoucherImage = "https://placehold.co/600x400.png"
 export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFormProps) {
   const [code, setCode] = useState("")
   const [value, setValue] = useState<string | number>("")
+  const [quantity, setQuantity] = useState<string | number>(1);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>()
   const [imageUrl, setImageUrl] = useState(defaultVoucherImage)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -50,6 +51,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     if (voucher) {
       setCode(voucher.code)
       setValue(voucher.value)
+      setQuantity(voucher.quantity)
       setExpiryDate(voucher.expiryDate)
       setImageUrl(voucher.imageUrl || defaultVoucherImage)
       setRecipientName(voucher.recipientName || "")
@@ -59,6 +61,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
       // Reset form for new voucher
       setCode(generateVoucherCode())
       setValue("")
+      setQuantity(1)
       setExpiryDate(undefined)
       setImageUrl(defaultVoucherImage)
       setRecipientName("")
@@ -86,17 +89,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   
   const handleNumericChange = (setter: React.Dispatch<React.SetStateAction<string | number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow empty string to clear the input, and only allow numbers
     if (value === "" || /^[0-9]\d*$/.test(value)) {
        setter(value);
     }
   };
 
   const handleSubmit = () => {
-    if (!code || !expiryDate || !value || parseFloat(String(value)) <= 0) {
+    if (!code || !expiryDate || !value || !quantity || parseFloat(String(value)) <= 0 || parseInt(String(quantity)) <= 0) {
       toast({
         title: "Faltan datos",
-        description: "Por favor, completa código, valor y fecha de vencimiento.",
+        description: "Por favor, completa código, valor, cantidad y fecha de vencimiento.",
         variant: "destructive"
       })
       return
@@ -106,6 +108,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
       id: voucher?.id || "",
       code,
       value: parseFloat(String(value)),
+      quantity: parseInt(String(quantity)),
       expiryDate,
       status: voucher?.status || "Activo",
       imageUrl: imageUrl,
@@ -128,14 +131,18 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
             {/* Form Fields */}
             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="code">Código del Voucher</Label>
+                    <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                      <Label htmlFor="code">Código del Voucher</Label>
-                      <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} />
-                  </div>
                   <div className="space-y-2">
                       <Label htmlFor="value">Valor ($)</Label>
                       <Input id="value" type="text" value={value} onChange={handleNumericChange(setValue)} placeholder="Ej: 25000" />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="quantity">Cantidad</Label>
+                      <Input id="quantity" type="text" value={quantity} onChange={handleNumericChange(setQuantity)} placeholder="Ej: 10" />
                   </div>
                 </div>
 

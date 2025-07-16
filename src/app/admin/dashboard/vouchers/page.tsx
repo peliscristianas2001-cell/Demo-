@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -24,30 +24,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { VoucherForm } from "@/components/admin/voucher-form"
+import { mockVouchers } from "@/lib/mock-data"
 import type { Voucher } from "@/lib/types"
 
-const mockVouchers: Voucher[] = [
-  { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31T23:59:59") },
-  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2025-12-31T23:59:59") },
-  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2025-10-31T23:59:59") },
-  { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado", expiryDate: new Date("2024-01-01T23:59:59") },
-];
 
 export default function VouchersAdminPage() {
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>(mockVouchers);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
-  useEffect(() => {
+  const activeVouchers = useMemo(() => {
     const now = new Date();
-    const updatedVouchers = mockVouchers.map(v => {
-      if (v.status === "Activo" && v.expiryDate < now) {
-        return { ...v, status: "Expirado" as const };
-      }
-      return v;
-    });
-    setVouchers(updatedVouchers);
-  }, []);
+    return vouchers.filter(v => v.expiryDate >= now && v.status !== "Expirado");
+  }, [vouchers]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -95,7 +84,7 @@ export default function VouchersAdminPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vouchers</h2>
           <p className="text-muted-foreground">
-            Crea, edita y administra los vouchers de regalo.
+            Crea, edita y administra los vouchers de regalo. Los expirados se ocultan automáticamente.
           </p>
         </div>
         <Button onClick={handleCreate}>
@@ -110,22 +99,24 @@ export default function VouchersAdminPage() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Valor</TableHead>
+                <TableHead>Cantidad Disp.</TableHead>
                 <TableHead>Vencimiento</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vouchers.length === 0 ? (
+              {activeVouchers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Cargando vouchers...
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No hay vouchers activos.
                   </TableCell>
                 </TableRow>
-              ) : vouchers.map((voucher) => (
+              ) : activeVouchers.map((voucher) => (
                 <TableRow key={voucher.id}>
                   <TableCell className="font-medium font-mono">{voucher.code}</TableCell>
                   <TableCell>${voucher.value.toLocaleString("es-AR")}</TableCell>
+                  <TableCell>{voucher.quantity}</TableCell>
                   <TableCell>
                     {voucher.expiryDate.toLocaleDateString("es-AR")}
                   </TableCell>
