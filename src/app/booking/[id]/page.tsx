@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import { mockTours } from "@/lib/mock-data"
 import type { Tour } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon } from "lucide-react"
+import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon } from "lucide-react"
 
 interface Passenger {
   fullName: string
@@ -162,6 +162,21 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
             ))}
+
+            <Card className="bg-secondary/50 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                  <HeartIcon className="w-6 h-6" />
+                  ¿Quieres guardar tus datos?
+                </CardTitle>
+                <CardDescription>
+                  Regístrate y sé parte de nosotros para agilizar tus próximas reservas. ¡Es rápido y fácil!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline">Crear una cuenta</Button>
+              </CardContent>
+            </Card>
 
           </div>
 
