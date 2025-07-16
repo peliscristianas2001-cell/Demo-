@@ -1,16 +1,58 @@
 
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Gift, ArrowRight } from "lucide-react"
-import type { VoucherSettings } from "@/lib/types"
+import { Gift, ArrowRight, Tag } from "lucide-react"
+import { mockVouchers } from "@/lib/mock-data"
+import type { Voucher, VoucherSettings } from "@/lib/types"
+
+const VoucherCard = ({ voucher }: { voucher: Voucher }) => (
+  <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white bg-gray-900">
+    <Image 
+      src={voucher.imageUrl || "https://placehold.co/600x400.png"}
+      alt="Fondo del voucher" 
+      layout="fill" 
+      objectFit="cover" 
+      className="z-0 brightness-50 group-hover:brightness-75 transition-all duration-300"
+      data-ai-hint="abstract texture"
+    />
+    
+    <div className="relative z-10 flex justify-between items-start">
+      <div className="font-headline text-2xl tracking-wider uppercase">{voucher.senderName || "YO TE LLEVO"}</div>
+      <Gift className="w-8 h-8 opacity-80"/>
+    </div>
+
+    <div className="relative z-10 flex flex-col items-center text-center">
+      {voucher.recipientName && <p className="text-sm opacity-80">Para: {voucher.recipientName}</p>}
+      <p className="text-4xl lg:text-5xl font-bold mt-1 text-amber-300 drop-shadow-lg">${voucher.value.toLocaleString('es-AR')}</p>
+      <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{voucher.code}</p>
+      {voucher.message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
+    </div>
+    
+    <div className="relative z-10 text-right">
+      <p className="text-xs opacity-70">
+        Válido hasta: {format(voucher.expiryDate, "dd/MM/yyyy", { locale: es })}
+      </p>
+    </div>
+  </div>
+);
 
 export default function VouchersPage() {
   const [settings, setSettings] = useState<VoucherSettings | null>(null);
+
+  const activeVouchers = useMemo(() => {
+    const now = new Date();
+    return mockVouchers.filter(v => 
+      v.status === "Activo" && 
+      new Date(v.expiryDate) >= now
+    );
+  }, []);
 
   useEffect(() => {
     try {
@@ -27,7 +69,6 @@ export default function VouchersPage() {
   }, []);
 
   // In a real app with user authentication, you would check the user's status here.
-  // For now, we'll just simulate the logic based on the settings.
   const showVouchers = settings?.visibility === 'all'; 
   // A real implementation would be:
   // const showVouchers = settings?.visibility === 'all' || (isUserLoggedIn && user.completedTrips >= settings.minTrips);
@@ -61,40 +102,28 @@ export default function VouchersPage() {
       <SiteHeader />
       <main className="flex-1">
         <div className="container py-12 md:py-24">
-          <div className="mx-auto max-w-4xl">
-            <Card className="overflow-hidden shadow-2xl md:grid md:grid-cols-2">
-              <div className="relative h-64 md:h-full">
-                 <Image 
-                    src="https://placehold.co/600x800.png"
-                    alt="Tarjeta de Regalo"
-                    layout="fill"
-                    objectFit="cover"
-                    className="brightness-90"
-                    data-ai-hint="gift card travel"
-                 />
-              </div>
-              <div className="flex flex-col justify-center p-8 md:p-12">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-4xl font-headline text-primary">
-                    <Gift className="w-10 h-10" />
-                    ¡Regalá una Aventura!
-                  </CardTitle>
-                  <CardDescription className="text-lg text-muted-foreground mt-2">
-                    Nuestras Gift Cards son el regalo perfecto para cualquier amante de los viajes. Sorprendé a esa persona especial con una experiencia que nunca olvidará.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-6">
-                    Las Gift Cards son válidas para cualquier destino y no tienen fecha de vencimiento. Podés elegir el monto que quieras regalar y la persona agasajada podrá canjearlo por el viaje que más le guste.
-                  </p>
-                  <Button size="lg" className="w-full text-lg h-12 group">
-                    Comprar Gift Card
-                    <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Button>
-                </CardContent>
-              </div>
-            </Card>
+          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline text-primary flex items-center gap-4">
+                <Tag className="w-10 h-10" />
+                Vouchers Disponibles
+              </h1>
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                ¡Aprovechá estos descuentos para tu próxima aventura! Mencioná el código al momento de contactarnos por WhatsApp para realizar tu reserva.
+              </p>
+            </div>
           </div>
+          {activeVouchers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {activeVouchers.map(voucher => (
+                <VoucherCard key={voucher.id} voucher={voucher} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">Por el momento no hay vouchers disponibles. ¡Vuelve a consultar pronto!</p>
+            </div>
+          )}
         </div>
       </main>
       <SiteFooter />
