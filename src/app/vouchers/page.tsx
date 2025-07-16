@@ -68,17 +68,21 @@ export default function VouchersPage() {
     return mockVouchers.filter(v => {
       const isExpired = new Date(v.expiryDate) < now;
       if (v.status !== "Activo" || isExpired) {
-        return false;
+        return false; // Always filter out inactive or expired vouchers first.
       }
       
+      // If visibility is for everyone, show it.
       if (v.visibility === "all") {
         return true;
       }
 
+      // If visibility is for registered users, check conditions.
+      // This part will become relevant when a user login system is implemented.
       if (v.visibility === "registered" && isUserRegistered) {
         return userTripCount >= (v.minTrips || 0);
       }
       
+      // By default, if none of the above conditions are met, don't show it.
       return false;
     });
   }, []);
