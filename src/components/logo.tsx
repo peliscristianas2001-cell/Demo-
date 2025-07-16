@@ -12,17 +12,11 @@ export function Logo() {
   useEffect(() => {
     const updateLogo = () => {
         const savedLogo = localStorage.getItem("ytl_logo_url");
-        if (savedLogo) {
-            setLogoUrl(savedLogo);
-        } else {
-            setLogoUrl(defaultLogo);
-        }
+        setLogoUrl(savedLogo || defaultLogo);
     };
 
     updateLogo();
 
-    // Listen for storage changes to update the logo in real-time
-    // (e.g., when changed in another tab or from the admin panel)
     window.addEventListener('storage', updateLogo);
 
     return () => {
@@ -38,7 +32,7 @@ export function Logo() {
         width={36}
         height={36}
         className="rounded-full"
-        key={logoUrl} // Add key to force re-render on URL change
+        key={logoUrl}
       />
       <span className="text-2xl font-bold tracking-tight text-foreground font-headline">
         YO TE LLEVO
