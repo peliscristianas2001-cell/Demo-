@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Voucher, BackgroundOptions, BorderOptions, StripesOptions } from "@/lib/types"
-import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Ruler, Users, Ticket, Layers, Brush } from "lucide-react"
+import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Brush, Users, Ticket, Layers } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import {
@@ -70,13 +70,13 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     if (border?.enabled) {
         borderStyles.border = `${border.width || 4}px solid ${border.color || '#ffffff'}`;
     }
-
+    
     const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
 
     const cardStyle = {
         width: `${width}px`,
         height: `${height}px`,
-        maxWidth: 'none', // Allow it to be wider than container
+        maxWidth: 'none',
         ...backgroundStyles,
         ...borderStyles
     };
@@ -123,6 +123,13 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         </div>
     );
 };
+
+interface VoucherFormProps {
+    isOpen: boolean
+    onOpenChange: (isOpen: boolean) => void
+    onSave: (voucher: Voucher) => void
+    voucher: Voucher | null
+}
 
 const generateVoucherCode = () => {
     return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
@@ -175,7 +182,6 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         stripes: { ...defaultValues.stripes, ...voucher.stripes },
       })
     } else {
-      // Reset form for new voucher
       setFormData(defaultValues)
     }
   }, [voucher, isOpen])
@@ -235,7 +241,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     onSave({
       id: voucher?.id || "",
       status: voucher?.status || "Activo",
-      ...defaultValues, // ensure all fields are present
+      ...defaultValues,
       ...formData
     } as Voucher)
   }
@@ -249,22 +255,23 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y personaliza el diseño de la tarjeta."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 md:grid md:grid-cols-2 md:gap-x-8 min-h-0">
-            {/* --- FORM COLUMN --- */}
-            <div className="flex flex-col min-h-0 md:pr-6">
-                
-                {/* Mobile Preview */}
+        
+        <div className="flex-1 md:grid md:grid-cols-2 md:gap-x-6 min-h-0">
+            {/* --- FORM COLUMN (Scrollable) --- */}
+            <div className="md:pr-6 flex flex-col min-h-0">
+
+                {/* --- MOBILE PREVIEW (Top on Mobile) --- */}
                 <div className="md:hidden p-4 space-y-2 border-b">
                     <Label>Vista Previa de la Tarjeta</Label>
-                    <div className="p-4 bg-muted rounded-lg flex items-center justify-start overflow-auto">
+                    <div className="p-4 bg-muted rounded-lg flex items-center justify-start overflow-x-auto">
                         <VoucherPreview voucherData={formData} />
                     </div>
                 </div>
 
-                {/* Form Inputs with Vertical Scroll */}
+                {/* --- FORM INPUTS WRAPPER (Scrolls vertically) --- */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="p-6 md:p-0 md:py-6 space-y-6">
-                    
+                        {/* Design Section */}
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
                             <div className="space-y-2">
@@ -384,6 +391,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             </div>
                         </div>
 
+                        {/* Voucher Data Section */}
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</Label>
                             <div className="space-y-2">
@@ -410,6 +418,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             </div>
                         </div>
 
+                        {/* Visibility Section */}
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</Label>
                             <Select onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)} value={formData.visibility}>
@@ -421,27 +430,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                     <SelectItem value="registered">Mostrar solo a clientes registrados</SelectItem>
                                 </SelectContent>
                             </Select>
-
                             {formData.visibility === 'registered' && (
                                 <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-                                    <Label htmlFor="minTrips" className="font-semibold">
-                                        Condición para Clientes
-                                    </Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Mínimo de viajes completados para ver este voucher:
-                                    </p>
-                                    <Input
-                                        id="minTrips"
-                                        type="number"
-                                        value={formData.minTrips || 1}
-                                        onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)}
-                                        className="w-48"
-                                        min="1"
-                                    />
+                                    <Label htmlFor="minTrips" className="font-semibold">Condición para Clientes</Label>
+                                    <p className="text-sm text-muted-foreground">Mínimo de viajes completados para ver este voucher:</p>
+                                    <Input id="minTrips" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
                                 </div>
                             )}
                         </div>
 
+                        {/* Custom Content Section */}
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -468,14 +466,15 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                 </div>
             </div>
 
-            {/* --- PREVIEW COLUMN (Desktop) --- */}
+            {/* --- PREVIEW COLUMN (Desktop only, sticky) --- */}
             <div className="hidden md:flex flex-col space-y-4 p-6">
                 <Label>Vista Previa de la Tarjeta</Label>
-                <div className="w-full h-full p-4 bg-muted rounded-lg flex items-center justify-center overflow-auto sticky top-4">
+                <div className="w-full h-full p-4 bg-muted rounded-lg flex items-center justify-center sticky top-0 overflow-auto">
                     <VoucherPreview voucherData={formData} />
                 </div>
             </div>
         </div>
+
         <DialogFooter className="p-6 pt-4 mt-auto border-t bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit}>
