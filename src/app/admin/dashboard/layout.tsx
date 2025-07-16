@@ -84,12 +84,14 @@ export default function DashboardLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <SidebarMenuButton asChild tooltip="Salir del Panel">
-              <Link href="/admin">
-                <LogOut />
-                <span>Salir del Panel</span>
-              </Link>
-            </SidebarMenuButton>
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Salir del Panel">
+                  <Link href="/admin">
+                    <LogOut />
+                    <span>Salir del Panel</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
