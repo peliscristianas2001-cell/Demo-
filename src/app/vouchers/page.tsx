@@ -12,6 +12,14 @@ import { Gift, Tag } from "lucide-react"
 import { mockVouchers } from "@/lib/mock-data"
 import type { Voucher } from "@/lib/types"
 
+
+const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
     const { 
         title,
@@ -38,6 +46,8 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
     if (border?.enabled) {
         borderStyles.border = `${border.width || 4}px solid ${border.color || '#ffffff'}`;
     }
+    
+    const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
 
     const cardStyle = {
         width: `${width}px`,
@@ -63,8 +73,8 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
             )}
              {stripes?.enabled && (
                 <>
-                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
-                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
+                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
+                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
                 </>
             )}
             
@@ -181,5 +191,3 @@ export default function VouchersPage() {
     </div>
   )
 }
-
-    

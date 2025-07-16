@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-
+import { Slider } from "@/components/ui/slider"
 
 interface VoucherFormProps {
   isOpen: boolean
@@ -38,6 +38,14 @@ interface VoucherFormProps {
   onSave: (voucher: Voucher) => void
   voucher: Voucher | null
 }
+
+
+const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     const { 
@@ -50,7 +58,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         height = 300,
         background = { type: 'solid', color: '#cccccc' },
         border = { enabled: false },
-        stripes = { enabled: false },
+        stripes = { enabled: false, color: '#ffffff', opacity: 0.3 },
         message
      } = voucherData;
 
@@ -70,6 +78,8 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     if (border?.enabled) {
         borderStyles.border = `${border.width || 4}px solid ${border.color || '#ffffff'}`;
     }
+
+    const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
 
     const previewStyle = {
         width: `${width}px`,
@@ -95,8 +105,8 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
             )}
              {stripes?.enabled && (
                 <>
-                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
-                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
+                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
+                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
                 </>
             )}
             <div className="relative z-10 flex justify-between items-start">
@@ -147,7 +157,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     },
     stripes: {
         enabled: false,
-        color: 'rgba(255,255,255,0.3)'
+        color: '#ffffff',
+        opacity: 0.3,
     },
     recipientName: "",
     senderName: "YO TE LLEVO",
@@ -183,7 +194,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     setFormData(prev => ({
       ...prev,
       [object]: {
-        ...prev[object],
+        ...(prev[object] as object),
         [field]: value
       }
     }));
@@ -327,22 +338,35 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                 <Label htmlFor="stripes-enabled">Habilitar Franjas</Label>
                             </div>
                              {formData.stripes?.enabled && (
-                                <div className="space-y-2 pl-8 animate-fade-in-down">
-                                    <Label htmlFor="stripesColor">Color (con transparencia)</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input 
-                                            id="stripesColorPicker"
-                                            type="color"
-                                            value={formData.stripes?.color?.startsWith('#') ? formData.stripes.color : '#ffffff'} 
-                                            onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
-                                            className="w-12 h-10 p-1"
-                                        />
-                                        <Input 
-                                            id="stripesColor"
-                                            type="text" 
-                                            value={formData.stripes?.color || ''} 
-                                            onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
-                                            placeholder="rgba(255, 255, 255, 0.3)"
+                                <div className="space-y-4 pl-8 animate-fade-in-down">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="stripesColor">Color</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input 
+                                                id="stripesColorPicker"
+                                                type="color"
+                                                value={formData.stripes?.color || '#ffffff'} 
+                                                onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                                className="w-12 h-10 p-1"
+                                            />
+                                            <Input 
+                                                id="stripesColor"
+                                                type="text" 
+                                                value={formData.stripes?.color || ''} 
+                                                onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                                placeholder="#ffffff"
+                                            />
+                                        </div>
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="stripesOpacity">Opacidad ({Math.round((formData.stripes?.opacity ?? 0.3) * 100)}%)</Label>
+                                        <Slider
+                                            id="stripesOpacity"
+                                            min={0}
+                                            max={1}
+                                            step={0.05}
+                                            value={[formData.stripes?.opacity ?? 0.3]}
+                                            onValueChange={(value) => handleNestedChange('stripes', 'opacity', value[0])}
                                         />
                                     </div>
                                 </div>
@@ -452,5 +476,3 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
-
-    

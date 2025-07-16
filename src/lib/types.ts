@@ -52,6 +52,7 @@ export type BorderOptions = {
 export type StripesOptions = {
     enabled: boolean;
     color?: string;
+    opacity?: number;
 }
 
 export type Voucher = {
@@ -79,5 +80,3 @@ export type Voucher = {
     visibility: "all" | "registered";
     minTrips?: number; // Minimum number of trips for registered users
 }
-
-    
