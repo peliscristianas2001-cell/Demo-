@@ -1,28 +1,49 @@
+
+import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Ticket } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Gift, ArrowRight } from "lucide-react"
 
 export default function VouchersPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-muted/20">
       <SiteHeader />
       <main className="flex-1">
         <div className="container py-12 md:py-24">
-          <div className="mx-auto max-w-2xl">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                  <Ticket className="w-6 h-6 text-primary" />
-                  Vouchers
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Esta página está en construcción. Próximamente encontrarás aquí
-                  nuestros vouchers y gift cards.
-                </p>
-              </CardContent>
+          <div className="mx-auto max-w-4xl">
+            <Card className="overflow-hidden shadow-2xl md:grid md:grid-cols-2">
+              <div className="relative h-64 md:h-full">
+                 <Image 
+                    src="https://placehold.co/600x800.png"
+                    alt="Tarjeta de Regalo"
+                    layout="fill"
+                    objectFit="cover"
+                    className="brightness-90"
+                    data-ai-hint="gift card travel"
+                 />
+              </div>
+              <div className="flex flex-col justify-center p-8 md:p-12">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-4xl font-headline text-primary">
+                    <Gift className="w-10 h-10" />
+                    ¡Regalá una Aventura!
+                  </CardTitle>
+                  <CardDescription className="text-lg text-muted-foreground mt-2">
+                    Nuestras Gift Cards son el regalo perfecto para cualquier amante de los viajes. Sorprendé a esa persona especial con una experiencia que nunca olvidará.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-6">
+                    Las Gift Cards son válidas para cualquier destino y no tienen fecha de vencimiento. Podés elegir el monto que quieras regalar y la persona agasajada podrá canjearlo por el viaje que más le guste.
+                  </p>
+                  <Button size="lg" className="w-full text-lg h-12 group">
+                    Comprar Gift Card
+                    <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Button>
+                </CardContent>
+              </div>
             </Card>
           </div>
         </div>
