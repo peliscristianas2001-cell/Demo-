@@ -85,13 +85,14 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     const previewStyle = {
         width: `${width}px`,
         height: `${height}px`,
+        maxWidth: 'none', // Allow it to be wider than container
         ...backgroundStyles,
         ...borderStyles
     };
 
     return (
         <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white max-w-full max-h-[400px] mx-auto"
+            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white max-w-full max-h-[400px] mx-auto flex-shrink-0"
             style={previewStyle}
         >
              {background.type === 'image' && background.imageUrl && (
@@ -477,3 +478,5 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
+
+    
