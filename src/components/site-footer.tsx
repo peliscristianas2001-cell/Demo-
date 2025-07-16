@@ -8,7 +8,7 @@ export function SiteFooter() {
         <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
           <Logo />
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © {new Date().getFullYear()} Viajá Ya. Todos los derechos reservados.
+            © {new Date().getFullYear()} YO TE LLEVO. Todos los derechos reservados.
           </p>
         </div>
         <nav className="flex gap-4 sm:ml-auto">

@@ -31,7 +31,7 @@ export default function Home() {
               Tu Próxima Aventura Comienza Aquí
             </h1>
             <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl">
-              Explora los destinos más increíbles. Encontrá tu viaje soñado con Viajá Ya.
+              Explora los destinos más increíbles. Encontrá tu viaje soñado con YO TE LLEVO.
             </p>
             <div className="max-w-2xl mx-auto mt-8">
               <div className="flex flex-col gap-4 p-4 rounded-lg shadow-lg md:flex-row bg-background/80 backdrop-blur-sm">

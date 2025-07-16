@@ -111,7 +111,7 @@ export default function BookingPage() {
       return
     }
 
-    const reservationId = `VY-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     toast({
       title: "¡Reserva Confirmada!",
       description: `Tu reserva para ${tour?.destination} ha sido confirmada. Tu número de reserva es ${reservationId}.`,
