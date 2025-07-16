@@ -36,4 +36,7 @@ export type Voucher = {
     status: VoucherStatus;
     expiryDate: Date;
     imageUrl?: string;
+    recipientName?: string;
+    senderName?: string;
+    message?: string;
 }
