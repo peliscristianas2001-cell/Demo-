@@ -21,6 +21,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair } from "lucide-react"
 import { mockTours } from "@/lib/mock-data"
@@ -167,7 +170,7 @@ export default function ReservationsPage() {
                                             <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="max-w-md">
+                                    <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
                                         <DialogHeader>
                                             <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                             <DialogDescription>
@@ -175,13 +178,20 @@ export default function ReservationsPage() {
                                                 Selecciona su/s lugar/es en el mapa.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <SeatSelector
-                                            totalSeats={tour.totalSeats}
-                                            occupiedSeats={tour.occupiedSeats}
-                                            selectedSeats={res.assignedSeats}
-                                            onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId)}
-                                            passengerSeats={[]} // Not needed here as we are assigning
-                                        />
+                                        <ScrollArea className="flex-grow">
+                                            <SeatSelector
+                                                totalSeats={tour.totalSeats}
+                                                occupiedSeats={tour.occupiedSeats}
+                                                selectedSeats={res.assignedSeats}
+                                                onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId)}
+                                                passengerSeats={[]} // Not needed here as we are assigning
+                                            />
+                                        </ScrollArea>
+                                         <DialogFooter>
+                                            <DialogClose asChild>
+                                                <Button type="button">Cerrar</Button>
+                                            </DialogClose>
+                                        </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
                                <DropdownMenu>
