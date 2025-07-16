@@ -39,12 +39,12 @@ export function TourCard({ tour }: TourCardProps) {
               <p className="text-sm text-muted-foreground">Desde</p>
               <p className="text-4xl font-bold text-foreground">${tour.price.toLocaleString('es-AR')}</p>
             </div>
-            <Link href={`/booking/${tour.id}`} prefetch={false} legacyBehavior>
-                <Button size="lg" className="text-base rounded-xl">
+            <Button asChild size="lg" className="text-base rounded-xl">
+                <Link href={`/booking/${tour.id}`} prefetch={false}>
                   Reservar
                   <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                </Button>
-            </Link>
+                </Link>
+            </Button>
           </div>
         </div>
       </CardContent>
