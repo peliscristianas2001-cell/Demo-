@@ -52,10 +52,10 @@ export default function Home() {
             priority
           />
           <div className="container px-4 md:px-6 z-10">
-            <h1 className="text-5xl font-headline tracking-tight md:text-7xl lg:text-8xl drop-shadow-2xl animate-fade-in-down">
+            <h1 className="text-4xl sm:text-5xl font-headline tracking-tight md:text-7xl lg:text-8xl drop-shadow-2xl animate-fade-in-down">
               Tu Próxima Aventura Comienza Aquí
             </h1>
-            <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down" style={{ animationDelay: '0.2s' }}>
+            <p className="max-w-3xl mx-auto mt-4 text-base sm:text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down" style={{ animationDelay: '0.2s' }}>
               Explora los destinos más increíbles. Encontrá tu viaje soñado con YO TE LLEVO.
             </p>
             <div className="max-w-3xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
@@ -121,7 +121,7 @@ export default function Home() {
                      <p className="mt-4 text-lg text-muted-foreground">
                         Con nosotros, no solo descubrís un destino, te sumas a una comunidad de viajeros. ¡La aventura te espera!
                     </p>
-                    <div className="mt-8 flex gap-4">
+                    <div className="mt-8 flex flex-col sm:flex-row gap-4">
                         <div className="flex items-center gap-2"><PlaneIcon className="w-5 h-5 text-primary" /><span>Coordinación Permanente</span></div>
                         <div className="flex items-center gap-2"><SparklesIcon className="w-5 h-5 text-primary" /><span>La Mejor Onda</span></div>
                     </div>
@@ -137,5 +137,3 @@ export default function Home() {
     </div>
   )
 }
-
-    

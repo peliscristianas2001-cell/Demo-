@@ -144,14 +144,14 @@ export default function BookingPage() {
         <div className="container grid grid-cols-1 gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-8">
             <Card className="overflow-hidden shadow-lg">
-              <div className="relative h-64">
+              <div className="relative h-48 sm:h-64">
                 <Image src={tour.flyerUrl} alt={tour.destination} layout="fill" objectFit="cover" className="brightness-90" data-ai-hint="travel destination"/>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-6 flex flex-col justify-end">
-                    <h1 className="text-4xl font-headline text-white drop-shadow-xl">{tour.destination}</h1>
+                    <h1 className="text-3xl sm:text-4xl font-headline text-white drop-shadow-xl">{tour.destination}</h1>
                 </div>
               </div>
               <CardContent className="p-6 bg-card">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-muted-foreground">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-muted-foreground">
                     <div className="flex items-center gap-2"><MapPinIcon className="w-5 h-5 text-primary" /><span>Salida desde Buenos Aires</span></div>
                     <div className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary" /><span>{new Date(tour.date).toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
                     <div className="flex items-center gap-2"><ClockIcon className="w-5 h-5 text-primary" /><span>{new Date(tour.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs</span></div>
@@ -258,7 +258,7 @@ export default function BookingPage() {
                 <Separator />
                 <div className="flex items-baseline justify-between text-2xl font-bold">
                   <span>Total</span>
-                  <span className="text-4xl">${totalPrice.toLocaleString('es-AR')}</span>
+                  <span className="text-3xl sm:text-4xl">${totalPrice.toLocaleString('es-AR')}</span>
                 </div>
                  <p className="text-xs text-muted-foreground text-center">
                   El pago se coordina por WhatsApp luego de enviar la solicitud.
@@ -276,5 +276,3 @@ export default function BookingPage() {
     </div>
   )
 }
-
-    

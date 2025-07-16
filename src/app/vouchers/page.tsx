@@ -50,8 +50,9 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
     const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
 
     const cardStyle = {
-        width: `${width}px`,
-        height: `${height}px`,
+        width: '100%',
+        maxWidth: `${width}px`,
+        aspectRatio: `${width} / ${height}`,
         ...backgroundStyles,
         ...borderStyles
     };
@@ -165,7 +166,7 @@ export default function VouchersPage() {
             </div>
           </div>
           {activeVouchers.length > 0 ? (
-            <div className="flex flex-wrap justify-center items-start gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {activeVouchers.map(voucher => (
                 <VoucherCard key={voucher.id} voucher={voucher} />
               ))}
