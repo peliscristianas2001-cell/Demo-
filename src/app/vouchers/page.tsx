@@ -13,10 +13,37 @@ import { mockVouchers } from "@/lib/mock-data"
 import type { Voucher } from "@/lib/types"
 
 const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
+    const { 
+        title,
+        code,
+        value,
+        recipientName,
+        expiryDate,
+        width,
+        height,
+        background,
+        border,
+        stripes,
+        message
+     } = voucher;
+
+    const backgroundStyles: React.CSSProperties = {};
+    if (background.type === 'solid') {
+        backgroundStyles.backgroundColor = background.color;
+    } else if (background.type === 'gradient') {
+        backgroundStyles.background = `linear-gradient(to bottom right, ${background.color1}, ${background.color2})`;
+    }
+
+    const borderStyles: React.CSSProperties = {};
+    if (border?.enabled) {
+        borderStyles.border = `${border.width || 4}px solid ${border.color || '#ffffff'}`;
+    }
+
     const cardStyle = {
-        width: `${voucher.width}px`,
-        height: `${voucher.height}px`,
-        backgroundColor: voucher.imageUrl ? 'transparent' : voucher.backgroundColor,
+        width: `${width}px`,
+        height: `${height}px`,
+        ...backgroundStyles,
+        ...borderStyles
     };
 
     return (
@@ -24,9 +51,9 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
             className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white"
             style={cardStyle}
         >
-            {voucher.imageUrl && (
+            {background.type === 'image' && background.imageUrl && (
                  <Image 
-                    src={voucher.imageUrl}
+                    src={background.imageUrl}
                     alt="Fondo del voucher" 
                     layout="fill" 
                     objectFit="cover" 
@@ -34,22 +61,28 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
                     data-ai-hint="abstract texture"
                 />
             )}
+             {stripes?.enabled && (
+                <>
+                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
+                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripes.color || 'rgba(255,255,255,0.3)' }} />
+                </>
+            )}
             
             <div className="relative z-10 flex justify-between items-start">
-                <div className="font-headline text-2xl tracking-wider uppercase">{voucher.title}</div>
+                <div className="font-headline text-2xl tracking-wider uppercase">{title}</div>
                 <Gift className="w-8 h-8 opacity-80"/>
             </div>
 
             <div className="relative z-10 flex flex-col items-center text-center">
-                {voucher.recipientName && <p className="text-sm opacity-80">Para: {voucher.recipientName}</p>}
-                <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${voucher.value.toLocaleString('es-AR')}</p>
-                <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{voucher.code}</p>
-                {voucher.message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
+                {recipientName && <p className="text-sm opacity-80">Para: {recipientName}</p>}
+                <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${value.toLocaleString('es-AR')}</p>
+                <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
+                {message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
             </div>
             
             <div className="relative z-10 text-right">
                 <p className="text-xs opacity-70">
-                    Válido hasta: {format(new Date(voucher.expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es })}
+                    Válido hasta: {format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es })}
                 </p>
             </div>
         </div>

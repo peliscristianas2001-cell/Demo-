@@ -11,7 +11,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 2, // This trip has two buses
-    occupiedSeats: [], // This will be derived from reservations
   },
   {
     id: '2',
@@ -21,7 +20,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 1,
-    occupiedSeats: [],
   },
   {
     id: '3',
@@ -31,7 +29,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 1,
-    occupiedSeats: [],
   },
   {
     id: '4',
@@ -41,7 +38,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 1,
-    occupiedSeats: [],
   },
   {
     id: '5',
@@ -51,7 +47,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 1,
-    occupiedSeats: [],
   },
   {
     id: '6',
@@ -61,7 +56,6 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
     busCount: 1,
-    occupiedSeats: [],
   },
 ];
 
@@ -87,8 +81,22 @@ export const mockVouchers: Voucher[] = [
     quantity: 10,
     width: 500,
     height: 300,
-    backgroundColor: "#3b82f6",
-    imageUrl: "https://placehold.co/600x400.png",
+    background: {
+      type: 'image',
+      imageUrl: "https://placehold.co/600x400.png",
+      color: '#3b82f6',
+      color1: '#3b82f6',
+      color2: '#ef4444',
+    },
+    border: {
+        enabled: true,
+        color: '#ffffff',
+        width: 4
+    },
+    stripes: {
+        enabled: true,
+        color: 'rgba(0,0,0,0.2)'
+    },
     recipientName: "Ana",
     senderName: "Carlos",
     message: "¡Feliz cumpleaños! Espero que disfrutes tu próxima aventura.",
@@ -104,8 +112,19 @@ export const mockVouchers: Voucher[] = [
     quantity: 0,
     width: 400,
     height: 400,
-    backgroundColor: "#ef4444",
-    imageUrl: "https://placehold.co/600x400.png",
+    background: {
+        type: 'gradient',
+        color: '#ef4444',
+        color1: '#ef4444',
+        color2: '#f97316',
+        imageUrl: '',
+    },
+    border: {
+        enabled: false,
+    },
+    stripes: {
+        enabled: false,
+    },
     recipientName: "Juan Pérez",
     senderName: "Admin",
     message: "Gracias por tu compra.",
@@ -122,8 +141,20 @@ export const mockVouchers: Voucher[] = [
     quantity: 1,
     width: 350,
     height: 500,
-    backgroundColor: "#10b981",
-    imageUrl: "",
+    background: {
+      type: 'solid',
+      color: '#10b981',
+      color1: '#3b82f6',
+      color2: '#ef4444',
+      imageUrl: ''
+    },
+    border: {
+        enabled: false,
+    },
+    stripes: {
+        enabled: true,
+        color: 'rgba(255,255,255,0.5)'
+    },
     visibility: "registered",
     minTrips: 1,
   },
@@ -137,8 +168,21 @@ export const mockVouchers: Voucher[] = [
     quantity: 0,
     width: 500,
     height: 300,
-    backgroundColor: "#6b7280",
-    imageUrl: "",
+    background: {
+      type: 'solid',
+      color: '#6b7280',
+      color1: '#3b82f6',
+      color2: '#ef4444',
+      imageUrl: ''
+    },
+     border: {
+        enabled: false,
+    },
+    stripes: {
+        enabled: false,
+    },
     visibility: "all",
   },
 ];
+
+    

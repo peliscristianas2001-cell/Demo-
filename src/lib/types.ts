@@ -35,6 +35,25 @@ export type Reservation = {
 
 export type VoucherStatus = "Activo" | "Canjeado" | "Expirado";
 
+export type BackgroundOptions = {
+    type: 'solid' | 'gradient' | 'image';
+    color?: string; // For solid
+    color1?: string; // For gradient
+    color2?: string; // For gradient
+    imageUrl?: string; // For image
+}
+
+export type BorderOptions = {
+    enabled: boolean;
+    color?: string;
+    width?: number;
+}
+
+export type StripesOptions = {
+    enabled: boolean;
+    color?: string;
+}
+
 export type Voucher = {
     id: string;
     title: string;
@@ -47,8 +66,9 @@ export type Voucher = {
     // Design properties
     width: number;
     height: number;
-    backgroundColor: string;
-    imageUrl?: string;
+    background: BackgroundOptions;
+    border: BorderOptions;
+    stripes: StripesOptions;
 
     // Content properties
     recipientName?: string;
