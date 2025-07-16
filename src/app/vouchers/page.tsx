@@ -49,7 +49,7 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
             
             <div className="relative z-10 text-right">
                 <p className="text-xs opacity-70">
-                    Válido hasta: {format(voucher.expiryDate, "dd 'de' LLLL 'de' yyyy", { locale: es })}
+                    Válido hasta: {format(new Date(voucher.expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es })}
                 </p>
             </div>
         </div>
@@ -57,27 +57,12 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
 };
 
 export default function VouchersPage() {
-  // In a real app with user authentication, you would check the user's status here.
-  // For now, we will assume a mock user status.
-  const mockUser = {
-      isLoggedIn: true,
-      completedTrips: 5 
-  };
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
     return mockVouchers.filter(v => {
       const isExpired = new Date(v.expiryDate) < now;
-      if (v.status !== "Activo" || isExpired) return false;
-
-      if (v.visibility === "all") return true;
-
-      // Logic for registered users. Replace mockUser with real user data in a real app.
-      if (v.visibility === "registered" && mockUser.isLoggedIn) {
-          return mockUser.completedTrips >= (v.minTrips || 1);
-      }
-      
-      return false;
+      return v.status === "Activo" && !isExpired;
     });
   }, []);
 
@@ -107,9 +92,9 @@ export default function VouchersPage() {
              <div className="text-center py-12">
                 <Card className="max-w-2xl mx-auto">
                     <CardHeader>
-                        <CardTitle>No hay vouchers para ti... por ahora</CardTitle>
+                        <CardTitle>No hay vouchers disponibles por ahora</CardTitle>
                         <CardDescription className="text-lg">
-                            No encontramos vouchers que coincidan con tu perfil en este momento. ¡Sigue viajando con nosotros para desbloquear ofertas exclusivas!
+                            ¡Vuelve pronto para no perderte nuestras próximas ofertas y promociones exclusivas!
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
