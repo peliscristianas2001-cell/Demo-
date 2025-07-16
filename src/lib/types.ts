@@ -35,4 +35,5 @@ export type Voucher = {
     value: number;
     status: VoucherStatus;
     expiryDate: Date;
+    imageUrl?: string;
 }
