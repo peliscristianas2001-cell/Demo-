@@ -20,9 +20,9 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // This is a mock login. In a real app, you'd verify the password.
-    // For now, any password works.
-    if (password) {
+    // IMPORTANT: This is a mock login for demonstration purposes.
+    // In a real production app, passwords should be hashed and validated on a server.
+    if (password === "AngelaRojasYTL") {
       toast({
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     } else {
       toast({
         title: "Error de autenticación",
-        description: "Por favor, ingresa la contraseña.",
+        description: "La contraseña es incorrecta.",
         variant: "destructive",
       });
     }
