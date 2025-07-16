@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { SeatSelector } from "@/components/booking/seat-selector"
 import { Armchair, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, Bus } from "lucide-react"
 
 interface Passenger {
@@ -141,31 +140,6 @@ export default function BookingPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-2xl"><Armchair className="w-8 h-8 text-primary"/> Disponibilidad de Asientos</CardTitle>
-                    <CardDescription>
-                        Estos son los asientos ya ocupados. La administradora te asignará tus lugares una vez confirmada la reserva.
-                    </CardDescription>
-                    {tour.busCount > 1 && (
-                      <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground">
-                        <Bus className="w-5 h-5" />
-                        <span>Este viaje cuenta con {tour.busCount} micros. El mapa muestra la disponibilidad general.</span>
-                      </div>
-                    )}
-                </CardHeader>
-                <CardContent>
-                    <SeatSelector 
-                        totalSeats={tour.totalSeats}
-                        occupiedSeats={occupiedSeats}
-                        selectedSeats={[]}
-                        onSeatSelect={() => {}} // No action for client
-                        passengerSeats={[]}
-                    />
-                </CardContent>
-            </Card>
-
 
             <Card className="shadow-lg">
               <CardHeader>
