@@ -13,18 +13,14 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { mockTours } from "@/lib/mock-data"
 import type { Tour } from "@/lib/types"
-import { SeatSelector } from "@/components/booking/seat-selector"
 import { DatePicker } from "@/components/ui/date-picker"
-import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HashIcon } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-
+import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon } from "lucide-react"
 
 interface Passenger {
   fullName: string
   dni: string
   dob?: Date
   nationality: string
-  seat: string | null
 }
 
 export default function BookingPage() {
@@ -36,8 +32,6 @@ export default function BookingPage() {
   const [adults, setAdults] = useState(1)
   const [children, setChildren] = useState(0)
   const [passengers, setPassengers] = useState<Passenger[]>([])
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([])
-  const [currentPassengerIndex, setCurrentPassengerIndex] = useState(0)
 
   useEffect(() => {
     const foundTour = mockTours.find((t) => t.id === id)
@@ -51,16 +45,8 @@ export default function BookingPage() {
       dni: "",
       dob: undefined,
       nationality: "Argentina",
-      seat: null
     })
     setPassengers(newPassengers)
-    
-    const newSelectedSeats = newPassengers.map(p => p.seat).filter(Boolean) as string[];
-    setSelectedSeats(newSelectedSeats);
-    
-    if (currentPassengerIndex >= totalPassengers) {
-      setCurrentPassengerIndex(totalPassengers > 0 ? totalPassengers - 1 : 0);
-    }
   }, [adults, children])
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
@@ -69,43 +55,11 @@ export default function BookingPage() {
     setPassengers(newPassengers)
   }
 
-  const handleSeatSelect = (seat: string) => {
-    if (tour?.occupiedSeats.includes(seat)) return
-
-    const totalPassengers = adults + children
-    if (currentPassengerIndex >= totalPassengers) return
-    
-    const newPassengers = [...passengers];
-    const newSelectedSeats = [...selectedSeats];
-
-    const currentSeatForPassenger = newPassengers[currentPassengerIndex].seat;
-    if (currentSeatForPassenger) {
-       const seatIndex = newSelectedSeats.indexOf(currentSeatForPassenger);
-       if (seatIndex > -1) newSelectedSeats.splice(seatIndex, 1);
-    }
-
-    if (newSelectedSeats.includes(seat)) { // Deselecting seat from another passenger
-      const passengerIndexWithSeat = newPassengers.findIndex(p => p.seat === seat);
-      if(passengerIndexWithSeat > -1) newPassengers[passengerIndexWithSeat].seat = null;
-    }
-
-    newPassengers[currentPassengerIndex].seat = seat;
-    newSelectedSeats.push(seat);
-
-    setPassengers(newPassengers);
-    setSelectedSeats(newSelectedSeats);
-    
-    if (currentPassengerIndex < totalPassengers - 1) {
-      setCurrentPassengerIndex(currentPassengerIndex + 1);
-    }
-  }
-
   const handleConfirmReservation = () => {
-    // Basic validation
-    if (passengers.some(p => !p.fullName || !p.dni || !p.seat)) {
+    if (passengers.some(p => !p.fullName || !p.dni)) {
       toast({
         title: "Error de validación",
-        description: "Por favor, complete todos los datos de los pasajeros y seleccione sus asientos.",
+        description: "Por favor, complete todos los datos de los pasajeros.",
         variant: "destructive",
       })
       return
@@ -114,7 +68,7 @@ export default function BookingPage() {
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     toast({
       title: "¡Reserva Confirmada!",
-      description: `Tu reserva para ${tour?.destination} ha sido confirmada. Tu número de reserva es ${reservationId}.`,
+      description: `Tu reserva para ${tour?.destination} ha sido confirmada. Tu número de reserva es ${reservationId}. Un administrador te asignará los asientos.`,
       duration: 9000,
     })
   }
@@ -176,12 +130,11 @@ export default function BookingPage() {
             </Card>
 
             {passengers.map((passenger, index) => (
-              <Card key={index} className={currentPassengerIndex === index ? "border-primary border-2 shadow-lg" : ""}>
+              <Card key={index}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <UserIcon className="w-6 h-6 text-primary" />
                     Pasajero {index + 1}
-                    {passenger.seat && <span className="text-sm font-medium px-2 py-1 rounded-md bg-accent text-accent-foreground">Asiento: {passenger.seat}</span>}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -213,26 +166,6 @@ export default function BookingPage() {
           </div>
 
           <div className="space-y-8 lg:col-span-1">
-             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-armchair w-6 h-6 text-primary"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5Z"/><path d="M5 11v-2"/><path d="M19 11v-2"/></svg> Selección de asientos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Alert className="mb-4 bg-accent/50">
-                    <AlertTitle>Pasajero {currentPassengerIndex + 1}</AlertTitle>
-                    <AlertDescription>
-                        Seleccioná el asiento para: <span className="font-semibold">{passengers[currentPassengerIndex]?.fullName || `Pasajero ${currentPassengerIndex + 1}`}</span>
-                    </AlertDescription>
-                </Alert>
-                <SeatSelector
-                    totalSeats={tour.totalSeats}
-                    occupiedSeats={tour.occupiedSeats}
-                    selectedSeats={selectedSeats}
-                    onSeatSelect={handleSeatSelect}
-                    passengerSeats={passengers.map(p => p.seat)}
-                />
-              </CardContent>
-            </Card>
             <Card className="sticky top-24">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><TicketIcon className="w-6 h-6 text-primary" /> Resumen de reserva</CardTitle>
@@ -251,7 +184,7 @@ export default function BookingPage() {
                   <span>Total</span>
                   <span>${totalPrice.toLocaleString('es-AR')}</span>
                 </div>
-                <Button className="w-full" size="lg" onClick={handleConfirmReservation} disabled={passengers.some(p => !p.seat)}>
+                <Button className="w-full" size="lg" onClick={handleConfirmReservation}>
                   Confirmar reserva
                 </Button>
               </CardContent>
