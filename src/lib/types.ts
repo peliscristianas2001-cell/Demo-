@@ -40,3 +40,8 @@ export type Voucher = {
     senderName?: string;
     message?: string;
 }
+
+export type VoucherSettings = {
+  visibility: "all" | "registered";
+  minTrips: number;
+}

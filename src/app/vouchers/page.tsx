@@ -1,12 +1,61 @@
 
+"use client"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Gift, ArrowRight } from "lucide-react"
+import type { VoucherSettings } from "@/lib/types"
 
 export default function VouchersPage() {
+  const [settings, setSettings] = useState<VoucherSettings | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem("ytl_voucher_settings")
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings))
+      } else {
+        setSettings({ visibility: 'all', minTrips: 1 }); // Default if no settings found
+      }
+    } catch (error) {
+      console.error("Failed to load voucher settings", error)
+      setSettings({ visibility: 'all', minTrips: 1 });
+    }
+  }, []);
+
+  // In a real app with user authentication, you would check the user's status here.
+  // For now, we'll just simulate the logic based on the settings.
+  const showVouchers = settings?.visibility === 'all'; 
+  // A real implementation would be:
+  // const showVouchers = settings?.visibility === 'all' || (isUserLoggedIn && user.completedTrips >= settings.minTrips);
+
+  if (!showVouchers) {
+     return (
+        <div className="flex flex-col min-h-screen bg-muted/20">
+            <SiteHeader />
+            <main className="flex-1 flex items-center justify-center">
+                <div className="container py-12 md:py-24 text-center">
+                    <Card className="max-w-2xl mx-auto">
+                        <CardHeader>
+                            <CardTitle>Vouchers Exclusivos</CardTitle>
+                            <CardDescription className="text-lg">
+                                ¡Tenemos sorpresas para nuestros viajeros frecuentes! Inicia sesión para ver si tienes vouchers disponibles.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button>Iniciar Sesión</Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </main>
+            <SiteFooter />
+        </div>
+     )
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-muted/20">
       <SiteHeader />
