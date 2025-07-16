@@ -1,4 +1,6 @@
+
 "use client"
+import { useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
@@ -11,7 +13,8 @@ import { mockTours } from "@/lib/mock-data"
 import { CalendarIcon, MapPinIcon, SearchIcon, ArrowRight, PlaneIcon, SparklesIcon } from "lucide-react"
 
 export default function Home() {
-  const featuredTours = mockTours.slice(0, 3);
+  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  const featuredTours = activeTours.slice(0, 3);
 
   return (
     <div className="flex flex-col min-h-screen">

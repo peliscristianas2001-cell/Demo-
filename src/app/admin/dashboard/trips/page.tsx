@@ -1,12 +1,10 @@
 
 "use client"
 
+import { useMemo } from "react"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
 import {
   Table,
@@ -24,17 +22,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plane, PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours } from "@/lib/mock-data"
 
 export default function TripsPage() {
+  // Filter out trips that have already passed
+  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Viajes</h2>
           <p className="text-muted-foreground">
-            Aquí podrás crear, editar y eliminar los viajes.
+            Aquí podrás crear, editar y eliminar los viajes. Los viajes pasados se ocultan automáticamente.
           </p>
         </div>
         <Button>
@@ -55,7 +56,7 @@ export default function TripsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTours.map((tour) => (
+              {activeTours.map((tour) => (
                 <TableRow key={tour.id}>
                   <TableCell className="font-medium">{tour.destination}</TableCell>
                   <TableCell>

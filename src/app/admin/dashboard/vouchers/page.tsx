@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -25,13 +26,16 @@ import {
 
 // Mock data for vouchers
 const mockVouchers = [
-  { id: "V001", code: "VERANO2025", value: 10000, status: "Activo" },
-  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado" },
-  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo" },
-  { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado" },
+  { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31") },
+  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2024-12-31") },
+  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2024-10-31") },
+  { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado", expiryDate: new Date("2024-01-01") },
 ];
 
 export default function VouchersAdminPage() {
+  // Filter out vouchers that have expired
+  const activeVouchers = useMemo(() => mockVouchers.filter(v => v.expiryDate >= new Date() || v.status === 'Canjeado'), []);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "Activo": return "secondary";
@@ -47,7 +51,7 @@ export default function VouchersAdminPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vouchers</h2>
           <p className="text-muted-foreground">
-            Crea, edita y administra los vouchers de regalo.
+            Crea, edita y administra los vouchers de regalo. Los vouchers expirados se ocultan.
           </p>
         </div>
         <Button>
@@ -62,15 +66,19 @@ export default function VouchersAdminPage() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Valor</TableHead>
+                <TableHead>Vencimiento</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockVouchers.map((voucher) => (
+              {activeVouchers.map((voucher) => (
                 <TableRow key={voucher.id}>
                   <TableCell className="font-medium font-mono">{voucher.code}</TableCell>
                   <TableCell>${voucher.value.toLocaleString("es-AR")}</TableCell>
+                  <TableCell>
+                    {voucher.expiryDate.toLocaleDateString("es-AR")}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(voucher.status)}>
                       {voucher.status}

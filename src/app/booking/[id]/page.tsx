@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -14,7 +15,8 @@ import { useToast } from "@/hooks/use-toast"
 import { mockTours } from "@/lib/mock-data"
 import type { Tour } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
+import { SeatSelector } from "@/components/booking/seat-selector"
+import { Armchair, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
 
 interface Passenger {
   fullName: string
@@ -35,7 +37,11 @@ export default function BookingPage() {
 
   useEffect(() => {
     const foundTour = mockTours.find((t) => t.id === id)
-    setTour(foundTour || null)
+    if (foundTour && new Date(foundTour.date) >= new Date()) {
+        setTour(foundTour)
+    } else {
+        setTour(null)
+    }
   }, [id])
 
   useEffect(() => {
@@ -80,8 +86,20 @@ export default function BookingPage() {
     return (
       <div className="flex flex-col min-h-screen">
         <SiteHeader />
-        <main className="flex-1 flex items-center justify-center">
-          <p>Cargando información del viaje...</p>
+        <main className="flex-1 flex items-center justify-center text-center p-8">
+            <Card className="max-w-lg">
+                <CardHeader>
+                    <CardTitle>Viaje no disponible</CardTitle>
+                    <CardDescription>
+                        Lo sentimos, el viaje que buscas ya no está disponible o la fecha ha expirado.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <Button asChild>
+                        <a href="/tours">Ver otros viajes</a>
+                    </Button>
+                </CardContent>
+            </Card>
         </main>
         <SiteFooter />
       </div>
@@ -109,6 +127,25 @@ export default function BookingPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-2xl"><Armchair className="w-8 h-8 text-primary"/> Disponibilidad de Asientos</CardTitle>
+                    <CardDescription>
+                        Estos son los asientos ya ocupados. La administradora te asignará tus lugares una vez confirmada la reserva.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <SeatSelector 
+                        totalSeats={tour.totalSeats}
+                        occupiedSeats={tour.occupiedSeats}
+                        selectedSeats={[]}
+                        onSeatSelect={() => {}} // No action for client
+                        passengerSeats={[]}
+                    />
+                </CardContent>
+            </Card>
+
 
             <Card className="shadow-lg">
               <CardHeader>

@@ -1,9 +1,14 @@
+
+"use client"
+import { useMemo } from 'react';
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { TourCard } from "@/components/tour-card"
 import { mockTours } from "@/lib/mock-data"
 
 export default function ToursPage() {
+  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
@@ -20,7 +25,7 @@ export default function ToursPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {mockTours.map((tour) => (
+            {activeTours.map((tour) => (
               <TourCard key={tour.id} tour={tour} />
             ))}
           </div>

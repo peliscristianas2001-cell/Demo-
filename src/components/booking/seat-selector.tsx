@@ -1,3 +1,4 @@
+
 "use client"
 
 import { cn } from "@/lib/utils"
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 interface SeatSelectorProps {
   totalSeats: number
   occupiedSeats: string[]
-  selectedSeats: (string | null)[]
+  selectedSeats: string[]
   onSeatSelect: (seatId: string) => void
   passengerSeats: (string | null)[]
 }
@@ -34,7 +35,7 @@ export function SeatSelector({
             <div className="flex justify-around flex-1 gap-2 md:gap-4">
               {cols.slice(0, 2).map((col) => {
                 const seatId = `${row}${col}`
-                const isOccupied = occupiedSeats.includes(seatId)
+                const isOccupied = occupiedSeats.includes(seatId) && !selectedSeats.includes(seatId)
                 const isSelected = selectedSeats.includes(seatId)
                 const passengerIndex = passengerSeats.findIndex(s => s === seatId);
 
@@ -65,7 +66,7 @@ export function SeatSelector({
             <div className="flex justify-around flex-1 gap-2 md:gap-4">
               {cols.slice(2, 4).map((col) => {
                 const seatId = `${row}${col}`
-                const isOccupied = occupiedSeats.includes(seatId)
+                const isOccupied = occupiedSeats.includes(seatId) && !selectedSeats.includes(seatId)
                 const isSelected = selectedSeats.includes(seatId)
                 const passengerIndex = passengerSeats.findIndex(s => s === seatId);
 
