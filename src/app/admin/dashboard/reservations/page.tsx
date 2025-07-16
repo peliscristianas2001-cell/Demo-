@@ -54,9 +54,9 @@ type Reservation = {
 
 // Mock data - in a real app, this would come from your database
 const initialReservations: Reservation[] = [
-    { id: "R001", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Juan Pérez", seatsCount: 2, assignedSeats: [], status: "Confirmado" },
+    { id: "R001", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Juan Pérez", seatsCount: 2, assignedSeats: ["1A", "1B"], status: "Confirmado" },
     { id: "R002", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "María García", seatsCount: 1, assignedSeats: ["7A"], status: "Pendiente" },
-    { id: "R003", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Carlos López", seatsCount: 4, assignedSeats: [], status: "Confirmado" },
+    { id: "R003", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Carlos López", seatsCount: 4, assignedSeats: ["2A", "2B", "2C", "2D"], status: "Confirmado" },
     { id: "R004", tripId: "3", tripDestination: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seatsCount: 2, assignedSeats: ["9A", "9B"], status: "Pendiente" },
     { id: "R005", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seatsCount: 3, assignedSeats: ["3B", "3C", "3D"], status: "Confirmado" },
 ]
@@ -107,6 +107,12 @@ export default function ReservationsPage() {
     });
 };
 
+  const getOccupiedSeatsForTour = (tourId: string, currentReservationId: string) => {
+    return reservations
+      .filter(res => res.tripId === tourId && res.id !== currentReservationId)
+      .flatMap(res => res.assignedSeats);
+  };
+
 
   const getStatusVariant = (status: ReservationStatus) => {
     switch (status) {
@@ -149,6 +155,8 @@ export default function ReservationsPage() {
                 ) : activeReservations.map((res) => {
                     const tour = tours.find(t => t.id === res.tripId);
                     if (!tour) return null; // Should not happen with filtered reservations
+                    
+                    const occupiedSeatsForSelector = getOccupiedSeatsForTour(tour.id, res.id);
 
                     return (
                         <TableRow key={res.id}>
@@ -181,7 +189,7 @@ export default function ReservationsPage() {
                                         <ScrollArea className="flex-1 px-6">
                                             <SeatSelector
                                                 totalSeats={tour.totalSeats}
-                                                occupiedSeats={tour.occupiedSeats}
+                                                occupiedSeats={occupiedSeatsForSelector}
                                                 selectedSeats={res.assignedSeats}
                                                 onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId)}
                                                 passengerSeats={[]} // Not needed here as we are assigning
