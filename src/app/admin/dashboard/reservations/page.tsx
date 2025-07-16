@@ -146,7 +146,7 @@ export default function ReservationsPage() {
                             <TableCell>{res.tripDestination}</TableCell>
                             <TableCell>{res.passenger}</TableCell>
                             <TableCell>
-                                <Badge variant="outline">{res.seatsCount} / {res.assignedSeats.length}</Badge>
+                                <Badge variant="outline">{res.assignedSeats.length} / {res.seatsCount}</Badge>
                             </TableCell>
                             <TableCell>
                                 <Badge variant={getStatusVariant(res.status)}>

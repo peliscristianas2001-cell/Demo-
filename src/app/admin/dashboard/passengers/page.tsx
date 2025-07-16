@@ -14,7 +14,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Users, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
 // Mock data
 const mockPassengers = [

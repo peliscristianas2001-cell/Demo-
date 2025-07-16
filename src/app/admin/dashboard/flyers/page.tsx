@@ -17,7 +17,7 @@ export default function FlyersPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Flyers</h2>
           <p className="text-muted-foreground">
-            Sube y administra los flyers para viajes activos. Los flyers de viajes pasados se ocultan.
+            Sube y administra los flyers promocionales para los viajes.
           </p>
         </div>
         <Button>
