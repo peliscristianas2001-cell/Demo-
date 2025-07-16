@@ -23,11 +23,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
-import { mockTours } from "@/lib/mock-data"
+import { mockTours, mockReservations } from "@/lib/mock-data"
 
 export default function TripsPage() {
-  // Filter out trips that have already passed
   const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  
+  const getOccupiedSeatCount = (tourId: string) => {
+    return mockReservations
+        .filter(r => r.tripId === tourId)
+        .reduce((acc, r) => acc + r.assignedSeats.length, 0);
+  }
+
+  const getTotalSeatCount = (tour: typeof activeTours[0]) => {
+    return tour.totalSeats * tour.busCount;
+  }
 
   return (
     <div className="space-y-6">
@@ -52,54 +61,63 @@ export default function TripsPage() {
                 <TableHead>Fecha</TableHead>
                 <TableHead>Precio</TableHead>
                 <TableHead>Asientos</TableHead>
+                <TableHead>Micros</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {activeTours.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No hay viajes activos.
                   </TableCell>
                 </TableRow>
-              ) : activeTours.map((tour) => (
-                <TableRow key={tour.id}>
-                  <TableCell className="font-medium">{tour.destination}</TableCell>
-                  <TableCell>
-                    {new Date(tour.date).toLocaleDateString("es-AR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </TableCell>
-                  <TableCell>${tour.price.toLocaleString("es-AR")}</TableCell>
-                  <TableCell>
-                    <Badge variant={tour.occupiedSeats.length / tour.totalSeats > 0.8 ? "destructive" : "secondary"}>
-                      {tour.occupiedSeats.length} / {tour.totalSeats}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menú</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : activeTours.map((tour) => {
+                const occupiedCount = getOccupiedSeatCount(tour.id);
+                const totalSeats = getTotalSeatCount(tour);
+
+                return (
+                  <TableRow key={tour.id}>
+                    <TableCell className="font-medium">{tour.destination}</TableCell>
+                    <TableCell>
+                      {new Date(tour.date).toLocaleDateString("es-AR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell>${tour.price.toLocaleString("es-AR")}</TableCell>
+                    <TableCell>
+                      <Badge variant={occupiedCount / totalSeats > 0.8 ? "destructive" : "secondary"}>
+                        {occupiedCount} / {totalSeats}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{tour.busCount}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menú</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

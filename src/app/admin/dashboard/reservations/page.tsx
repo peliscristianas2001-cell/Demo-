@@ -5,6 +5,9 @@ import { useState, useMemo } from "react"
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card"
 import {
   Table,
@@ -14,6 +17,12 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import {
   Dialog,
   DialogContent,
@@ -34,43 +43,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair } from "lucide-react"
-import { mockTours } from "@/lib/mock-data"
-import type { Tour } from "@/lib/types"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus } from "lucide-react"
+import { mockTours, mockReservations } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, AssignedSeat } from "@/lib/types"
 
-type ReservationStatus = "Confirmado" | "Pendiente";
-
-type Reservation = {
-    id: string;
-    tripId: string;
-    tripDestination: string;
-    passenger: string;
-    seatsCount: number;
-    assignedSeats: string[];
-    status: ReservationStatus;
-}
-
-// Mock data - in a real app, this would come from your database
-const initialReservations: Reservation[] = [
-    { id: "R001", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Juan Pérez", seatsCount: 2, assignedSeats: ["1A", "1B"], status: "Confirmado" },
-    { id: "R002", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "María García", seatsCount: 1, assignedSeats: ["7A"], status: "Pendiente" },
-    { id: "R003", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Carlos López", seatsCount: 4, assignedSeats: ["2A", "2B", "2C", "2D"], status: "Confirmado" },
-    { id: "R004", tripId: "3", tripDestination: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seatsCount: 2, assignedSeats: ["9A", "9B"], status: "Pendiente" },
-    { id: "R005", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seatsCount: 3, assignedSeats: ["3B", "3C", "3D"], status: "Confirmado" },
-]
 
 export default function ReservationsPage() {
-  const [reservations, setReservations] = useState(initialReservations)
+  const [reservations, setReservations] = useState(mockReservations)
   const [tours, setTours] = useState(mockTours);
+  const [activeBus, setActiveBus] = useState(1);
 
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
   
-  // Filter reservations to only show those for active tours
-  const activeReservations = useMemo(() => 
-      reservations.filter(res => activeTours.some(tour => tour.id === res.tripId))
-  , [reservations, activeTours]);
+  // Group reservations by tripId for easier rendering
+  const reservationsByTrip = useMemo(() => {
+    return activeTours.reduce((acc, tour) => {
+        const tripReservations = reservations.filter(res => res.tripId === tour.id);
+        if (tripReservations.length > 0) {
+            acc[tour.id] = {
+                tour,
+                reservations: tripReservations
+            };
+        }
+        return acc;
+    }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
+  }, [reservations, activeTours]);
 
 
   const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
@@ -83,7 +90,7 @@ export default function ReservationsPage() {
     setReservations(reservations.filter(res => res.id !== reservationId));
   }
 
-  const handleSeatSelect = (reservationId: string, seatId: string) => {
+  const handleSeatSelect = (reservationId: string, seatId: string, busNumber: number) => {
     setReservations(prevReservations => {
         return prevReservations.map(res => {
             if (res.id === reservationId) {
@@ -91,13 +98,15 @@ export default function ReservationsPage() {
                 if (!tour) return res;
 
                 let newAssignedSeats = [...res.assignedSeats];
-                if (newAssignedSeats.includes(seatId)) {
+                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.bus === busNumber);
+
+                if (seatIndex > -1) {
                     // Deselect seat
-                    newAssignedSeats = newAssignedSeats.filter(s => s !== seatId);
+                    newAssignedSeats.splice(seatIndex, 1);
                 } else {
                     // Select seat if not exceeding count
                     if (newAssignedSeats.length < res.seatsCount) {
-                        newAssignedSeats.push(seatId);
+                        newAssignedSeats.push({ seatId, bus: busNumber });
                     }
                 }
                 return { ...res, assignedSeats: newAssignedSeats };
@@ -107,10 +116,12 @@ export default function ReservationsPage() {
     });
 };
 
-  const getOccupiedSeatsForTour = (tourId: string, currentReservationId: string) => {
+  const getOccupiedSeatsForTour = (tourId: string, busNumber: number, currentReservationId: string) => {
     return reservations
       .filter(res => res.tripId === tourId && res.id !== currentReservationId)
-      .flatMap(res => res.assignedSeats);
+      .flatMap(res => res.assignedSeats)
+      .filter(seat => seat.bus === busNumber)
+      .map(seat => seat.seatId);
   };
 
 
@@ -135,105 +146,127 @@ export default function ReservationsPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-          <Table>
-             <TableHeader>
-              <TableRow>
-                <TableHead>Viaje</TableHead>
-                <TableHead>Pasajero Principal</TableHead>
-                <TableHead>Asientos</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-                {activeReservations.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                            No hay reservas activas.
-                        </TableCell>
-                    </TableRow>
-                ) : activeReservations.map((res) => {
-                    const tour = tours.find(t => t.id === res.tripId);
-                    if (!tour) return null; // Should not happen with filtered reservations
-                    
-                    const occupiedSeatsForSelector = getOccupiedSeatsForTour(tour.id, res.id);
-
-                    return (
-                        <TableRow key={res.id}>
-                            <TableCell>{res.tripDestination}</TableCell>
-                            <TableCell>{res.passenger}</TableCell>
-                            <TableCell>
-                                <Badge variant="outline">{res.assignedSeats.length} / {res.seatsCount}</Badge>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant={getStatusVariant(res.status)}>
-                                  {res.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                               <div className="flex items-center justify-end gap-2">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                            <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-md h-[90vh] flex flex-col p-0">
-                                        <DialogHeader className="p-6 pb-4">
-                                            <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
-                                            <DialogDescription>
-                                                Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
-                                                Selecciona su/s lugar/es en el mapa.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <ScrollArea className="flex-1 px-6">
-                                            <SeatSelector
-                                                totalSeats={tour.totalSeats}
-                                                occupiedSeats={occupiedSeatsForSelector}
-                                                selectedSeats={res.assignedSeats}
-                                                onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId)}
-                                                passengerSeats={[]} // Not needed here as we are assigning
-                                            />
-                                        </ScrollArea>
-                                         <DialogFooter className="p-6 pt-4 mt-auto border-t">
-                                            <DialogClose asChild>
-                                                <Button type="button">Cerrar</Button>
-                                            </DialogClose>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-                               <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                      <span className="sr-only">Abrir menú</span>
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Confirmado')}>
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Confirmar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Pendiente')}>
-                                      <Clock className="mr-2 h-4 w-4" />
-                                      Marcar como Pendiente
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleDelete(res.id)} className="text-destructive">
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Eliminar
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                               </div>
-                            </TableCell>
-                        </TableRow>
-                    )
-                })}
-            </TableBody>
-          </Table>
+           {Object.keys(reservationsByTrip).length === 0 ? (
+                <div className="h-24 text-center flex items-center justify-center">
+                    No hay reservas activas.
+                </div>
+            ) : (
+                <Accordion type="multiple" className="w-full">
+                    {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => (
+                       <AccordionItem value={tour.id} key={tour.id}>
+                           <AccordionTrigger className="text-lg font-medium hover:no-underline">
+                               {tour.destination} ({tripReservations.length} reservas)
+                            </AccordionTrigger>
+                           <AccordionContent>
+                               <Table>
+                                    <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Pasajero Principal</TableHead>
+                                        <TableHead>Asientos</TableHead>
+                                        <TableHead>Estado</TableHead>
+                                        <TableHead className="text-right">Acciones</TableHead>
+                                    </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {tripReservations.map((res) => {
+                                            const occupiedSeatsForSelector = getOccupiedSeatsForTour(tour.id, activeBus, res.id);
+                                            const selectedSeatsForBus = res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId);
+                                            
+                                            return (
+                                                <TableRow key={res.id}>
+                                                    <TableCell>{res.passenger}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{res.assignedSeats.length} / {res.seatsCount}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={getStatusVariant(res.status)}>
+                                                        {res.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Dialog onOpenChange={(open) => !open && setActiveBus(1)}>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="outline" size="sm">
+                                                                    <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-md h-[90vh] flex flex-col p-0">
+                                                                <DialogHeader className="p-6 pb-4">
+                                                                    <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
+                                                                    <DialogDescription>
+                                                                        Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
+                                                                        Selecciona su/s lugar/es en el mapa.
+                                                                    </DialogDescription>
+                                                                    {tour.busCount > 1 && (
+                                                                        <div className="flex items-center gap-2 pt-2">
+                                                                            <Bus className="w-5 h-5 text-muted-foreground"/>
+                                                                            <Select onValueChange={(v) => setActiveBus(parseInt(v))} defaultValue="1">
+                                                                                <SelectTrigger className="w-[180px]">
+                                                                                    <SelectValue placeholder="Seleccionar micro" />
+                                                                                </SelectTrigger>
+                                                                                <SelectContent>
+                                                                                    {Array.from({ length: tour.busCount }, (_, i) => i + 1).map(busNum => (
+                                                                                        <SelectItem key={busNum} value={String(busNum)}>Micro {busNum}</SelectItem>
+                                                                                    ))}
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                        </div>
+                                                                    )}
+                                                                </DialogHeader>
+                                                                <ScrollArea className="flex-1 px-6">
+                                                                    <SeatSelector
+                                                                        totalSeats={tour.totalSeats}
+                                                                        occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus, res.id)}
+                                                                        selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId)}
+                                                                        onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus)}
+                                                                        passengerSeats={[]} 
+                                                                    />
+                                                                </ScrollArea>
+                                                                <DialogFooter className="p-6 pt-4 mt-auto border-t">
+                                                                    <DialogClose asChild>
+                                                                        <Button type="button">Cerrar</Button>
+                                                                    </DialogClose>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                        <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Abrir menú</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Confirmado')}>
+                                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                                            Confirmar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Pendiente')}>
+                                                            <Clock className="mr-2 h-4 w-4" />
+                                                            Marcar como Pendiente
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => handleDelete(res.id)} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Eliminar
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                           </AccordionContent>
+                       </AccordionItem>
+                    ))}
+                </Accordion>
+            )}
         </CardContent>
       </Card>
     </div>

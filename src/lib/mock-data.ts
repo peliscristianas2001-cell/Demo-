@@ -1,4 +1,4 @@
-import type { Tour } from './types';
+import type { Tour, Reservation } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025
 export const mockTours: Tour[] = [
@@ -9,7 +9,8 @@ export const mockTours: Tour[] = [
     price: 150000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
-    occupiedSeats: ['1A', '1B', '2C', '5D', '10A'],
+    busCount: 2, // This trip has two buses
+    occupiedSeats: [], // This will be derived from reservations
   },
   {
     id: '2',
@@ -18,7 +19,8 @@ export const mockTours: Tour[] = [
     price: 125000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
-    occupiedSeats: ['3A', '3B', '3C', '3D', '7A', '7B'],
+    busCount: 1,
+    occupiedSeats: [],
   },
   {
     id: '3',
@@ -27,7 +29,8 @@ export const mockTours: Tour[] = [
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
-    occupiedSeats: ['1A', '2B', '4C', '8D', '9A', '9B', '9C'],
+    busCount: 1,
+    occupiedSeats: [],
   },
   {
     id: '4',
@@ -36,7 +39,8 @@ export const mockTours: Tour[] = [
     price: 180000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
-    occupiedSeats: ['1C', '1D', '5A', '5B'],
+    busCount: 1,
+    occupiedSeats: [],
   },
   {
     id: '5',
@@ -45,6 +49,7 @@ export const mockTours: Tour[] = [
     price: 250000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
+    busCount: 1,
     occupiedSeats: [],
   },
   {
@@ -54,6 +59,17 @@ export const mockTours: Tour[] = [
     price: 85000,
     flyerUrl: 'https://placehold.co/400x500.png',
     totalSeats: 40,
-    occupiedSeats: ['1A', '1B', '1C', '1D', '2A', '2B', '2C', '2D', '3A', '3B'],
+    busCount: 1,
+    occupiedSeats: [],
   },
 ];
+
+
+export const mockReservations: Reservation[] = [
+    { id: "R001", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Juan Pérez", seatsCount: 2, assignedSeats: [{seatId: "1A", bus: 1}, {seatId: "1B", bus: 1}], status: "Confirmado" },
+    { id: "R001B", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Pedro Gonzalez", seatsCount: 1, assignedSeats: [{seatId: "5C", bus: 2}], status: "Confirmado" },
+    { id: "R002", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "María García", seatsCount: 1, assignedSeats: [{seatId: "7A", bus: 1}], status: "Pendiente" },
+    { id: "R003", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Carlos López", seatsCount: 4, assignedSeats: [{seatId: "2A", bus: 1}, {seatId: "2B", bus: 1}], status: "Confirmado" },
+    { id: "R004", tripId: "3", tripDestination: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seatsCount: 2, assignedSeats: [], status: "Pendiente" },
+    { id: "R005", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seatsCount: 3, assignedSeats: [{seatId: "3B", bus: 1}, {seatId: "3C", bus: 1}, {seatId: "3D", bus: 1}], status: "Confirmado" },
+]
