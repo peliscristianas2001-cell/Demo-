@@ -18,12 +18,12 @@ import { Users, Search } from "lucide-react"
 
 // Mock data
 const mockPassengers = [
-    { id: "P001", name: "Juan Pérez", dni: "30123456", lastTrip: "Bariloche, Patagonia" },
-    { id: "P002", name: "María García", dni: "32654987", lastTrip: "Cataratas del Iguazú, Misiones" },
-    { id: "P003", name: "Carlos López", dni: "28789123", lastTrip: "Bariloche, Patagonia" },
-    { id: "P004", name: "Ana Martínez", dni: "35987654", lastTrip: "Mendoza, Ruta del Vino" },
-    { id: "P005", name: "Lucía Hernández", dni: "38456789", lastTrip: "Cataratas del Iguazú, Misiones" },
-    { id: "P006", name: "Jorge Rodriguez", dni: "25123789", lastTrip: "Quebrada de Humahuaca, Jujuy" },
+    { id: "P001", name: "Juan Pérez", dni: "30123456" },
+    { id: "P002", name: "María García", dni: "32654987" },
+    { id: "P003", name: "Carlos López", dni: "28789123" },
+    { id: "P004", name: "Ana Martínez", dni: "35987654" },
+    { id: "P005", name: "Lucía Hernández", dni: "38456789" },
+    { id: "P006", name: "Jorge Rodriguez", dni: "25123789" },
 ]
 
 
@@ -59,7 +59,6 @@ export default function PassengersPage() {
               <TableRow>
                 <TableHead>Nombre Completo</TableHead>
                 <TableHead>DNI</TableHead>
-                <TableHead>Último Viaje</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -67,7 +66,6 @@ export default function PassengersPage() {
                 <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell>{p.dni}</TableCell>
-                    <TableCell>{p.lastTrip}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
