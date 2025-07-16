@@ -44,7 +44,7 @@ const VoucherCard = ({ voucher }: { voucher: Voucher }) => {
                 {voucher.recipientName && <p className="text-sm opacity-80">Para: {voucher.recipientName}</p>}
                 <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${voucher.value.toLocaleString('es-AR')}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{voucher.code}</p>
-                {message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
+                {voucher.message && <p className="text-sm opacity-80 mt-2 italic">"{voucher.message}"</p>}
             </div>
             
             <div className="relative z-10 text-right">
