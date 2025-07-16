@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,6 +11,8 @@ import {
   Image as ImageIcon,
   Plane,
   LogOut,
+  Globe,
+  LayoutDashboard
 } from "lucide-react";
 
 import {
@@ -28,7 +31,7 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/admin/dashboard", label: "Inicio", icon: Home },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/dashboard/trips", label: "Viajes", icon: Plane },
   { href: "/admin/dashboard/reservations", label: "Reservas", icon: Ticket },
   { href: "/admin/dashboard/passengers", label: "Pasajeros", icon: Users },
@@ -52,6 +55,17 @@ export default function DashboardLayout({
               <Logo />
             </SidebarHeader>
             <SidebarMenu>
+              <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Ver Sitio Web"
+                  >
+                    <Link href="/" target="_blank">
+                      <Globe />
+                      <span>Ver Sitio Web</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
@@ -70,7 +84,7 @@ export default function DashboardLayout({
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenuButton asChild tooltip="Salir del Panel">
-              <Link href="/">
+              <Link href="/admin">
                 <LogOut />
                 <span>Salir del Panel</span>
               </Link>
