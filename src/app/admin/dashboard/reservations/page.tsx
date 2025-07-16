@@ -170,15 +170,15 @@ export default function ReservationsPage() {
                                             <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-                                        <DialogHeader>
+                                    <DialogContent className="max-w-md h-[90vh] flex flex-col p-0">
+                                        <DialogHeader className="p-6 pb-4">
                                             <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                             <DialogDescription>
                                                 Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
                                                 Selecciona su/s lugar/es en el mapa.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <ScrollArea className="flex-grow">
+                                        <ScrollArea className="flex-1 px-6">
                                             <SeatSelector
                                                 totalSeats={tour.totalSeats}
                                                 occupiedSeats={tour.occupiedSeats}
@@ -187,7 +187,7 @@ export default function ReservationsPage() {
                                                 passengerSeats={[]} // Not needed here as we are assigning
                                             />
                                         </ScrollArea>
-                                         <DialogFooter>
+                                         <DialogFooter className="p-6 pt-4 mt-auto border-t">
                                             <DialogClose asChild>
                                                 <Button type="button">Cerrar</Button>
                                             </DialogClose>
