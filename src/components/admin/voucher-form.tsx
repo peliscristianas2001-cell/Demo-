@@ -45,7 +45,8 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         expiryDate,
         width = 500,
         height = 300,
-        backgroundColor = "#cccccc"
+        backgroundColor = "#cccccc",
+        message
      } = voucherData;
 
      const formattedValue = `$${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}`
@@ -80,7 +81,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
                 {recipientName && <p className="text-sm opacity-80">Para: {recipientName}</p>}
                 <p className="text-4xl lg:text-5xl font-bold mt-1 text-amber-300 drop-shadow-lg">{formattedValue}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-                {senderName && <p className="text-sm opacity-80 mt-2">De: {senderName}</p>}
+                {message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
             </div>
             <div className="relative z-10 text-right">
                 <p className="text-xs opacity-70">Válido hasta: {formattedDate}</p>
@@ -95,6 +96,10 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   const [imageFile, setImageFile] = useState<File | null>(null)
   
   const { toast } = useToast()
+
+  const generateVoucherCode = () => {
+    return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
+  }
 
   const defaultValues: Partial<Voucher> = {
     title: "Voucher de Descuento",
@@ -138,10 +143,6 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     }
   };
 
-
-  const generateVoucherCode = () => {
-    return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
-  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -221,11 +222,11 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                     <div className="space-y-2">
                         <Label htmlFor="title">Título del Voucher</Label>
-                        <Input id="title" value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
+                        <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="code">Código del Voucher</Label>
-                        <Input id="code" value={formData.code} onChange={(e) => handleInputChange('code', e.target.value)} />
+                        <Input id="code" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -246,17 +247,17 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                     <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="recipientName">Para (Destinatario)</Label>
-                        <Input id="recipientName" value={formData.recipientName} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
+                        <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="senderName">De (Remitente)</Label>
-                        <Input id="senderName" value={formData.senderName} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
+                        <Input id="senderName" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
                     </div>
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="message">Mensaje</Label>
-                        <Textarea id="message" value={formData.message} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
+                        <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
                     </div>
 
                     <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
