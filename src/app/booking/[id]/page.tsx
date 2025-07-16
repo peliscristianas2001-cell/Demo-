@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import { mockTours } from "@/lib/mock-data"
 import type { Tour } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon } from "lucide-react"
+import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
 
 interface Passenger {
   fullName: string
@@ -47,7 +47,7 @@ export default function BookingPage() {
       nationality: "Argentina",
     })
     setPassengers(newPassengers)
-  }, [adults, children])
+  }, [adults, children, passengers.length])
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
     const newPassengers = [...passengers]
@@ -58,8 +58,8 @@ export default function BookingPage() {
   const handleConfirmReservation = () => {
     if (passengers.some(p => !p.fullName || !p.dni)) {
       toast({
-        title: "Error de validación",
-        description: "Por favor, complete todos los datos de los pasajeros.",
+        title: "Faltan datos",
+        description: "Por favor, complete nombre y DNI de todos los pasajeros.",
         variant: "destructive",
       })
       return
@@ -67,8 +67,8 @@ export default function BookingPage() {
 
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     toast({
-      title: "¡Reserva Confirmada!",
-      description: `Tu reserva para ${tour?.destination} ha sido confirmada. Tu número de reserva es ${reservationId}. Un administrador te asignará los asientos.`,
+      title: "¡Reserva Recibida!",
+      description: `Tu solicitud para ${tour?.destination} fue enviada. Un administrador te contactará para confirmar. N°: ${reservationId}`,
       duration: 9000,
     })
   }
@@ -94,35 +94,46 @@ export default function BookingPage() {
       <main className="flex-1 py-12">
         <div className="container grid grid-cols-1 gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-3xl font-headline text-primary">{tour.destination}</CardTitle>
-                <div className="flex flex-wrap gap-4 pt-2 text-muted-foreground">
-                    <div className="flex items-center gap-2"><MapPinIcon className="w-4 h-4" /><span>Salida desde Buenos Aires</span></div>
-                    <div className="flex items-center gap-2"><CalendarIcon className="w-4 h-4" /><span>{new Date(tour.date).toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
-                    <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4" /><span>{new Date(tour.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs</span></div>
+            <Card className="overflow-hidden shadow-lg">
+              <div className="relative h-64">
+                <Image src={tour.flyerUrl} alt={tour.destination} layout="fill" objectFit="cover" className="brightness-90" data-ai-hint="travel destination"/>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-6 flex flex-col justify-end">
+                    <h1 className="text-4xl font-headline text-white drop-shadow-xl">{tour.destination}</h1>
                 </div>
-              </CardHeader>
+              </div>
+              <CardContent className="p-6 bg-card">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-muted-foreground">
+                    <div className="flex items-center gap-2"><MapPinIcon className="w-5 h-5 text-primary" /><span>Salida desde Buenos Aires</span></div>
+                    <div className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary" /><span>{new Date(tour.date).toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+                    <div className="flex items-center gap-2"><ClockIcon className="w-5 h-5 text-primary" /><span>{new Date(tour.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs</span></div>
+                </div>
+              </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><UsersIcon className="w-6 h-6 text-primary"/> ¿Cuántos viajan?</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-2xl"><UsersIcon className="w-8 h-8 text-primary"/> ¿Cuántos viajan?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="adults" className="text-lg">Adultos</Label>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/40">
+                  <div>
+                    <Label htmlFor="adults" className="text-lg font-medium">Adultos</Label>
+                    <p className="text-sm text-muted-foreground">Mayores de 12 años</p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={() => setAdults(Math.max(1, adults - 1))}><MinusIcon className="w-4 h-4" /></Button>
-                    <span className="w-12 text-center text-lg font-bold">{adults}</span>
+                    <span className="w-12 text-center text-xl font-bold">{adults}</span>
                     <Button variant="outline" size="icon" onClick={() => setAdults(adults + 1)}><PlusIcon className="w-4 h-4" /></Button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="children" className="text-lg">Niños</Label>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/40">
+                   <div>
+                    <Label htmlFor="children" className="text-lg font-medium">Niños</Label>
+                    <p className="text-sm text-muted-foreground">Menores de 12 años</p>
+                  </div>
                    <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={() => setChildren(Math.max(0, children - 1))}><MinusIcon className="w-4 h-4" /></Button>
-                    <span className="w-12 text-center text-lg font-bold">{children}</span>
+                    <span className="w-12 text-center text-xl font-bold">{children}</span>
                     <Button variant="outline" size="icon" onClick={() => setChildren(children + 1)}><PlusIcon className="w-4 h-4" /></Button>
                   </div>
                 </div>
@@ -130,11 +141,11 @@ export default function BookingPage() {
             </Card>
 
             {passengers.map((passenger, index) => (
-              <Card key={index}>
+              <Card key={index} className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <UserIcon className="w-6 h-6 text-primary" />
-                    Pasajero {index + 1}
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <UserIcon className="w-8 h-8 text-primary" />
+                    Datos del Pasajero {index + 1}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -152,55 +163,60 @@ export default function BookingPage() {
                       date={passenger.dob} 
                       setDate={(d) => handlePassengerChange(index, 'dob', d)} 
                       placeholder="Seleccionar fecha"
-                      className="h-10 pl-3"
                      />
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor={`nationality-${index}`}>Nacionalidad (opcional)</Label>
+                    <Label htmlFor={`nationality-${index}`}>Nacionalidad</Label>
                     <Input id={`nationality-${index}`} value={passenger.nationality} onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)} />
                   </div>
                 </CardContent>
               </Card>
             ))}
 
-            <Card className="bg-secondary/50 border-primary/20">
+            <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                <CardTitle className="flex items-center gap-2 font-headline">
                   <HeartIcon className="w-6 h-6" />
-                  ¿Quieres guardar tus datos?
+                  ¿Querés agilizar tus próximas reservas?
                 </CardTitle>
-                <CardDescription>
-                  Regístrate y sé parte de nosotros para agilizar tus próximas reservas. ¡Es rápido y fácil!
+                <CardDescription className="text-primary-foreground/80">
+                  Crea una cuenta para guardar tus datos y acceder a beneficios exclusivos. ¡Es rápido y fácil!
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline">Crear una cuenta</Button>
+                <Button variant="secondary" className="bg-white text-primary hover:bg-white/90">Crear una cuenta <ArrowRight className="w-4 h-4 ml-2"/></Button>
               </CardContent>
             </Card>
 
           </div>
 
           <div className="space-y-8 lg:col-span-1">
-            <Card className="sticky top-24">
+            <Card className="sticky top-24 shadow-2xl">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><TicketIcon className="w-6 h-6 text-primary" /> Resumen de reserva</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-2xl"><TicketIcon className="w-8 h-8 text-primary" /> Resumen de reserva</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Pasajeros</span>
-                  <span>{totalPassengers}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Precio por pasajero</span>
-                  <span>${tour.price.toLocaleString('es-AR')}</span>
-                </div>
+                 <div className="p-4 space-y-3 rounded-lg bg-secondary/40">
+                    <div className="flex justify-between font-medium">
+                      <span>Adultos</span>
+                      <span>{adults} x ${tour.price.toLocaleString('es-AR')}</span>
+                    </div>
+                     <div className="flex justify-between font-medium">
+                      <span>Niños</span>
+                      <span>{children} x ${tour.price.toLocaleString('es-AR')}</span>
+                    </div>
+                 </div>
                 <Separator />
-                <div className="flex justify-between text-xl font-bold">
+                <div className="flex items-baseline justify-between text-2xl font-bold">
                   <span>Total</span>
-                  <span>${totalPrice.toLocaleString('es-AR')}</span>
+                  <span className="text-4xl">${totalPrice.toLocaleString('es-AR')}</span>
                 </div>
-                <Button className="w-full" size="lg" onClick={handleConfirmReservation}>
-                  Confirmar reserva
+                 <p className="text-xs text-muted-foreground text-center">
+                  El pago se coordina por WhatsApp luego de enviar la solicitud.
+                </p>
+                <Button className="w-full text-lg h-14 rounded-xl group" size="lg" onClick={handleConfirmReservation}>
+                  Solicitar Reserva
+                   <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </CardContent>
             </Card>
