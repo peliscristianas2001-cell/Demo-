@@ -18,12 +18,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Voucher, BackgroundOptions, BorderOptions, StripesOptions } from "@/lib/types"
-import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Ruler, UserCheck, Ticket, Users, Layers, Brush } from "lucide-react"
+import { Gift, Sparkles, Upload, FileImage, MessageSquare, Palette, Ruler, Users, Ticket, Layers, Brush } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -118,15 +116,14 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
     )
 }
 
+const generateVoucherCode = () => {
+    return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
+}
 
 export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFormProps) {
   const [formData, setFormData] = useState<Partial<Voucher>>({})
   
   const { toast } = useToast()
-
-  const generateVoucherCode = () => {
-    return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
-  }
 
   const defaultValues: Partial<Voucher> = {
     title: "Voucher de Descuento",
@@ -305,7 +302,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                          </div>
 
                         <div className="space-y-3 p-4 border rounded-lg bg-background/50">
-                            <Label className="text-base font-medium flex items-center gap-2"><Ruler className="w-5 h-5"/> Bordes y Franjas</Label>
+                            <Label className="text-base font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</Label>
                             <div className="flex items-center space-x-2">
                                 <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
                                 <Label htmlFor="border-enabled">Habilitar Borde</Label>
@@ -318,7 +315,10 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="borderColor">Color</Label>
-                                        <Input id="borderColor" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-full h-10 p-1" />
+                                        <div className="flex items-center gap-2">
+                                            <Input id="borderColor" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                            <Input type="text" value={formData.border?.color || ''} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} placeholder="#ffffff" />
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -328,8 +328,23 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             </div>
                              {formData.stripes?.enabled && (
                                 <div className="space-y-2 pl-8 animate-fade-in-down">
-                                    <Label htmlFor="stripesColor">Color</Label>
-                                    <Input id="stripesColor" type="color" value={formData.stripes?.color || '#ffffff'} onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} className="w-full h-10 p-1" />
+                                    <Label htmlFor="stripesColor">Color (con transparencia)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input 
+                                            id="stripesColorPicker"
+                                            type="color"
+                                            value={formData.stripes?.color?.startsWith('#') ? formData.stripes.color : '#ffffff'} 
+                                            onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                            className="w-12 h-10 p-1"
+                                        />
+                                        <Input 
+                                            id="stripesColor"
+                                            type="text" 
+                                            value={formData.stripes?.color || ''} 
+                                            onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                            placeholder="rgba(255, 255, 255, 0.3)"
+                                        />
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -362,24 +377,20 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                     </div>
 
                     <div className="space-y-3 p-4 border rounded-lg">
-                         <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Visibilidad y Condiciones</Label>
-                         <RadioGroup 
-                            value={formData.visibility} 
-                            onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)}
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="all" id="r1" />
-                                <Label htmlFor="r1">Mostrar a todos los visitantes</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="registered" id="r2" />
-                                <Label htmlFor="r2">Mostrar solo a clientes registrados</Label>
-                            </div>
-                        </RadioGroup>
+                         <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</Label>
+                        <Select onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)} value={formData.visibility}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar visibilidad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Mostrar a todos los visitantes</SelectItem>
+                                <SelectItem value="registered">Mostrar solo a clientes registrados</SelectItem>
+                            </SelectContent>
+                        </Select>
+
                          {formData.visibility === 'registered' && (
-                            <div className="p-4 space-y-3 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-                                <Label htmlFor="minTrips" className="flex items-center gap-2 font-semibold">
-                                    <UserCheck className="w-5 h-5"/>
+                            <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
+                                <Label htmlFor="minTrips" className="font-semibold">
                                     Condición para Clientes
                                 </Label>
                                 <p className="text-sm text-muted-foreground">
