@@ -29,16 +29,18 @@ export default function FlyersPage() {
         {activeTours.map((tour) => (
           <Card key={tour.id} className="overflow-hidden group">
             <CardContent className="p-0">
-              <Image
-                src={tour.flyerUrl}
-                alt={tour.destination}
-                width={400}
-                height={300}
-                className="w-full h-48 object-cover aspect-video"
-                data-ai-hint="travel flyer"
-              />
+              <div className="relative aspect-[4/5] w-full">
+                <Image
+                  src={tour.flyerUrl}
+                  alt={tour.destination}
+                  layout="fill"
+                  objectFit="cover"
+                  className="transition-transform duration-300 group-hover:scale-105"
+                  data-ai-hint="travel flyer"
+                />
+              </div>
             </CardContent>
-            <CardFooter className="p-4 bg-muted/50">
+            <CardFooter className="p-3 bg-muted/50">
                 <p className="font-semibold truncate text-sm">{tour.destination}</p>
             </CardFooter>
           </Card>
