@@ -41,9 +41,10 @@ interface VoucherFormProps {
 
 
 const hexToRgba = (hex: string, alpha: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    if (!hex || typeof hex !== 'string') hex = '#000000';
+    const r = parseInt(hex.slice(1, 3), 16) || 0;
+    const g = parseInt(hex.slice(3, 5), 16) || 0;
+    const b = parseInt(hex.slice(5, 7), 16) || 0;
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
