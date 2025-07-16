@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -24,9 +24,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
+import type { Tour } from "@/lib/types"
+import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
-  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  const [tours, setTours] = useState<Tour[]>(mockTours)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
+
+  const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
   
   const getOccupiedSeatCount = (tourId: string) => {
     return mockReservations
@@ -34,12 +40,44 @@ export default function TripsPage() {
         .reduce((acc, r) => acc + r.assignedSeats.length, 0);
   }
 
-  const getTotalSeatCount = (tour: typeof activeTours[0]) => {
+  const getTotalSeatCount = (tour: Tour) => {
     return tour.totalSeats * tour.busCount;
+  }
+
+  const handleCreate = () => {
+    setSelectedTour(null)
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (tour: Tour) => {
+    setSelectedTour(tour)
+    setIsFormOpen(true)
+  }
+
+  const handleSave = (tourData: Tour) => {
+    if (selectedTour) {
+      // Update existing tour
+      setTours(tours.map(t => t.id === tourData.id ? tourData : t))
+    } else {
+      // Create new tour
+      setTours([...tours, { ...tourData, id: `T${Date.now()}` }])
+    }
+    setIsFormOpen(false)
+    setSelectedTour(null)
+  }
+
+  const handleDelete = (tourId: string) => {
+    setTours(tours.filter(t => t.id !== tourId))
   }
 
   return (
     <div className="space-y-6">
+      <TripForm
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSave={handleSave}
+        tour={selectedTour}
+      />
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Viajes</h2>
@@ -47,7 +85,7 @@ export default function TripsPage() {
             Aquí podrás crear, editar y eliminar los viajes. Los viajes pasados se ocultan automáticamente.
           </p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Crear Nuevo Viaje
         </Button>
@@ -104,11 +142,11 @@ export default function TripsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(tour)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem onClick={() => handleDelete(tour.id)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Eliminar
                           </DropdownMenuItem>

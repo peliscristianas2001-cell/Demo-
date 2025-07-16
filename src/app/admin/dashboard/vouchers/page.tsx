@@ -23,16 +23,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { VoucherForm } from "@/components/admin/voucher-form"
+import type { Voucher } from "@/lib/types"
 
-type Voucher = {
-    id: string;
-    code: string;
-    value: number;
-    status: "Activo" | "Canjeado" | "Expirado";
-    expiryDate: Date;
-}
-
-// Mock data for vouchers
 const mockVouchers: Voucher[] = [
   { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31T23:59:59") },
   { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2025-12-31T23:59:59") },
@@ -42,9 +35,10 @@ const mockVouchers: Voucher[] = [
 
 export default function VouchersAdminPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
   useEffect(() => {
-    // This logic now correctly runs on the client, avoiding hydration errors.
     const now = new Date();
     const updatedVouchers = mockVouchers.map(v => {
       if (v.status === "Activo" && v.expiryDate < now) {
@@ -64,8 +58,39 @@ export default function VouchersAdminPage() {
     }
   }
 
+  const handleCreate = () => {
+    setSelectedVoucher(null);
+    setIsFormOpen(true);
+  }
+
+  const handleEdit = (voucher: Voucher) => {
+    setSelectedVoucher(voucher);
+    setIsFormOpen(true);
+  }
+
+  const handleSave = (voucherData: Voucher) => {
+    if (selectedVoucher) {
+      setVouchers(vouchers.map(v => v.id === voucherData.id ? voucherData : v));
+    } else {
+      const newVoucher = { ...voucherData, id: `V${Date.now()}`, status: "Activo" as const };
+      setVouchers([...vouchers, newVoucher]);
+    }
+    setIsFormOpen(false);
+    setSelectedVoucher(null);
+  }
+
+  const handleDelete = (voucherId: string) => {
+    setVouchers(vouchers.filter(v => v.id !== voucherId));
+  }
+
   return (
     <div className="space-y-6">
+      <VoucherForm 
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSave={handleSave}
+        voucher={selectedVoucher}
+      />
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vouchers</h2>
@@ -73,7 +98,7 @@ export default function VouchersAdminPage() {
             Crea, edita y administra los vouchers de regalo.
           </p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Crear Nuevo Voucher
         </Button>
@@ -118,11 +143,11 @@ export default function VouchersAdminPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(voucher)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem onClick={() => handleDelete(voucher.id)} className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
                           Eliminar
                         </DropdownMenuItem>

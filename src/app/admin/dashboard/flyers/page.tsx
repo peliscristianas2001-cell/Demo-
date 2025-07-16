@@ -1,18 +1,38 @@
 
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Upload } from "lucide-react"
 import { mockTours } from "@/lib/mock-data"
+import { FlyerForm } from "@/components/admin/flyer-form"
+import type { Tour } from "@/lib/types"
 
 export default function FlyersPage() {
-  const activeTours = useMemo(() => mockTours.filter(tour => new Date(tour.date) >= new Date()), []);
+  const [tours, setTours] = useState<Tour[]>(mockTours)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+
+  const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
+
+  const handleFlyerUpload = (tripId: string, flyerUrl: string) => {
+    setTours(prevTours => 
+      prevTours.map(tour => 
+        tour.id === tripId ? { ...tour, flyerUrl } : tour
+      )
+    )
+    setIsFormOpen(false)
+  }
 
   return (
     <div className="space-y-6">
+      <FlyerForm
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        tours={activeTours}
+        onSave={handleFlyerUpload}
+      />
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Flyers</h2>
@@ -20,7 +40,7 @@ export default function FlyersPage() {
             Sube y administra los flyers promocionales para los viajes.
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsFormOpen(true)}>
           <Upload className="mr-2 h-4 w-4" />
           Subir Nuevo Flyer
         </Button>

@@ -1,3 +1,4 @@
+
 export interface Tour {
   id: string;
   destination: string;
@@ -24,4 +25,14 @@ export type Reservation = {
     seatsCount: number;
     assignedSeats: AssignedSeat[];
     status: ReservationStatus;
+}
+
+export type VoucherStatus = "Activo" | "Canjeado" | "Expirado";
+
+export type Voucher = {
+    id: string;
+    code: string;
+    value: number;
+    status: VoucherStatus;
+    expiryDate: Date;
 }
