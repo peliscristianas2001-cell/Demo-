@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useMemo } from "react"
+import { useState, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -24,17 +24,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type Voucher = {
+    id: string;
+    code: string;
+    value: number;
+    status: "Activo" | "Canjeado" | "Expirado";
+    expiryDate: Date;
+}
+
 // Mock data for vouchers
-const mockVouchers = [
-  { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31") },
-  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2024-12-31") },
-  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2024-10-31") },
-  { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado", expiryDate: new Date("2024-01-01") },
+const mockVouchers: Voucher[] = [
+  { id: "V001", code: "VERANO2025", value: 10000, status: "Activo", expiryDate: new Date("2025-03-31T23:59:59") },
+  { id: "V002", code: "REGALOESPECIAL", value: 25000, status: "Canjeado", expiryDate: new Date("2024-12-31T23:59:59") },
+  { id: "V003", code: "AVENTURA15", value: 15000, status: "Activo", expiryDate: new Date("2024-10-31T23:59:59") },
+  { id: "V004", code: "EXPIRADO01", value: 5000, status: "Expirado", expiryDate: new Date("2024-01-01T23:59:59") },
 ];
 
 export default function VouchersAdminPage() {
-  // Filter out vouchers that have expired
-  const activeVouchers = useMemo(() => mockVouchers.filter(v => v.expiryDate >= new Date() || v.status === 'Canjeado'), []);
+  const [activeVouchers, setActiveVouchers] = useState<Voucher[]>([]);
+
+  useEffect(() => {
+    // Filter out vouchers that have expired on the client-side to avoid hydration errors
+    const filtered = mockVouchers.filter(v => {
+        const now = new Date();
+        // If status is "Expirado", only show if it has not actually expired yet (edge case for manual setting)
+        if(v.status === "Expirado") {
+            return v.expiryDate >= now;
+        }
+        // Always show "Canjeado"
+        if(v.status === "Canjeado") {
+            return true;
+        }
+        // Show "Activo" only if not expired
+        return v.expiryDate >= now;
+    });
+    setActiveVouchers(filtered);
+  }, []);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
