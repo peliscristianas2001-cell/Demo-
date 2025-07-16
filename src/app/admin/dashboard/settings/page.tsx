@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -42,7 +43,7 @@ export default function SettingsPage() {
               title: "¡Éxito!",
               description: "El nuevo logo se ha guardado. Se reflejará en todo el sitio.",
           })
-          // Optionally trigger a window event to notify other components like the header
+          // Trigger a window event to notify other components like the header
           window.dispatchEvent(new Event('storage'));
         } catch (error) {
             toast({

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -15,12 +16,12 @@ export function Logo() {
         setLogoUrl(savedLogo || defaultLogo);
     };
 
-    updateLogo();
+    updateLogo(); // Initial load
 
-    window.addEventListener('storage', updateLogo);
+    window.addEventListener('storage', updateLogo); // Listen for changes from other tabs/windows
 
     return () => {
-      window.removeEventListener('storage', updateLogo);
+      window.removeEventListener('storage', updateLogo); // Cleanup listener
     };
   }, []);
 
@@ -32,7 +33,7 @@ export function Logo() {
         width={36}
         height={36}
         className="rounded-full"
-        key={logoUrl}
+        key={logoUrl} // Adding key forces re-render when src changes
       />
       <span className="text-2xl font-bold tracking-tight text-foreground font-headline">
         YO TE LLEVO
