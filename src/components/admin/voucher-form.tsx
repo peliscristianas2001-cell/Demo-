@@ -256,16 +256,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </DialogHeader>
         
         <div className="flex-1 md:grid md:grid-cols-2 overflow-hidden">
-            {/* --- PREVIEW (Top on Mobile) --- */}
-            <div className="md:hidden p-4 space-y-2 border-b">
-                <Label>Vista Previa de la Tarjeta</Label>
-                <div className="p-4 bg-muted rounded-lg flex items-center justify-start overflow-x-auto">
-                    <VoucherPreview voucherData={formData} />
+            {/* --- FORM COLUMN (Scrollable) --- */}
+            <div className="h-full overflow-y-auto">
+                {/* Mobile-only Preview */}
+                <div className="p-4 space-y-2 border-b md:hidden">
+                    <Label>Vista Previa de la Tarjeta</Label>
+                    <div className="p-4 bg-muted rounded-lg flex items-center justify-center overflow-x-auto">
+                        <VoucherPreview voucherData={formData} />
+                    </div>
                 </div>
-            </div>
-            
-            {/* --- FORM COLUMN (Scrollable on mobile) --- */}
-            <div className="flex-1 overflow-y-auto">
+
                 <div className="p-6 space-y-6">
                     {/* Design Section */}
                     <div className="space-y-3 p-4 border rounded-lg">
@@ -458,26 +458,27 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         <Sparkles className="mr-2 h-4 w-4" />
                         Generar nuevo código
                     </Button>
+                    
                 </div>
+                <DialogFooter className="pt-4">
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                        <Button onClick={handleSubmit}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {voucher ? "Guardar Cambios" : "Guardar Voucher"}
+                        </Button>
+                    </DialogFooter>
             </div>
 
-            {/* --- PREVIEW COLUMN (Desktop only, sticky & scrollable) --- */}
-            <div className="hidden md:flex flex-col space-y-4 p-6 flex-1">
+            {/* --- PREVIEW COLUMN (Desktop only, sticky & centered) --- */}
+            <div className="hidden md:flex flex-col space-y-4 p-6 bg-muted/50 h-full overflow-auto">
                 <Label>Vista Previa de la Tarjeta</Label>
-                <div className="w-full h-full p-4 bg-muted rounded-lg flex items-center justify-center sticky top-0 overflow-auto">
+                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center">
                     <VoucherPreview voucherData={formData} />
                 </div>
             </div>
         </div>
-
-        <DialogFooter className="p-6 pt-4 mt-auto border-t bg-background">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>
-            <Upload className="mr-2 h-4 w-4" />
-            {voucher ? "Guardar Cambios" : "Guardar Voucher"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+ 
