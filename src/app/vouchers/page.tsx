@@ -60,9 +60,26 @@ export default function VouchersPage() {
 
   const activeVouchers = useMemo(() => {
     const now = new Date();
+    // For now, we assume the user is not logged in.
+    // In a real app with auth, you would check user status here.
+    const isUserRegistered = false; 
+    const userTripCount = 0;
+
     return mockVouchers.filter(v => {
       const isExpired = new Date(v.expiryDate) < now;
-      return v.status === "Activo" && !isExpired;
+      if (v.status !== "Activo" || isExpired) {
+        return false;
+      }
+      
+      if (v.visibility === "all") {
+        return true;
+      }
+
+      if (v.visibility === "registered" && isUserRegistered) {
+        return userTripCount >= (v.minTrips || 0);
+      }
+      
+      return false;
     });
   }, []);
 
