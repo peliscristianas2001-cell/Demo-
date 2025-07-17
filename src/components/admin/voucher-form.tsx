@@ -471,9 +471,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             </div>
 
             {/* Preview Column */}
-            <div className="hidden md:flex flex-col bg-muted/50 p-6">
-                <div className="font-medium text-sm mb-2">Vista Previa de la Tarjeta</div>
-                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
+            <div className="hidden md:flex flex-col bg-muted/50 p-6 overflow-auto">
+                <div className="font-medium text-sm mb-2 sticky top-0 bg-muted/50 py-2 z-10">Vista Previa de la Tarjeta</div>
+                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center">
                     <VoucherPreview voucherData={formData} />
                 </div>
             </div>
