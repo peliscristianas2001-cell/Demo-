@@ -261,16 +261,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
         <div className="flex-1 grid md:grid-cols-2 overflow-hidden">
             {/* Form Column */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Mobile Preview */}
-                <div className="md:hidden p-4 bg-muted/50 overflow-auto">
-                    <Label>Vista Previa de la Tarjeta</Label>
-                    <div className="mt-2 w-full flex items-center justify-center">
+            <div className="flex flex-col p-6 overflow-y-auto">
+                 {/* Mobile Preview */}
+                <div className="md:hidden mb-6">
+                    <div className="text-sm font-medium mb-2">Vista Previa de la Tarjeta</div>
+                    <div className="w-full flex items-center justify-center overflow-auto p-2 bg-muted/50 rounded-lg">
                         <VoucherPreview voucherData={formData} />
                     </div>
                 </div>
 
-                <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                <div className="space-y-6">
                     {/* Design Section */}
                     <div className="space-y-3 p-4 border rounded-lg">
                         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
@@ -460,33 +460,28 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
                         </div>
                     </div>
-                    <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generar nuevo código
-                    </Button>
-
-                    <DialogFooter className="p-6 pt-4 mt-auto border-t bg-background sticky bottom-0 md:hidden">
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                        <Button onClick={handleSubmit}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            {voucher ? "Guardar Cambios" : "Guardar Voucher"}
+                    <div className="mt-6 flex flex-col gap-4">
+                         <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Generar nuevo código
                         </Button>
-                    </DialogFooter>
+                        <DialogFooter className="p-0 bg-transparent border-none">
+                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                            <Button onClick={handleSubmit}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                {voucher ? "Guardar Cambios" : "Guardar Voucher"}
+                            </Button>
+                        </DialogFooter>
+                    </div>
                 </div>
             </div>
 
             {/* Preview Column */}
-            <div className="hidden md:flex flex-col space-y-4 p-6 bg-muted/50 overflow-auto">
-                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
+            <div className="hidden md:flex flex-col p-6 bg-muted/50 overflow-y-auto">
+                 <div className="text-sm font-medium mb-2">Vista Previa de la Tarjeta</div>
+                 <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
                     <VoucherPreview voucherData={formData} />
                 </div>
-                 <DialogFooter className="p-6 pt-4 mt-auto border-t bg-muted/50">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        {voucher ? "Guardar Cambios" : "Guardar Voucher"}
-                    </Button>
-                </DialogFooter>
             </div>
         </div>
       </DialogContent>
