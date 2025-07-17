@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -85,7 +86,6 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
   const cardStyle = {
     width: '100%',
-    maxWidth: `${width}px`,
     aspectRatio: `${width} / ${height}`,
     ...backgroundStyles,
     ...borderStyles
@@ -93,7 +93,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto"
+      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto w-full"
       style={cardStyle}
     >
       {safeBackground?.type === 'image' && safeBackground.imageUrl && (
@@ -172,9 +172,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             ...defaultValues,
             ...voucher,
             expiryDate: voucher.expiryDate ? new Date(voucher.expiryDate) : undefined,
-            background: { ...defaultValues.background, ...(voucher.background || {}) },
-            border: { ...defaultValues.border, ...(voucher.border || {}) },
-            stripes: { ...defaultValues.stripes, ...(voucher.stripes || {}) },
+            background: { ...defaultValues.background!, ...(voucher.background || {}) },
+            border: { ...defaultValues.border!, ...(voucher.border || {}) },
+            stripes: { ...defaultValues.stripes!, ...(voucher.stripes || {}) },
           })
         } else {
           setFormData(defaultValues)
@@ -256,7 +256,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   };
   
   const FormFields = () => (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-1">
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -466,27 +466,29 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 border-b">
+      <DialogContent className="max-w-4xl w-full h-[95vh] sm:h-[90vh] flex flex-col p-2 sm:p-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 border-b">
           <DialogTitle>{voucher ? "Editar Voucher" : "Crear Nuevo Voucher"}</DialogTitle>
           <DialogDescription>
             {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y personaliza el diseño de la tarjeta."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 grid-cols-1 md:grid-cols-2 overflow-hidden">
-            <div className="flex-1 overflow-y-auto h-full">
-                <div className="md:hidden p-4">
-                    <div className="mb-2 text-sm font-medium text-center">Vista Previa</div>
-                    <VoucherPreview voucherData={formData} />
-                </div>
-                <FormFields />
+        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden gap-4">
+            <div className="flex flex-col gap-4 overflow-y-auto p-1 pr-3">
+              <div className="md:hidden">
+                <div className="mb-2 text-sm font-medium text-center">Vista Previa</div>
+                <VoucherPreview voucherData={formData} />
+              </div>
+              <FormFields />
             </div>
             
             <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
                 <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
                 <div className="flex items-center justify-center flex-1">
+                  <div className="w-full max-w-md">
                     <VoucherPreview voucherData={formData} />
+                  </div>
                 </div>
             </div>
         </div>
@@ -494,3 +496,5 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
+
+    
