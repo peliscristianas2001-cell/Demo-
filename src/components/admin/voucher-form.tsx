@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 
 const hexToRgba = (hex: string, alpha: number) => {
     if (!hex || typeof hex !== 'string') hex = '#000000';
@@ -84,7 +86,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
   const stripesColorWithOpacity = hexToRgba(safeStripes?.color || '#ffffff', safeStripes?.opacity ?? 0.3);
 
-  const cardStyle = {
+  const cardStyle: React.CSSProperties = {
     width: '100%',
     aspectRatio: `${width} / ${height}`,
     ...backgroundStyles,
@@ -93,7 +95,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto w-full"
+      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white"
       style={cardStyle}
     >
       {safeBackground?.type === 'image' && safeBackground.imageUrl && (
@@ -403,8 +405,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
           <DatePicker
             id="expiryDate"
-            date={formData.expiryDate ? new Date(formData.expiryDate) : undefined}
-            setDate={(d) => handleInputChange('expiryDate', d instanceof Date ? d : new Date(d || Date.now()))}
+            date={formData.expiryDate instanceof Date ? formData.expiryDate : new Date(formData.expiryDate || Date.now())}
+            setDate={(d) => handleInputChange("expiryDate", d instanceof Date ? d : new Date(d || Date.now()))}
             className="w-full"
             placeholder="Seleccionar fecha"
           />
@@ -473,28 +475,33 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y personaliza el diseño de la tarjeta."}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden gap-4">
-            <div className="flex flex-col gap-4 overflow-y-auto p-1 pr-3">
-              <div className="md:hidden">
-                <div className="mb-2 text-sm font-medium text-center">Vista Previa</div>
-                <VoucherPreview voucherData={formData} />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
+          {/* Columna del formulario */}
+          <ScrollArea className="w-full h-full">
+            <div className="p-4 md:p-6 space-y-4">
+              <div className="md:hidden mb-6">
+                <Label className="text-sm font-medium text-center block mb-2">Vista Previa</Label>
+                <div className="w-full max-w-sm mx-auto">
+                    <VoucherPreview voucherData={formData} />
+                </div>
               </div>
               <FormFields />
             </div>
-            
-            <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
-                <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
-                <div className="flex items-center justify-center flex-1">
-                  <div className="w-full max-w-md">
-                    <VoucherPreview voucherData={formData} />
-                  </div>
-                </div>
+          </ScrollArea>
+          
+          {/* Columna de la vista previa (solo en escritorio) */}
+          <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
+            <Label className="text-sm font-medium">Vista Previa de la Tarjeta</Label>
+            <div className="flex items-center justify-center flex-1">
+              <div className="w-full max-w-md">
+                <VoucherPreview voucherData={formData} />
+              </div>
             </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-    
