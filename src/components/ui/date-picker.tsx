@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/popover"
 
 interface DatePickerProps {
+    id?: string;
     date?: Date;
     setDate?: (date: Date | undefined) => void;
     placeholder?: string;
     className?: string;
 }
 
-export function DatePicker({ date, setDate, placeholder, className }: DatePickerProps) {
+export function DatePicker({ id, date, setDate, placeholder, className }: DatePickerProps) {
   const [internalDate, setInternalDate] = React.useState<Date|undefined>(date)
   
   const handleDateChange = (newDate: Date | undefined) => {
@@ -37,13 +38,15 @@ export function DatePicker({ date, setDate, placeholder, className }: DatePicker
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant={"outline"}
           className={cn(
-            "w-full justify-start text-left font-normal h-12 pl-10",
+            "w-full justify-start text-left font-normal h-10",
             !displayDate && "text-muted-foreground",
             className
           )}
         >
+          <CalendarIcon className="mr-2 h-4 w-4" />
           {displayDate ? format(displayDate, "PPP", { locale: es }) : <span>{placeholder || "Pick a date"}</span>}
         </Button>
       </PopoverTrigger>

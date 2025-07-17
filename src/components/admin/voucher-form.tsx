@@ -257,7 +257,6 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   
   const FormFields = () => (
     <div className="flex flex-col gap-6">
-      {/* Design Section */}
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -380,7 +379,6 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </div>
       </div>
 
-      {/* Voucher Data Section */}
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</h3>
         <div className="space-y-2">
@@ -407,12 +405,12 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
             id="expiryDate"
             date={formData.expiryDate ? new Date(formData.expiryDate) : undefined}
             setDate={(d) => handleInputChange('expiryDate', d instanceof Date ? d : new Date(d || Date.now()))}
-            className="h-10 w-full"
+            className="w-full"
+            placeholder="Seleccionar fecha"
           />
         </div>
       </div>
 
-      {/* Visibility Section */}
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</h3>
         <Label htmlFor="visibility-select">Visibilidad</Label>
@@ -433,7 +431,6 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         )}
       </div>
 
-      {/* Custom Content Section */}
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -478,14 +475,10 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </DialogHeader>
 
         <div className="grid flex-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:overflow-hidden">
-          {/* Form Column */}
           <div className="order-2 p-6 overflow-y-auto md:order-1 lg:col-span-2">
-            <div className="flex flex-col w-full gap-6">
-              <FormFields />
-            </div>
+            <FormFields />
           </div>
-
-          {/* Preview Column */}
+          
           <div className="flex flex-col order-1 p-6 overflow-hidden bg-muted/50 md:order-2">
             <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
             <div className="flex items-center justify-center flex-1 -m-6 p-6">
