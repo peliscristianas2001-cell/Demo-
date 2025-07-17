@@ -261,8 +261,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
         <div className="flex-1 md:grid md:grid-cols-2 overflow-hidden">
           {/* Form Column */}
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex flex-col h-full overflow-y-auto">
+            <div className="flex-1 p-6 space-y-6">
                 {/* Mobile-only Preview */}
                 <div className="md:hidden space-y-2">
                     <Label>Vista Previa de la Tarjeta</Label>
@@ -273,7 +273,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                 {/* Design Section */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                    <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
+                    <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="width">Ancho (px)</Label>
@@ -285,7 +285,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         </div>
                     </div>
                     <div className="space-y-3 p-4 border rounded-lg bg-background/50">
-                        <Label className="text-base font-medium flex items-center gap-2"><Layers className="w-5 h-5"/> Fondo</Label>
+                        <Label className="font-medium flex items-center gap-2"><Layers className="w-5 h-5"/> Fondo</Label>
                         <Select onValueChange={(v: 'solid' | 'gradient' | 'image') => handleNestedChange('background', 'type', v)} value={formData.background?.type}>
                             <SelectTrigger id="background-type"><SelectValue placeholder="Tipo de fondo" /></SelectTrigger>
                             <SelectContent>
@@ -297,10 +297,10 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         
                         {formData.background?.type === 'solid' && (
                             <div className="space-y-2 animate-fade-in-down">
-                                <Label htmlFor="backgroundColor">Color de Fondo</Label>
+                                <Label htmlFor="backgroundColorText">Color de Fondo (Hex)</Label>
                                 <div className="flex items-center gap-2">
-                                    <Input id="backgroundColor" type="color" value={formData.background?.color || '#000000'} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} className="w-12 h-10 p-1"/>
-                                    <Input type="text" value={formData.background?.color || ''} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} placeholder="#3b82f6" />
+                                    <Input id="backgroundColorPicker" type="color" value={formData.background?.color || '#000000'} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                    <Input id="backgroundColorText" type="text" value={formData.background?.color || ''} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} placeholder="#3b82f6" />
                                 </div>
                             </div>
                         )}
@@ -308,17 +308,17 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         {formData.background?.type === 'gradient' && (
                             <div className="space-y-4 animate-fade-in-down">
                                 <div className="space-y-2">
-                                    <Label htmlFor="gradientColor1">Color 1</Label>
+                                    <Label htmlFor="gradientColor1Text">Color 1 (Hex)</Label>
                                     <div className="flex items-center gap-2">
-                                        <Input id="gradientColor1" type="color" value={formData.background?.color1 || '#000000'} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} className="w-12 h-10 p-1"/>
-                                        <Input type="text" value={formData.background?.color1 || ''} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} />
+                                        <Input id="gradientColor1Picker" type="color" value={formData.background?.color1 || '#000000'} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} className="w-12 h-10 p-1"/>
+                                        <Input id="gradientColor1Text" type="text" value={formData.background?.color1 || ''} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="gradientColor2">Color 2</Label>
+                                    <Label htmlFor="gradientColor2Text">Color 2 (Hex)</Label>
                                     <div className="flex items-center gap-2">
-                                        <Input id="gradientColor2" type="color" value={formData.background?.color2 || '#000000'} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} className="w-12 h-10 p-1"/>
-                                        <Input type="text" value={formData.background?.color2 || ''} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} />
+                                        <Input id="gradientColor2Picker" type="color" value={formData.background?.color2 || '#000000'} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} className="w-12 h-10 p-1"/>
+                                        <Input id="gradientColor2Text" type="text" value={formData.background?.color2 || ''} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -333,7 +333,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                     </div>
 
                     <div className="space-y-3 p-4 border rounded-lg bg-background/50">
-                        <Label className="text-base font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</Label>
+                        <Label className="font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</Label>
                         <div className="flex items-center space-x-2">
                             <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
                             <Label htmlFor="border-enabled">Habilitar Borde</Label>
@@ -345,10 +345,10 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                     <Input id="borderWidth" type="number" value={formData.border?.width || ''} onChange={(e) => handleNestedChange('border', 'width', parseInt(e.target.value) || 0)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="borderColor">Color</Label>
+                                    <Label htmlFor="borderColorText">Color del Borde (Hex)</Label>
                                     <div className="flex items-center gap-2">
-                                        <Input id="borderColor" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
-                                        <Input type="text" value={formData.border?.color || ''} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} placeholder="#ffffff" />
+                                        <Input id="borderColorPicker" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                        <Input id="borderColorText" type="text" value={formData.border?.color || ''} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} placeholder="#ffffff" />
                                     </div>
                                 </div>
                             </div>
@@ -360,7 +360,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         {formData.stripes?.enabled && (
                             <div className="space-y-4 pl-8 animate-fade-in-down">
                                 <div className="space-y-2">
-                                    <Label htmlFor="stripesColor">Color</Label>
+                                    <Label htmlFor="stripesColorText">Color de Franjas (Hex)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input 
                                             id="stripesColorPicker"
@@ -370,7 +370,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                             className="w-12 h-10 p-1"
                                         />
                                         <Input 
-                                            id="stripesColor"
+                                            id="stripesColorText"
                                             type="text" 
                                             value={formData.stripes?.color || ''} 
                                             onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
@@ -396,7 +396,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                 {/* Voucher Data Section */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                    <Label className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</Label>
+                    <h3 className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</h3>
                     <div className="space-y-2">
                         <Label htmlFor="title">Título del Voucher</Label>
                         <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
@@ -416,14 +416,14 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
+                        <Label>Fecha de Vencimiento</Label>
                         <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
                     </div>
                 </div>
 
                 {/* Visibility Section */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                    <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</Label>
+                    <h3 className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</h3>
                     <Select onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)} value={formData.visibility}>
                         <SelectTrigger id="visibility-select">
                             <SelectValue placeholder="Seleccionar visibilidad" />
@@ -435,8 +435,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                     </Select>
                     {formData.visibility === 'registered' && (
                         <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-                            <Label htmlFor="minTrips" className="font-semibold">Condición para Clientes</Label>
-                            <p className="text-sm text-muted-foreground">Mínimo de viajes completados para ver este voucher:</p>
+                            <Label htmlFor="minTrips" className="font-semibold">Mínimo de viajes completados</Label>
                             <Input id="minTrips" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
                         </div>
                     )}
@@ -444,7 +443,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                 {/* Custom Content Section */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                    <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
+                    <h3 className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="recipientName">Para (Destinatario)</Label>
@@ -465,7 +464,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                     Generar nuevo código
                 </Button>
 
-                 <DialogFooter className="p-6 pt-4 border-t bg-background">
+                 <DialogFooter className="p-6 pt-4 border-t bg-background mt-auto">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button onClick={handleSubmit}>
                         <Upload className="mr-2 h-4 w-4" />
@@ -478,7 +477,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           {/* Preview Column */}
           <div className="hidden md:flex flex-col space-y-4 p-6 bg-muted/50 overflow-auto">
             <Label>Vista Previa de la Tarjeta</Label>
-            <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center">
+            <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
                 <VoucherPreview voucherData={formData} />
             </div>
           </div>
