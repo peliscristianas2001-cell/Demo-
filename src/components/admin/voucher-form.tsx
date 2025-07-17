@@ -248,7 +248,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   }
 
   const FormFields = () => (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Design Section */}
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
@@ -394,8 +394,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Fecha de Vencimiento</Label>
-          <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
+          <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
+          <DatePicker id="expiryDate" date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
         </div>
       </div>
 
@@ -414,7 +414,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </Select>
         {formData.visibility === 'registered' && (
           <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-            <Label htmlFor="minTrips" className="font-semibold">Mínimo de viajes completados</Label>
+            <Label htmlFor="minTrips">Mínimo de viajes completados</Label>
             <Input id="minTrips" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
           </div>
         )}
@@ -464,19 +464,23 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden md:grid md:grid-cols-2 lg:grid-cols-3">
-          <div className="flex-1 p-6 overflow-y-auto lg:col-span-2">
-              <FormFields/>
-          </div>
-          <div className="hidden md:flex flex-col bg-muted/50 p-6">
-              <div className="font-medium text-sm mb-2">Vista Previa de la Tarjeta</div>
-              <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
-                  <VoucherPreview voucherData={formData} />
-              </div>
-          </div>
+        <div className="flex-1 md:grid md:grid-cols-2 lg:grid-cols-3 overflow-hidden">
+            {/* Form Column */}
+            <div className="p-6 overflow-y-auto lg:col-span-2">
+                 <FormFields />
+            </div>
+
+            {/* Preview Column */}
+            <div className="hidden md:flex flex-col bg-muted/50 p-6">
+                <div className="font-medium text-sm mb-2">Vista Previa de la Tarjeta</div>
+                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
+                    <VoucherPreview voucherData={formData} />
+                </div>
+            </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
- 
+
+    
