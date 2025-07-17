@@ -49,28 +49,32 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         expiryDate,
         width = 500,
         height = 300,
-        background = { type: 'solid', color: '#cccccc' },
-        border = { enabled: false },
-        stripes = { enabled: false, color: '#ffffff', opacity: 0.3 },
+        background,
+        border,
+        stripes,
         message
      } = voucherData;
+
+     const safeBackground = background || { type: 'solid', color: '#cccccc' };
+     const safeBorder = border || { enabled: false };
+     const safeStripes = stripes || { enabled: false, color: '#ffffff', opacity: 0.3 };
 
      const formattedValue = `$${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}`
      const formattedDate = expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'dd/mm/aaaa'
 
     const backgroundStyles: React.CSSProperties = {};
-    if (background?.type === 'solid') {
-        backgroundStyles.backgroundColor = background.color;
-    } else if (background?.type === 'gradient') {
-        backgroundStyles.background = `linear-gradient(to bottom right, ${background.color1}, ${background.color2})`;
+    if (safeBackground?.type === 'solid') {
+        backgroundStyles.backgroundColor = safeBackground.color;
+    } else if (safeBackground?.type === 'gradient') {
+        backgroundStyles.background = `linear-gradient(to bottom right, ${safeBackground.color1}, ${safeBackground.color2})`;
     }
 
     const borderStyles: React.CSSProperties = {};
-    if (border?.enabled) {
-        borderStyles.border = `${border.width || 4}px solid ${border.color || '#ffffff'}`;
+    if (safeBorder?.enabled) {
+        borderStyles.border = `${safeBorder.width || 4}px solid ${safeBorder.color || '#ffffff'}`;
     }
     
-    const stripesColorWithOpacity = hexToRgba(stripes?.color || '#ffffff', stripes?.opacity ?? 0.3);
+    const stripesColorWithOpacity = hexToRgba(safeStripes?.color || '#ffffff', safeStripes?.opacity ?? 0.3);
 
     const cardStyle = {
         width: `${width}px`,
@@ -85,9 +89,9 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
             className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white shrink-0"
             style={cardStyle}
         >
-            {background?.type === 'image' && background.imageUrl && (
+            {safeBackground?.type === 'image' && safeBackground.imageUrl && (
                  <Image 
-                    src={background.imageUrl}
+                    src={safeBackground.imageUrl}
                     alt="Fondo del voucher" 
                     layout="fill" 
                     objectFit="cover" 
@@ -95,7 +99,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
                     data-ai-hint="abstract texture"
                 />
             )}
-             {stripes?.enabled && (
+             {safeStripes?.enabled && (
                 <>
                     <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
                     <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
@@ -255,27 +259,26 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 md:grid md:grid-cols-2 overflow-hidden">
-            {/* --- FORM COLUMN (Scrollable) --- */}
-            <div className="h-full flex flex-col">
-                {/* Mobile-only Preview */}
-                <div className="p-4 space-y-2 border-b md:hidden bg-muted/50">
+        <div className="flex-1 grid md:grid-cols-2 overflow-hidden">
+            {/* --- FORM & PREVIEW COLUMN (Mobile) --- */}
+            <div className="flex flex-col md:hidden overflow-hidden">
+                <div className="p-4 space-y-2 border-b bg-muted/50">
                     <Label>Vista Previa de la Tarjeta</Label>
-                    <div className="p-4 rounded-lg flex items-center justify-start overflow-auto">
+                    <div className="p-4 rounded-lg flex items-center justify-start overflow-x-auto">
                         <VoucherPreview voucherData={formData} />
                     </div>
                 </div>
-
-                <div className="flex-1 overflow-y-auto">
+                 <div className="flex-1 overflow-y-auto">
                     <div className="p-6 space-y-6">
+                        {/* All form sections */}
                         {/* Design Section */}
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
                             <div className="space-y-2">
                                 <Label htmlFor="width">Dimensiones (Ancho x Alto en px)</Label>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Input id="width" type="number" value={formData.width || ''} onChange={(e) => handleNumericInputChange('width', e.target.value)} placeholder="500" />
-                                    <Input id="height" type="number" value={formData.height || ''} onChange={(e) => handleNumericInputChange('height', e.target.value)} placeholder="300" />
+                                    <Input id="width-mobile" type="number" value={formData.width || ''} onChange={(e) => handleNumericInputChange('width', e.target.value)} placeholder="500" />
+                                    <Input id="height-mobile" type="number" value={formData.height || ''} onChange={(e) => handleNumericInputChange('height', e.target.value)} placeholder="300" />
                                 </div>
                             </div>
                             <div className="space-y-3 p-4 border rounded-lg bg-background/50">
@@ -291,9 +294,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                 
                                 {formData.background?.type === 'solid' && (
                                     <div className="space-y-2 animate-fade-in-down">
-                                        <Label htmlFor="backgroundColor">Color de Fondo</Label>
+                                        <Label htmlFor="backgroundColor-mobile">Color de Fondo</Label>
                                         <div className="flex items-center gap-2">
-                                            <Input id="backgroundColor" type="color" value={formData.background?.color || '#000000'} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                            <Input id="backgroundColor-mobile" type="color" value={formData.background?.color || '#000000'} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} className="w-12 h-10 p-1"/>
                                             <Input type="text" value={formData.background?.color || ''} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} placeholder="#3b82f6" />
                                         </div>
                                     </div>
@@ -302,16 +305,16 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                 {formData.background?.type === 'gradient' && (
                                     <div className="space-y-4 animate-fade-in-down">
                                         <div className="space-y-2">
-                                            <Label htmlFor="gradientColor1">Color 1</Label>
+                                            <Label htmlFor="gradientColor1-mobile">Color 1</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input id="gradientColor1" type="color" value={formData.background?.color1 || '#000000'} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} className="w-12 h-10 p-1"/>
+                                                <Input id="gradientColor1-mobile" type="color" value={formData.background?.color1 || '#000000'} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} className="w-12 h-10 p-1"/>
                                                 <Input type="text" value={formData.background?.color1 || ''} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="gradientColor2">Color 2</Label>
+                                            <Label htmlFor="gradientColor2-mobile">Color 2</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input id="gradientColor2" type="color" value={formData.background?.color2 || '#000000'} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} className="w-12 h-10 p-1"/>
+                                                <Input id="gradientColor2-mobile" type="color" value={formData.background?.color2 || '#000000'} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} className="w-12 h-10 p-1"/>
                                                 <Input type="text" value={formData.background?.color2 || ''} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} />
                                             </div>
                                         </div>
@@ -320,8 +323,8 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
                                 {formData.background?.type === 'image' && (
                                     <div className="space-y-2 animate-fade-in-down">
-                                        <Label htmlFor="imageUpload" className="flex items-center gap-2"><FileImage className="w-4 h-4"/> Sube una imagen</Label>
-                                        <Input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="file:text-primary-foreground file:font-bold file:mr-4 file:px-4 file:py-2 file:rounded-full file:border-0 file:bg-primary hover:file:bg-primary/90"/>
+                                        <Label htmlFor="imageUpload-mobile" className="flex items-center gap-2"><FileImage className="w-4 h-4"/> Sube una imagen</Label>
+                                        <Input id="imageUpload-mobile" type="file" accept="image/*" onChange={handleImageUpload} className="file:text-primary-foreground file:font-bold file:mr-4 file:px-4 file:py-2 file:rounded-full file:border-0 file:bg-primary hover:file:bg-primary/90"/>
                                     </div>
                                 )}
                             </div>
@@ -329,42 +332,42 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             <div className="space-y-3 p-4 border rounded-lg bg-background/50">
                                 <Label className="text-base font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</Label>
                                 <div className="flex items-center space-x-2">
-                                    <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
-                                    <Label htmlFor="border-enabled">Habilitar Borde</Label>
+                                    <Switch id="border-enabled-mobile" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
+                                    <Label htmlFor="border-enabled-mobile">Habilitar Borde</Label>
                                 </div>
                                 {formData.border?.enabled && (
                                     <div className="grid grid-cols-2 gap-4 pl-8 animate-fade-in-down">
                                         <div className="space-y-2">
-                                            <Label htmlFor="borderWidth">Grosor (px)</Label>
-                                            <Input id="borderWidth" type="number" value={formData.border?.width || ''} onChange={(e) => handleNestedChange('border', 'width', parseInt(e.target.value) || 0)} />
+                                            <Label htmlFor="borderWidth-mobile">Grosor (px)</Label>
+                                            <Input id="borderWidth-mobile" type="number" value={formData.border?.width || ''} onChange={(e) => handleNestedChange('border', 'width', parseInt(e.target.value) || 0)} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="borderColor">Color</Label>
+                                            <Label htmlFor="borderColor-mobile">Color</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input id="borderColor" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                                <Input id="borderColor-mobile" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
                                                 <Input type="text" value={formData.border?.color || ''} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} placeholder="#ffffff" />
                                             </div>
                                         </div>
                                     </div>
                                 )}
                                 <div className="flex items-center space-x-2">
-                                    <Switch id="stripes-enabled" checked={formData.stripes?.enabled} onCheckedChange={(c) => handleNestedChange('stripes', 'enabled', c)} />
-                                    <Label htmlFor="stripes-enabled">Habilitar Franjas</Label>
+                                    <Switch id="stripes-enabled-mobile" checked={formData.stripes?.enabled} onCheckedChange={(c) => handleNestedChange('stripes', 'enabled', c)} />
+                                    <Label htmlFor="stripes-enabled-mobile">Habilitar Franjas</Label>
                                 </div>
                                 {formData.stripes?.enabled && (
                                     <div className="space-y-4 pl-8 animate-fade-in-down">
                                         <div className="space-y-2">
-                                            <Label htmlFor="stripesColor">Color</Label>
+                                            <Label htmlFor="stripesColor-mobile">Color</Label>
                                             <div className="flex items-center gap-2">
                                                 <Input 
-                                                    id="stripesColorPicker"
+                                                    id="stripesColorPicker-mobile"
                                                     type="color"
                                                     value={formData.stripes?.color || '#ffffff'} 
                                                     onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
                                                     className="w-12 h-10 p-1"
                                                 />
                                                 <Input 
-                                                    id="stripesColor"
+                                                    id="stripesColor-mobile"
                                                     type="text" 
                                                     value={formData.stripes?.color || ''} 
                                                     onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
@@ -373,9 +376,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="stripesOpacity">Opacidad ({Math.round((formData.stripes?.opacity ?? 0.3) * 100)}%)</Label>
+                                            <Label htmlFor="stripesOpacity-mobile">Opacidad ({Math.round((formData.stripes?.opacity ?? 0.3) * 100)}%)</Label>
                                             <Slider
-                                                id="stripesOpacity"
+                                                id="stripesOpacity-mobile"
                                                 min={0}
                                                 max={1}
                                                 step={0.05}
@@ -392,25 +395,25 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</Label>
                             <div className="space-y-2">
-                                <Label htmlFor="title">Título del Voucher</Label>
-                                <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
+                                <Label htmlFor="title-mobile">Título del Voucher</Label>
+                                <Input id="title-mobile" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="code">Código del Voucher</Label>
-                                <Input id="code" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
+                                <Label htmlFor="code-mobile">Código del Voucher</Label>
+                                <Input id="code-mobile" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="value">Valor ($)</Label>
-                                <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
+                                <Label htmlFor="value-mobile">Valor ($)</Label>
+                                <Input id="value-mobile" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="quantity">Cantidad</Label>
-                                <Input id="quantity" type="text" value={String(formData.quantity || "")} onChange={(e) => handleInputChange('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 10" />
+                                <Label htmlFor="quantity-mobile">Cantidad</Label>
+                                <Input id="quantity-mobile" type="text" value={String(formData.quantity || "")} onChange={(e) => handleInputChange('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 10" />
                             </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
+                                <Label htmlFor="expiryDate-mobile">Fecha de Vencimiento</Label>
                                 <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
                             </div>
                         </div>
@@ -419,9 +422,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                         <div className="space-y-3 p-4 border rounded-lg">
                             <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</Label>
                             <Select onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)} value={formData.visibility}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar visibilidad" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Seleccionar visibilidad" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Mostrar a todos los visitantes</SelectItem>
                                     <SelectItem value="registered">Mostrar solo a clientes registrados</SelectItem>
@@ -429,9 +430,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             </Select>
                             {formData.visibility === 'registered' && (
                                 <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
-                                    <Label htmlFor="minTrips" className="font-semibold">Condición para Clientes</Label>
+                                    <Label htmlFor="minTrips-mobile" className="font-semibold">Condición para Clientes</Label>
                                     <p className="text-sm text-muted-foreground">Mínimo de viajes completados para ver este voucher:</p>
-                                    <Input id="minTrips" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
+                                    <Input id="minTrips-mobile" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
                                 </div>
                             )}
                         </div>
@@ -441,17 +442,17 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="recipientName">Para (Destinatario)</Label>
-                                    <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
+                                    <Label htmlFor="recipientName-mobile">Para (Destinatario)</Label>
+                                    <Input id="recipientName-mobile" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="senderName">De (Remitente)</Label>
-                                    <Input id="senderName" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
+                                    <Label htmlFor="senderName-mobile">De (Remitente)</Label>
+                                    <Input id="senderName-mobile" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="message">Mensaje</Label>
-                                <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
+                                <Label htmlFor="message-mobile">Mensaje</Label>
+                                <Textarea id="message-mobile" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
                             </div>
                         </div>
                         <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
@@ -459,7 +460,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                             Generar nuevo código
                         </Button>
                     </div>
-                     <DialogFooter className="p-6 pt-4 border-t bg-background">
+                     <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                         <Button onClick={handleSubmit}>
                             <Upload className="mr-2 h-4 w-4" />
@@ -469,8 +470,212 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
                 </div>
             </div>
 
-            {/* --- PREVIEW COLUMN (Desktop only) --- */}
-            <div className="hidden md:flex flex-col space-y-4 p-6 bg-muted/50 h-full overflow-auto">
+            {/* --- FORM COLUMN (Desktop) --- */}
+            <div className="hidden md:flex flex-col overflow-y-auto">
+                 <div className="p-6 space-y-6">
+                    {/* All form sections */}
+                    {/* Design Section */}
+                    <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="width">Dimensiones (Ancho x Alto en px)</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input id="width" type="number" value={formData.width || ''} onChange={(e) => handleNumericInputChange('width', e.target.value)} placeholder="500" />
+                                <Input id="height" type="number" value={formData.height || ''} onChange={(e) => handleNumericInputChange('height', e.target.value)} placeholder="300" />
+                            </div>
+                        </div>
+                        <div className="space-y-3 p-4 border rounded-lg bg-background/50">
+                            <Label className="text-base font-medium flex items-center gap-2"><Layers className="w-5 h-5"/> Fondo</Label>
+                            <Select onValueChange={(v: 'solid' | 'gradient' | 'image') => handleNestedChange('background', 'type', v)} value={formData.background?.type}>
+                                <SelectTrigger><SelectValue placeholder="Tipo de fondo" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="solid">Color Sólido</SelectItem>
+                                    <SelectItem value="gradient">Gradiente</SelectItem>
+                                    <SelectItem value="image">Imagen</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            
+                            {formData.background?.type === 'solid' && (
+                                <div className="space-y-2 animate-fade-in-down">
+                                    <Label htmlFor="backgroundColor">Color de Fondo</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input id="backgroundColor" type="color" value={formData.background?.color || '#000000'} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                        <Input type="text" value={formData.background?.color || ''} onChange={(e) => handleNestedChange('background', 'color', e.target.value)} placeholder="#3b82f6" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {formData.background?.type === 'gradient' && (
+                                <div className="space-y-4 animate-fade-in-down">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="gradientColor1">Color 1</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input id="gradientColor1" type="color" value={formData.background?.color1 || '#000000'} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} className="w-12 h-10 p-1"/>
+                                            <Input type="text" value={formData.background?.color1 || ''} onChange={(e) => handleNestedChange('background', 'color1', e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="gradientColor2">Color 2</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input id="gradientColor2" type="color" value={formData.background?.color2 || '#000000'} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} className="w-12 h-10 p-1"/>
+                                            <Input type="text" value={formData.background?.color2 || ''} onChange={(e) => handleNestedChange('background', 'color2', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formData.background?.type === 'image' && (
+                                <div className="space-y-2 animate-fade-in-down">
+                                    <Label htmlFor="imageUpload" className="flex items-center gap-2"><FileImage className="w-4 h-4"/> Sube una imagen</Label>
+                                    <Input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="file:text-primary-foreground file:font-bold file:mr-4 file:px-4 file:py-2 file:rounded-full file:border-0 file:bg-primary hover:file:bg-primary/90"/>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 p-4 border rounded-lg bg-background/50">
+                            <Label className="text-base font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</Label>
+                            <div className="flex items-center space-x-2">
+                                <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
+                                <Label htmlFor="border-enabled">Habilitar Borde</Label>
+                            </div>
+                            {formData.border?.enabled && (
+                                <div className="grid grid-cols-2 gap-4 pl-8 animate-fade-in-down">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="borderWidth">Grosor (px)</Label>
+                                        <Input id="borderWidth" type="number" value={formData.border?.width || ''} onChange={(e) => handleNestedChange('border', 'width', parseInt(e.target.value) || 0)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="borderColor">Color</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input id="borderColor" type="color" value={formData.border?.color || '#ffffff'} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} className="w-12 h-10 p-1"/>
+                                            <Input type="text" value={formData.border?.color || ''} onChange={(e) => handleNestedChange('border', 'color', e.target.value)} placeholder="#ffffff" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex items-center space-x-2">
+                                <Switch id="stripes-enabled" checked={formData.stripes?.enabled} onCheckedChange={(c) => handleNestedChange('stripes', 'enabled', c)} />
+                                <Label htmlFor="stripes-enabled">Habilitar Franjas</Label>
+                            </div>
+                            {formData.stripes?.enabled && (
+                                <div className="space-y-4 pl-8 animate-fade-in-down">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="stripesColor">Color</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input 
+                                                id="stripesColorPicker"
+                                                type="color"
+                                                value={formData.stripes?.color || '#ffffff'} 
+                                                onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                                className="w-12 h-10 p-1"
+                                            />
+                                            <Input 
+                                                id="stripesColor"
+                                                type="text" 
+                                                value={formData.stripes?.color || ''} 
+                                                onChange={(e) => handleNestedChange('stripes', 'color', e.target.value)} 
+                                                placeholder="#ffffff"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="stripesOpacity">Opacidad ({Math.round((formData.stripes?.opacity ?? 0.3) * 100)}%)</Label>
+                                        <Slider
+                                            id="stripesOpacity"
+                                            min={0}
+                                            max={1}
+                                            step={0.05}
+                                            value={[formData.stripes?.opacity ?? 0.3]}
+                                            onValueChange={(value) => handleNestedChange('stripes', 'opacity', value[0])}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Voucher Data Section */}
+                    <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base font-medium flex items-center gap-2"><Ticket className="w-5 h-5"/> Datos del Voucher</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Título del Voucher</Label>
+                            <Input id="title" value={formData.title || ""} onChange={(e) => handleInputChange('title', e.target.value)} placeholder="Ej: Voucher de Descuento" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="code">Código del Voucher</Label>
+                            <Input id="code" value={formData.code || ""} onChange={(e) => handleInputChange('code', e.target.value)} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="value">Valor ($)</Label>
+                            <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="quantity">Cantidad</Label>
+                            <Input id="quantity" type="text" value={String(formData.quantity || "")} onChange={(e) => handleInputChange('quantity', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 10" />
+                        </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
+                            <DatePicker date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
+                        </div>
+                    </div>
+
+                    {/* Visibility Section */}
+                    <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base font-medium flex items-center gap-2"><Users className="w-5 h-5"/> Condiciones de Visibilidad</Label>
+                        <Select onValueChange={(value: "all" | "registered") => handleInputChange('visibility', value)} value={formData.visibility}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar visibilidad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Mostrar a todos los visitantes</SelectItem>
+                                <SelectItem value="registered">Mostrar solo a clientes registrados</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {formData.visibility === 'registered' && (
+                            <div className="p-3 mt-2 space-y-2 rounded-lg bg-background/70 border-l-4 border-primary animate-fade-in-down">
+                                <Label htmlFor="minTrips" className="font-semibold">Condición para Clientes</Label>
+                                <p className="text-sm text-muted-foreground">Mínimo de viajes completados para ver este voucher:</p>
+                                <Input id="minTrips" type="number" value={formData.minTrips || 1} onChange={(e) => handleInputChange('minTrips', parseInt(e.target.value) || 1)} className="w-48" min="1"/>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Custom Content Section */}
+                    <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base font-medium flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Contenido Personalizado</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="recipientName">Para (Destinatario)</Label>
+                                <Input id="recipientName" value={formData.recipientName || ""} onChange={(e) => handleInputChange('recipientName', e.target.value)} placeholder="Nombre de quien recibe"/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="senderName">De (Remitente)</Label>
+                                <Input id="senderName" value={formData.senderName || ""} onChange={(e) => handleInputChange('senderName', e.target.value)} placeholder="Tu nombre o 'YO TE LLEVO'"/>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="message">Mensaje</Label>
+                            <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
+                        </div>
+                    </div>
+                    <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generar nuevo código
+                    </Button>
+                </div>
+                <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {voucher ? "Guardar Cambios" : "Guardar Voucher"}
+                    </Button>
+                </DialogFooter>
+            </div>
+
+            {/* --- PREVIEW COLUMN (Desktop) --- */}
+            <div className="hidden md:flex flex-col space-y-4 p-6 bg-muted/50 overflow-y-auto">
                 <Label>Vista Previa de la Tarjeta</Label>
                 <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center overflow-auto">
                     <VoucherPreview voucherData={formData} />
