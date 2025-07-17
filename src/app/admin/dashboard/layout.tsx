@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { SheetTitle } from "@/components/ui/sheet";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -55,8 +54,6 @@ export default function DashboardLayout({
           <SidebarContent className="bg-card">
             <SidebarHeader>
               <Logo />
-              {/* This is for mobile accessibility. It's hidden but read by screen readers */}
-              <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
             </SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
