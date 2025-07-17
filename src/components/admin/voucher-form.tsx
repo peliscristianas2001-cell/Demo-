@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -123,7 +122,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         {recipientName && <p className="text-sm opacity-80 overflow-hidden text-ellipsis whitespace-nowrap">Para: {recipientName}</p>}
         <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">{formattedValue}</p>
         <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-        {message && <p className="text-sm opacity-80 mt-2 italic whitespace-pre-wrap overflow-hidden text-ellipsis">"{message}"</p>}
+        {voucherData.message && <p className="text-sm opacity-80 mt-2 italic whitespace-pre-wrap overflow-hidden text-ellipsis">"{message}"</p>}
       </div>
 
       <div className="relative z-10 text-right">
@@ -489,7 +488,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           {/* Preview Column */}
           <div className="flex flex-col order-1 p-6 overflow-hidden bg-muted/50 md:order-2">
             <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
-            <div className="flex items-center justify-center flex-1 overflow-auto rounded-lg -m-6 p-6">
+            <div className="flex items-center justify-center flex-1 -m-6 p-6">
                 <VoucherPreview voucherData={formData} />
             </div>
           </div>
@@ -498,5 +497,3 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
-
-    
