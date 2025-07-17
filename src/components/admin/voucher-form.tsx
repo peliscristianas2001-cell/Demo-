@@ -475,16 +475,14 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </DialogHeader>
 
         <div className="grid flex-1 grid-cols-1 md:grid-cols-2 overflow-hidden">
-            {/* Mobile-first: Preview is part of the scroll on small screens */}
             <div className="flex-1 overflow-y-auto h-full">
-                {/* Mobile Preview */}
-                <div className="md:hidden sticky top-0 bg-muted/50 p-4 z-10 border-b">
+                <div className="md:hidden p-4">
                     <div className="mb-2 text-sm font-medium text-center">Vista Previa</div>
                     <VoucherPreview voucherData={formData} />
                 </div>
                 <FormFields />
             </div>
-            {/* Desktop Preview */}
+            
             <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
                 <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
                 <div className="flex items-center justify-center flex-1">
@@ -496,5 +494,3 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     </Dialog>
   )
 }
-
-    
