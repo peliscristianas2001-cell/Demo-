@@ -30,7 +30,6 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 
-
 const hexToRgba = (hex: string, alpha: number) => {
     if (!hex || typeof hex !== 'string') hex = '#000000';
     const r = parseInt(hex.slice(1, 3), 16) || 0;
@@ -39,89 +38,103 @@ const hexToRgba = (hex: string, alpha: number) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
-    const { 
-        title = "Título del Voucher",
-        code = "YTL-XXXXXXXX",
-        value = 0,
-        recipientName,
-        expiryDate,
-        width = 500,
-        height = 300,
-        background,
-        border,
-        stripes,
-        message
-     } = voucherData;
-
-     const safeBackground = background || { type: 'solid', color: '#cccccc' };
-     const safeBorder = border || { enabled: false };
-     const safeStripes = stripes || { enabled: false, color: '#ffffff', opacity: 0.3 };
-
-    const backgroundStyles: React.CSSProperties = {};
-    if (safeBackground?.type === 'solid') {
-        backgroundStyles.backgroundColor = safeBackground.color;
-    } else if (safeBackground?.type === 'gradient') {
-        backgroundStyles.background = `linear-gradient(to bottom right, ${safeBackground.color1}, ${safeBackground.color2})`;
-    }
-
-    const borderStyles: React.CSSProperties = {};
-    if (safeBorder?.enabled) {
-        borderStyles.border = `${safeBorder.width || 4}px solid ${safeBorder.color || '#ffffff'}`;
-    }
-    
-    const stripesColorWithOpacity = hexToRgba(safeStripes?.color || '#ffffff', safeStripes?.opacity ?? 0.3);
-
-    const cardStyle = {
-        width: '100%',
-        maxWidth: `${width}px`,
-        aspectRatio: `${width} / ${height}`,
-        ...backgroundStyles,
-        ...borderStyles
-    };
-
-    return (
-        <div 
-            className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto"
-            style={cardStyle}
-        >
-            {safeBackground?.type === 'image' && safeBackground.imageUrl && (
-                 <Image 
-                    src={safeBackground.imageUrl}
-                    alt="Fondo del voucher" 
-                    layout="fill" 
-                    objectFit="cover" 
-                    className="z-0 brightness-50 group-hover:brightness-75 transition-all duration-300"
-                    data-ai-hint="abstract texture"
-                />
-            )}
-             {safeStripes?.enabled && (
-                <>
-                    <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
-                    <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
-                </>
-            )}
-            
-            <div className="relative z-10 flex justify-between items-start">
-                <div className="font-headline text-2xl tracking-wider uppercase overflow-hidden truncate">{title}</div>
-                <Gift className="w-8 h-8 opacity-80"/>
-            </div>
-
-            <div className="relative z-10 flex flex-col items-center text-center">
-                {recipientName && <p className="text-sm opacity-80 overflow-hidden truncate">Para: {recipientName}</p>}
-                <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}</p>
-                <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-                {message && <p className="text-sm opacity-80 mt-2 italic overflow-hidden truncate">"{message}"</p>}
-            </div>
-            
-            <div className="relative z-10 text-right">
-                <p className="text-xs opacity-70">
-                    Válido hasta: {expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : "dd/mm/aaaa"}
-                </p>
-            </div>
-        </div>
-    );
+const safeParseInt = (value: string | number, fallback = 0) => {
+  const num = parseInt(String(value), 10);
+  return isNaN(num) ? fallback : num;
 };
+
+const generateVoucherCode = () => {
+  return `YTL-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+};
+
+
+const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
+  const {
+    title = "Título del Voucher",
+    code = "YTL-XXXXXXXX",
+    value = 0,
+    recipientName,
+    expiryDate,
+    width = 500,
+    height = 300,
+    background,
+    border,
+    stripes,
+    message
+  } = voucherData;
+
+  const safeBackground = background || { type: 'solid', color: '#cccccc' };
+  const safeBorder = border || { enabled: false };
+  const safeStripes = stripes || { enabled: false, color: '#ffffff', opacity: 0.3 };
+
+  const formattedValue = `$${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}`
+  const formattedDate = expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'dd/mm/aaaa'
+
+  const backgroundStyles: React.CSSProperties = {};
+  if (safeBackground?.type === 'solid') {
+    backgroundStyles.backgroundColor = safeBackground.color;
+  } else if (safeBackground?.type === 'gradient') {
+    backgroundStyles.background = `linear-gradient(to bottom right, ${safeBackground.color1}, ${safeBackground.color2})`;
+  }
+
+  const borderStyles: React.CSSProperties = {};
+  if (safeBorder?.enabled) {
+    borderStyles.border = `${safeBorder.width || 4}px solid ${safeBorder.color || '#ffffff'}`;
+  }
+
+  const stripesColorWithOpacity = hexToRgba(safeStripes?.color || '#ffffff', safeStripes?.opacity ?? 0.3);
+
+  const cardStyle = {
+    width: '100%',
+    maxWidth: `${width}px`,
+    aspectRatio: `${width} / ${height}`,
+    ...backgroundStyles,
+    ...borderStyles
+  };
+
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto"
+      style={cardStyle}
+    >
+      {safeBackground?.type === 'image' && safeBackground.imageUrl && (
+        <Image
+          src={safeBackground.imageUrl}
+          alt="Fondo del voucher"
+          layout="fill"
+          objectFit="cover"
+          className="z-0 brightness-50 group-hover:brightness-75 transition-all duration-300"
+          data-ai-hint="abstract texture"
+        />
+      )}
+      {safeStripes?.enabled && (
+        <>
+          <div className="absolute top-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
+          <div className="absolute bottom-0 left-0 w-full h-4" style={{ backgroundColor: stripesColorWithOpacity }} />
+        </>
+      )}
+
+      <div className="relative z-10 flex justify-between items-start">
+        <div className="font-headline text-2xl tracking-wider uppercase overflow-hidden text-ellipsis whitespace-nowrap">{title}</div>
+        <Gift className="w-8 h-8 opacity-80" />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center text-center">
+        {recipientName && <p className="text-sm opacity-80 overflow-hidden text-ellipsis whitespace-nowrap">Para: {recipientName}</p>}
+        <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">{formattedValue}</p>
+        <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
+        {message && <p className="text-sm opacity-80 mt-2 italic whitespace-pre-wrap overflow-hidden text-ellipsis">"{message}"</p>}
+      </div>
+
+      <div className="relative z-10 text-right">
+        <p className="text-xs opacity-70">
+          Válido hasta: {formattedDate}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 
 interface VoucherFormProps {
     isOpen: boolean
@@ -130,15 +143,9 @@ interface VoucherFormProps {
     voucher: Voucher | null
 }
 
-const generateVoucherCode = () => {
-    return `YTL-${Math.random().toString(36).slice(2, 10).toUpperCase()}`
-}
-
 export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFormProps) {
-  const [formData, setFormData] = useState<Partial<Voucher>>({})
-  
   const { toast } = useToast()
-
+  
   const defaultValues: Partial<Voucher> = {
     title: "Voucher de Descuento",
     code: generateVoucherCode(),
@@ -147,23 +154,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     expiryDate: undefined,
     width: 500,
     height: 300,
-    background: {
-      type: 'solid',
-      color: '#3b82f6',
-      color1: '#3b82f6',
-      color2: '#ef4444',
-      imageUrl: ''
-    },
-    border: {
-        enabled: false,
-        color: '#ffffff',
-        width: 4
-    },
-    stripes: {
-        enabled: false,
-        color: '#ffffff',
-        opacity: 0.3,
-    },
+    background: { type: 'solid', color: '#3b82f6', color1: '#3b82f6', color2: '#ef4444', imageUrl: '' },
+    border: { enabled: false, color: '#ffffff', width: 4 },
+    stripes: { enabled: false, color: '#ffffff', opacity: 0.3 },
     recipientName: "",
     senderName: "YO TE LLEVO",
     message: "¡Válido para tu próxima gran aventura!",
@@ -171,24 +164,32 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     minTrips: 1,
   }
 
+  const [formData, setFormData] = useState<Partial<Voucher>>(defaultValues)
+
   useEffect(() => {
-    if (voucher) {
-      setFormData({
-        ...defaultValues,
-        ...voucher,
-        expiryDate: voucher.expiryDate ? new Date(voucher.expiryDate) : undefined,
-        background: { ...defaultValues.background, ...(voucher.background || {}) },
-        border: { ...defaultValues.border, ...(voucher.border || {}) },
-        stripes: { ...defaultValues.stripes, ...(voucher.stripes || {}) },
-      })
-    } else {
-      setFormData(defaultValues)
+    if (isOpen) {
+        if (voucher) {
+          setFormData({
+            ...defaultValues,
+            ...voucher,
+            expiryDate: voucher.expiryDate ? new Date(voucher.expiryDate) : undefined,
+            background: { ...defaultValues.background, ...(voucher.background || {}) },
+            border: { ...defaultValues.border, ...(voucher.border || {}) },
+            stripes: { ...defaultValues.stripes, ...(voucher.stripes || {}) },
+          })
+        } else {
+          setFormData(defaultValues)
+        }
     }
   }, [voucher, isOpen])
 
   const handleInputChange = (field: keyof Voucher, value: any) => {
     setFormData(prev => ({...prev, [field]: value}));
   }
+  
+  const handleNumericInputChange = (field: keyof Voucher, value: string) => {
+    handleInputChange(field, safeParseInt(value, 0));
+  };
 
   const handleNestedChange = (
     object: 'background' | 'border' | 'stripes',
@@ -203,18 +204,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
       }
     }));
   }
-  
-  const handleNumericInputChange = (field: keyof Voucher, value: string) => {
-    const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 0) {
-        handleInputChange(field, num);
-    } else if (value === "") {
-        handleInputChange(field, 0);
-    }
-  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
         toast({
@@ -224,35 +216,46 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         });
         return;
       }
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        handleNestedChange('background', 'imageUrl', reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        handleNestedChange("background", "imageUrl", reader.result as string);
+      };
+      reader.readAsDataURL(file);
     } else {
-        handleNestedChange('background', 'imageUrl', '')
+      handleNestedChange("background", "imageUrl", "");
     }
-  }
+  };
 
   const handleSubmit = () => {
-    const { title, code, expiryDate, value, quantity } = formData;
-    if (!title || !code || !expiryDate || value === undefined || parseFloat(String(value)) <= 0 || quantity === undefined || parseInt(String(quantity)) < 0) {
+    const { code, expiryDate, value, quantity, title } = formData;
+    const errors: string[] = [];
+  
+    if (!title?.trim()) errors.push("Título");
+    if (!code?.trim()) errors.push("Código");
+    if (!expiryDate) errors.push("Fecha de vencimiento");
+    if (value === undefined || parseFloat(String(value)) <= 0) errors.push("Valor (debe ser > 0)");
+    if (quantity === undefined || parseInt(String(quantity), 10) < 0) errors.push("Cantidad");
+  
+    if (errors.length > 0) {
       toast({
         title: "Faltan datos o son incorrectos",
-        description: "Por favor, completa título, código, valor, cantidad y fecha de vencimiento. El valor debe ser mayor a 0.",
-        variant: "destructive"
-      })
-      return
+        description: `Por favor, revisa los siguientes campos: ${errors.join(", ")}.`,
+        variant: "destructive",
+      });
+      return;
     }
-
+  
     onSave({
       id: voucher?.id || "",
       status: voucher?.status || "Activo",
       ...defaultValues,
-      ...formData
-    } as Voucher)
-  }
-
+      ...formData,
+      expiryDate: new Date(expiryDate as Date),
+      value: parseFloat(String(value)),
+      quantity: safeParseInt(String(quantity), 1),
+    } as Voucher);
+  };
+  
   const FormFields = () => (
     <div className="flex flex-col gap-6">
       {/* Design Section */}
@@ -401,7 +404,12 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </div>
         <div className="space-y-2">
           <Label htmlFor="expiryDate">Fecha de Vencimiento</Label>
-          <DatePicker id="expiryDate" date={formData.expiryDate} setDate={(d) => handleInputChange('expiryDate', d)} className="h-10 w-full" />
+          <DatePicker
+            id="expiryDate"
+            date={formData.expiryDate ? new Date(formData.expiryDate) : undefined}
+            setDate={(d) => handleInputChange('expiryDate', d)}
+            className="h-10 w-full"
+          />
         </div>
       </div>
 
