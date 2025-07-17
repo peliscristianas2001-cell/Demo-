@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, use } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
@@ -18,9 +18,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
 
 export default function BookingPage() {
-  const params = useParams()
+  const { id } = use(useParams())
   const router = useRouter();
-  const { id } = params
   const { toast } = useToast()
 
   const [tour, setTour] = useState<Tour | null>(null)
