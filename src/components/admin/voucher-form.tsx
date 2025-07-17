@@ -57,9 +57,6 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
      const safeBackground = background || { type: 'solid', color: '#cccccc' };
      const safeBorder = border || { enabled: false };
      const safeStripes = stripes || { enabled: false, color: '#ffffff', opacity: 0.3 };
-     
-     const formattedValue = `$${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}`
-     const formattedDate = expiryDate ? format(new Date(expiryDate), "dd 'de' LLLL 'de' yyyy", { locale: es }) : 'dd/mm/aaaa'
 
     const backgroundStyles: React.CSSProperties = {};
     if (safeBackground?.type === 'solid') {
@@ -106,15 +103,15 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
             )}
             
             <div className="relative z-10 flex justify-between items-start">
-                <div className="font-headline text-2xl tracking-wider uppercase">{title}</div>
+                <div className="font-headline text-2xl tracking-wider uppercase overflow-hidden truncate">{title}</div>
                 <Gift className="w-8 h-8 opacity-80"/>
             </div>
 
             <div className="relative z-10 flex flex-col items-center text-center">
-                {recipientName && <p className="text-sm opacity-80">Para: {recipientName}</p>}
+                {recipientName && <p className="text-sm opacity-80 overflow-hidden truncate">Para: {recipientName}</p>}
                 <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">${value ? parseFloat(String(value)).toLocaleString('es-AR') : '0'}</p>
                 <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-                {message && <p className="text-sm opacity-80 mt-2 italic">"{message}"</p>}
+                {message && <p className="text-sm opacity-80 mt-2 italic overflow-hidden truncate">"{message}"</p>}
             </div>
             
             <div className="relative z-10 text-right">
@@ -134,7 +131,7 @@ interface VoucherFormProps {
 }
 
 const generateVoucherCode = () => {
-    return `YTL-${Math.random().toString(36).substr(2, 8).toUpperCase()}`
+    return `YTL-${Math.random().toString(36).slice(2, 10).toUpperCase()}`
 }
 
 export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFormProps) {
@@ -179,6 +176,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
       setFormData({
         ...defaultValues,
         ...voucher,
+        expiryDate: voucher.expiryDate ? new Date(voucher.expiryDate) : undefined,
         background: { ...defaultValues.background, ...(voucher.background || {}) },
         border: { ...defaultValues.border, ...(voucher.border || {}) },
         stripes: { ...defaultValues.stripes, ...(voucher.stripes || {}) },
@@ -211,13 +209,21 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
     if (!isNaN(num) && num >= 0) {
         handleInputChange(field, num);
     } else if (value === "") {
-        handleInputChange(field, "");
+        handleInputChange(field, 0);
     }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Archivo no válido",
+          description: "Por favor, selecciona un archivo de imagen.",
+          variant: "destructive"
+        });
+        return;
+      }
       const reader = new FileReader()
       reader.onloadend = () => {
         handleNestedChange('background', 'imageUrl', reader.result as string)
@@ -229,11 +235,11 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   }
 
   const handleSubmit = () => {
-    const { code, expiryDate, value, quantity } = formData;
-    if (!code || !expiryDate || value === undefined || quantity === undefined || parseFloat(String(value)) < 0 || parseInt(String(quantity)) < 0) {
+    const { title, code, expiryDate, value, quantity } = formData;
+    if (!title || !code || !expiryDate || value === undefined || parseFloat(String(value)) <= 0 || quantity === undefined || parseInt(String(quantity)) < 0) {
       toast({
-        title: "Faltan datos",
-        description: "Por favor, completa código, valor, cantidad, y fecha de vencimiento.",
+        title: "Faltan datos o son incorrectos",
+        description: "Por favor, completa título, código, valor, cantidad y fecha de vencimiento. El valor debe ser mayor a 0.",
         variant: "destructive"
       })
       return
@@ -386,7 +392,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="value">Valor ($)</Label>
-            <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej: 25000" />
+            <Input id="value" type="text" value={String(formData.value || "")} onChange={(e) => handleInputChange('value', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="Ej: 25000" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="quantity">Cantidad</Label>
@@ -464,30 +470,25 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-hidden">
-            {/* Form Column */}
-            <div className="p-6 overflow-y-auto lg:col-span-2">
-                 <FormFields />
+        <div className="grid flex-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:overflow-hidden">
+          {/* Form Column */}
+          <div className="order-2 p-6 overflow-y-auto md:order-1 lg:col-span-2">
+            <div className="flex flex-col w-full gap-6">
+              <FormFields />
             </div>
+          </div>
 
-            {/* Preview Column */}
-            <div className="flex-col bg-muted/50 p-6 overflow-auto hidden md:flex">
-                <div className="font-medium text-sm mb-2 sticky top-0 bg-muted/50 py-2 z-10">Vista Previa de la Tarjeta</div>
-                <div className="w-full flex-1 p-4 rounded-lg flex items-center justify-center">
-                    <VoucherPreview voucherData={formData} />
-                </div>
+          {/* Preview Column */}
+          <div className="flex flex-col order-1 p-6 overflow-hidden bg-muted/50 md:order-2">
+            <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
+            <div className="flex items-center justify-center flex-1 overflow-auto rounded-lg -m-6 p-6">
+                <VoucherPreview voucherData={formData} />
             </div>
-            {/* Mobile Preview */}
-            <div className="md:hidden p-6 bg-muted/50 border-t">
-                 <div className="font-medium text-sm mb-4">Vista Previa de la Tarjeta</div>
-                 <div className="overflow-auto -m-6 p-6">
-                    <div className="w-full p-4 rounded-lg flex items-center justify-center min-w-[500px]">
-                       <VoucherPreview voucherData={formData} />
-                    </div>
-                 </div>
-            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+
+    
