@@ -122,7 +122,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
         {recipientName && <p className="text-sm opacity-80 overflow-hidden text-ellipsis whitespace-nowrap">Para: {recipientName}</p>}
         <p className="text-4xl lg:text-5xl font-bold mt-1 drop-shadow-lg">{formattedValue}</p>
         <p className="font-mono text-lg tracking-widest mt-2 bg-black/30 px-3 py-1 rounded-md border border-white/20">{code}</p>
-        {voucherData.message && <p className="text-sm opacity-80 mt-2 italic whitespace-pre-wrap overflow-hidden text-ellipsis">"{message}"</p>}
+        {message && <p className="text-sm opacity-80 mt-2 italic whitespace-pre-wrap overflow-hidden text-ellipsis">"{message}"</p>}
       </div>
 
       <div className="relative z-10 text-right">
@@ -256,7 +256,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   };
   
   const FormFields = () => (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-6">
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -448,7 +448,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           <Textarea id="message" value={formData.message || ""} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Unas palabras para el agasajado..." />
         </div>
       </div>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 p-6 pt-0">
         <Button onClick={() => handleInputChange('code', generateVoucherCode())} variant="outline">
           <Sparkles className="mr-2 h-4 w-4" />
           Generar nuevo código
@@ -475,16 +475,29 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </DialogHeader>
 
         <div className="grid flex-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:overflow-hidden">
-          <div className="order-2 p-6 overflow-y-auto md:order-1 lg:col-span-2">
-            <FormFields />
-          </div>
-          
-          <div className="flex flex-col order-1 p-6 overflow-hidden bg-muted/50 md:order-2">
-            <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
-            <div className="flex items-center justify-center flex-1 -m-6 p-6">
+           {/* Mobile layout */}
+           <div className="flex flex-col md:hidden h-full">
+              <div className="sticky top-0 z-10 p-6 bg-muted/50 border-b">
+                <div className="text-sm font-medium mb-2">Vista Previa de la Tarjeta</div>
                 <VoucherPreview voucherData={formData} />
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                 <FormFields />
+              </div>
             </div>
-          </div>
+
+            {/* Desktop layout */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 col-span-full h-full overflow-hidden">
+                 <div className="lg:col-span-2 overflow-y-auto h-full">
+                     <FormFields />
+                 </div>
+                 <div className="flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
+                    <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
+                    <div className="flex items-center justify-center flex-1">
+                        <VoucherPreview voucherData={formData} />
+                    </div>
+                </div>
+            </div>
         </div>
       </DialogContent>
     </Dialog>
