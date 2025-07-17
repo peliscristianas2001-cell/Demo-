@@ -188,7 +188,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   }
   
   const handleNumericInputChange = (field: keyof Voucher, value: string) => {
-    handleInputChange(field, safeParseInt(value, 0));
+    handleInputChange(field, safeParseInt(String(value), 0));
   };
 
   const handleNestedChange = (
@@ -407,7 +407,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           <DatePicker
             id="expiryDate"
             date={formData.expiryDate ? new Date(formData.expiryDate) : undefined}
-            setDate={(d) => handleInputChange('expiryDate', d)}
+            setDate={(d) => handleInputChange('expiryDate', d instanceof Date ? d : new Date(d || Date.now()))}
             className="h-10 w-full"
           />
         </div>
