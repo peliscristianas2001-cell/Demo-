@@ -474,28 +474,14 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:overflow-hidden">
-           {/* Mobile layout */}
-           <div className="flex flex-col md:hidden h-full">
-              <div className="sticky top-0 z-10 p-6 bg-muted/50 border-b">
-                <div className="text-sm font-medium mb-2">Vista Previa de la Tarjeta</div>
-                <VoucherPreview voucherData={formData} />
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                 <FormFields />
-              </div>
+        <div className="grid flex-1 grid-cols-1 md:grid-cols-2 overflow-hidden">
+            <div className="flex-1 overflow-y-auto h-full">
+                <FormFields />
             </div>
-
-            {/* Desktop layout */}
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 col-span-full h-full overflow-hidden">
-                 <div className="lg:col-span-2 overflow-y-auto h-full">
-                     <FormFields />
-                 </div>
-                 <div className="flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
-                    <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
-                    <div className="flex items-center justify-center flex-1">
-                        <VoucherPreview voucherData={formData} />
-                    </div>
+            <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
+                <div className="mb-2 text-sm font-medium">Vista Previa de la Tarjeta</div>
+                <div className="flex items-center justify-center flex-1">
+                    <VoucherPreview voucherData={formData} />
                 </div>
             </div>
         </div>
