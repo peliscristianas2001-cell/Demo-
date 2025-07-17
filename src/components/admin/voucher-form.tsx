@@ -30,7 +30,6 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
 
 const hexToRgba = (hex: string, alpha: number) => {
     if (!hex || typeof hex !== 'string') hex = '#000000';
@@ -95,7 +94,7 @@ const VoucherPreview = ({ voucherData }: { voucherData: Partial<Voucher> }) => {
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white"
+      className="relative rounded-2xl overflow-hidden shadow-2xl group flex flex-col justify-between p-6 text-white mx-auto"
       style={cardStyle}
     >
       {safeBackground?.type === 'image' && safeBackground.imageUrl && (
@@ -258,7 +257,7 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
   };
   
   const FormFields = () => (
-    <div className="flex flex-col gap-6 p-1">
+     <div className="flex flex-col gap-6 p-1">
       <div className="space-y-3 p-4 border rounded-lg">
         <h3 className="text-base font-medium flex items-center gap-2"><Palette className="w-5 h-5"/> Diseño del Voucher</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -272,9 +271,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
           </div>
         </div>
         <div className="space-y-3 p-4 border rounded-lg bg-background/50">
-          <Label htmlFor="background-type" className="font-medium flex items-center gap-2"><Layers className="w-5 h-5"/> Fondo</Label>
-          <Select onValueChange={(v: 'solid' | 'gradient' | 'image') => handleNestedChange('background', 'type', v)} value={formData.background?.type}>
-            <SelectTrigger id="background-type"><SelectValue placeholder="Tipo de fondo" /></SelectTrigger>
+          <div id="background-label" className="font-medium flex items-center gap-2"><Layers className="w-5 h-5"/> Fondo</div>
+          <Select onValueChange={(v: 'solid' | 'gradient' | 'image') => handleNestedChange('background', 'type', v)} value={formData.background?.type} >
+            <SelectTrigger id="background-type" aria-labelledby="background-label"><SelectValue placeholder="Tipo de fondo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="solid">Color Sólido</SelectItem>
               <SelectItem value="gradient">Gradiente</SelectItem>
@@ -320,9 +319,9 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
         </div>
 
         <div className="space-y-3 p-4 border rounded-lg bg-background/50">
-          <h4 className="font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</h4>
+          <div id="borders-stripes-label" className="font-medium flex items-center gap-2"><Brush className="w-5 h-5"/> Bordes y Franjas</div>
           <div className="flex items-center space-x-2">
-            <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} />
+            <Switch id="border-enabled" checked={formData.border?.enabled} onCheckedChange={(c) => handleNestedChange('border', 'enabled', c)} aria-labelledby="borders-stripes-label" />
             <Label htmlFor="border-enabled">Habilitar Borde</Label>
           </div>
           {formData.border?.enabled && (
@@ -468,40 +467,32 @@ export function VoucherForm({ isOpen, onOpenChange, onSave, voucher }: VoucherFo
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-full h-[95vh] sm:h-[90vh] flex flex-col p-2 sm:p-0">
-        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 border-b">
-          <DialogTitle>{voucher ? "Editar Voucher" : "Crear Nuevo Voucher"}</DialogTitle>
-          <DialogDescription>
-            {voucher ? "Modifica los detalles del voucher." : "Completa los detalles y personaliza el diseño de la tarjeta."}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
-          {/* Columna del formulario */}
-          <ScrollArea className="w-full h-full">
-            <div className="p-4 md:p-6 space-y-4">
-              <div className="md:hidden mb-6">
-                <Label className="text-sm font-medium text-center block mb-2">Vista Previa</Label>
-                <div className="w-full max-w-sm mx-auto">
-                    <VoucherPreview voucherData={formData} />
+      <DialogContent className="max-w-4xl w-full h-[95vh] sm:h-[90vh] flex flex-col p-0 sm:flex-row">
+        {/* Columna del formulario (en móvil se muestra en toda la pantalla) */}
+        <ScrollArea className="w-full h-full md:w-1/2">
+            <div className="p-4 space-y-4 md:p-6">
+                 {/* Vista previa solo en móvil */}
+                <div className="md:hidden mb-6">
+                    <Label className="text-sm font-medium text-center block mb-2">Vista Previa</Label>
+                    <div className="w-full max-w-sm mx-auto">
+                        <VoucherPreview voucherData={formData} />
+                    </div>
                 </div>
-              </div>
-              <FormFields />
+                {/* Formulario que se renderiza una sola vez */}
+                <FormFields />
             </div>
-          </ScrollArea>
-          
-          {/* Columna de la vista previa (solo en escritorio) */}
-          <div className="hidden md:flex flex-col p-6 bg-muted/50 h-full overflow-hidden">
+        </ScrollArea>
+        
+        {/* Columna de la vista previa (solo en escritorio) */}
+        <div className="hidden md:flex md:w-1/2 flex-col p-6 bg-muted/50 h-full overflow-hidden">
             <Label className="text-sm font-medium">Vista Previa de la Tarjeta</Label>
             <div className="flex items-center justify-center flex-1">
-              <div className="w-full max-w-md">
+              <div className="w-full">
                 <VoucherPreview voucherData={formData} />
               </div>
             </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
-
