@@ -12,7 +12,7 @@ import {
   LogOut,
   Globe,
   LayoutDashboard,
-  Gift
+  TicketCheck
 } from "lucide-react";
 
 import {
@@ -36,7 +36,7 @@ const navItems = [
   { href: "/admin/dashboard/reservations", label: "Reservas", icon: Ticket },
   { href: "/admin/dashboard/passengers", label: "Pasajeros", icon: Users },
   { href: "/admin/dashboard/flyers", label: "Flyers", icon: ImageIcon },
-  { href: "/admin/dashboard/vouchers", label: "Vouchers", icon: Gift },
+  { href: "/admin/dashboard/tickets", label: "Tickets", icon: TicketCheck },
   { href: "/admin/dashboard/settings", label: "Configuración", icon: Settings },
 ];
 

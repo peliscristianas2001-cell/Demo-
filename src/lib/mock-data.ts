@@ -1,5 +1,6 @@
 
-import type { Tour, Reservation, Voucher } from './types';
+
+import type { Tour, Reservation, Ticket } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -69,120 +70,26 @@ export const mockReservations: Reservation[] = [
     { id: "R005", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seatsCount: 3, assignedSeats: [{seatId: "3B", bus: 1}, {seatId: "3C", bus: 1}, {seatId: "3D", bus: 1}], status: "Confirmado" },
 ];
 
+const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');
+const associatedTours = mockTours.reduce((acc, tour) => {
+    acc[tour.id] = tour;
+    return acc;
+}, {} as Record<string, Tour>);
 
-export const mockVouchers: Voucher[] = [
-  { 
-    id: "V001", 
-    title: "Voucher de Verano",
-    code: "VERANO2025", 
-    value: 10000, 
-    status: "Activo", 
-    expiryDate: new Date("2025-03-31T23:59:59"),
-    quantity: 10,
-    width: 500,
-    height: 300,
-    background: {
-      type: 'image',
-      imageUrl: "https://placehold.co/600x400.png",
-      color: '#3b82f6',
-      color1: '#3b82f6',
-      color2: '#ef4444',
-    },
-    border: {
-        enabled: true,
-        color: '#ffffff',
-        width: 4
-    },
-    stripes: {
-        enabled: true,
-        color: 'rgba(0,0,0,0.2)'
-    },
-    recipientName: "Ana",
-    senderName: "Carlos",
-    message: "¡Feliz cumpleaños! Espero que disfrutes tu próxima aventura.",
-    visibility: "all",
-  },
-  { 
-    id: "V002", 
-    title: "GIFT CARD VIAJERO FRECUENTE",
-    code: "REGALOESPECIAL", 
-    value: 25000, 
-    status: "Canjeado", 
-    expiryDate: new Date("2025-12-31T23:59:59"),
-    quantity: 0,
-    width: 400,
-    height: 400,
-    background: {
-        type: 'gradient',
-        color: '#ef4444',
-        color1: '#ef4444',
-        color2: '#f97316',
-        imageUrl: '',
-    },
-    border: {
-        enabled: false,
-    },
-    stripes: {
-        enabled: false,
-    },
-    recipientName: "Juan Pérez",
-    senderName: "Admin",
-    message: "Gracias por tu compra.",
-    visibility: "registered",
-    minTrips: 3,
-  },
-  { 
-    id: "V003", 
-    title: "15% OFF AVENTURA",
-    code: "AVENTURA15", 
-    value: 15000, 
-    status: "Activo", 
-    expiryDate: new Date("2025-10-31T23:59:59"),
-    quantity: 1,
-    width: 350,
-    height: 500,
-    background: {
-      type: 'solid',
-      color: '#10b981',
-      color1: '#3b82f6',
-      color2: '#ef4444',
-      imageUrl: ''
-    },
-    border: {
-        enabled: false,
-    },
-    stripes: {
-        enabled: true,
-        color: 'rgba(255,255,255,0.5)'
-    },
-    visibility: "registered",
-    minTrips: 1,
-  },
-  { 
-    id: "V004", 
-    title: "Voucher Expirado",
-    code: "EXPIRADO01", 
-    value: 5000, 
-    status: "Expirado", 
-    expiryDate: new Date("2024-01-01T23:59:59"),
-    quantity: 0,
-    width: 500,
-    height: 300,
-    background: {
-      type: 'solid',
-      color: '#6b7280',
-      color1: '#3b82f6',
-      color2: '#ef4444',
-      imageUrl: ''
-    },
-     border: {
-        enabled: false,
-    },
-    stripes: {
-        enabled: false,
-    },
-    visibility: "all",
-  },
-];
-
-    
+export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
+    const tour = associatedTours[res.tripId];
+    // Create a ticket for each assigned seat in the reservation
+    return res.assignedSeats.map((seat, index) => ({
+        id: `${res.id}-T${index + 1}`,
+        reservationId: res.id,
+        tripId: res.tripId,
+        tripDestination: res.tripDestination,
+        tripDate: tour.date,
+        // For simplicity, we assume the main passenger name for all tickets in a reservation
+        // A more complex implementation would have individual passenger data per seat
+        passengerName: res.passenger,
+        passengerDni: 'XX.XXX.XXX', // Placeholder DNI
+        seat: seat,
+        qrCodeUrl: 'https://placehold.co/150x150.png', // Placeholder QR Code
+    }));
+});
