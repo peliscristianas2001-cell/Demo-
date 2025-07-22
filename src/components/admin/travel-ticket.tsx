@@ -15,65 +15,63 @@ interface TravelTicketProps {
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket }, ref) => {
   return (
-    <div ref={ref} className="bg-white">
-      <div className={cn(
-          "bg-card rounded-xl shadow-md overflow-hidden border flex",
-          "w-[700px] h-[300px]" // Fixed size for consistent PDF generation
-      )}>
-        {/* Pink Vertical Bar */}
-        <div className="flex flex-col items-center justify-center w-20 p-4 bg-primary text-primary-foreground">
-           <div className="transform -rotate-90 whitespace-nowrap">
-                <p className="text-xl font-bold tracking-widest uppercase font-headline">Pase de Abordar</p>
-            </div>
-        </div>
+    <div ref={ref} className={cn(
+      "bg-card rounded-xl shadow-md overflow-hidden border flex",
+      "w-[700px] h-[300px]"
+    )}>
+      {/* Pink Vertical Bar */}
+      <div className="flex flex-col items-center justify-center w-20 p-4 bg-primary text-primary-foreground">
+         <div className="transform -rotate-90 whitespace-nowrap">
+              <p className="text-xl font-bold tracking-widest uppercase font-headline">Pase de Abordar</p>
+          </div>
+      </div>
 
-        {/* Main Ticket Content */}
-        <div className="flex-1 flex flex-col p-6 text-foreground">
-            {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
-                   <Logo/>
-                </div>
-                 <div className="text-right">
-                    <p className="font-semibold">ID: {ticket.id}</p>
-                    <p className="text-xs text-muted-foreground">Reserva: {ticket.reservationId}</p>
-                 </div>
-            </div>
-            
-            <div className="border-t-2 border-dashed my-4"/>
+      {/* Main Ticket Content */}
+      <div className="flex-1 flex flex-col p-6 text-foreground">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                 <Logo/>
+              </div>
+               <div className="text-right">
+                  <p className="font-semibold">ID: {ticket.id}</p>
+                  <p className="text-xs text-muted-foreground">Reserva: {ticket.reservationId}</p>
+               </div>
+          </div>
+          
+          <div className="border-t-2 border-dashed my-4"/>
 
-            {/* Body */}
-            <div className="grid grid-cols-3 gap-6 flex-1">
-                <div className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-4">
-                    <InfoItem label="Pasajero/a" value={ticket.passengerName} />
-                    <InfoItem label="Documento (DNI)" value={ticket.passengerDni} />
-                    <InfoItem label="Destino" value={ticket.tripDestination} />
-                    <InfoItem label="Fecha y Hora de Salida" value={format(new Date(ticket.tripDate), "dd MMM yyyy, HH:mm 'hs'", { locale: es })} />
-                    <InfoItem label="Asiento" value={ticket.seat.seatId} largeValue/>
-                    <InfoItem label="Micro" value={String(ticket.seat.bus)} largeValue/>
-                </div>
-                <div className="col-span-1 flex flex-col items-center justify-center">
-                     <Image 
-                        src={`/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`}
-                        alt="QR Code"
-                        width={120}
-                        height={120}
-                        className="rounded-lg shadow-md bg-white p-1 border"
-                        data-ai-hint="qr code"
-                        unoptimized
-                    />
-                    <p className="text-xs text-muted-foreground mt-2 text-center">Presente este código al abordar</p>
-                </div>
-            </div>
+          {/* Body */}
+          <div className="grid grid-cols-3 gap-6 flex-1">
+              <div className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-4">
+                  <InfoItem label="Pasajero/a" value={ticket.passengerName} />
+                  <InfoItem label="Documento (DNI)" value={ticket.passengerDni} />
+                  <InfoItem label="Destino" value={ticket.tripDestination} />
+                  <InfoItem label="Fecha y Hora de Salida" value={format(new Date(ticket.tripDate), "dd MMM yyyy, HH:mm 'hs'", { locale: es })} />
+                  <InfoItem label="Asiento" value={ticket.seat.seatId} largeValue/>
+                  <InfoItem label="Micro" value={String(ticket.seat.bus)} largeValue/>
+              </div>
+              <div className="col-span-1 flex flex-col items-center justify-center">
+                   <Image 
+                      src={`/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`}
+                      alt="QR Code"
+                      width={120}
+                      height={120}
+                      className="rounded-lg shadow-md bg-white p-1 border"
+                      data-ai-hint="qr code"
+                      unoptimized
+                  />
+                  <p className="text-xs text-muted-foreground mt-2 text-center">Presente este código al abordar</p>
+              </div>
+          </div>
 
-            {/* Footer */}
-            <div className="border-t-2 border-dashed my-4"/>
-            <footer className="mt-auto">
-                 <p className="text-xs text-muted-foreground text-center">
-                    Este boleto es personal e intransferible. ¡Que tengas un excelente viaje!
-                 </p>
-            </footer>
-        </div>
+          {/* Footer */}
+          <div className="border-t-2 border-dashed my-4"/>
+          <footer className="mt-auto">
+               <p className="text-xs text-muted-foreground text-center">
+                  Este boleto es personal e intransferible. ¡Que tengas un excelente viaje!
+               </p>
+          </footer>
       </div>
     </div>
   )

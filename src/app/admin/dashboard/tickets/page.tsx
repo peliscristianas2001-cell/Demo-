@@ -78,18 +78,18 @@ export default function TicketsAdminPage() {
         pixelRatio: 2,
         style: {
           transform: 'scale(1)',
-          transformOrigin: 'top left'
+          transformOrigin: 'top left',
+          backgroundColor: 'white'
         },
-        // This helps with external images by fetching them through a proxy if needed
         fetchRequestInit: {
             headers: new Headers(),
             mode: 'cors'
         }
       });
+
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
-        // Ensure the PDF size matches the ticket element size
         format: [ticketElement.offsetWidth, ticketElement.offsetHeight]
       });
       pdf.addImage(dataUrl, 'PNG', 0, 0, ticketElement.offsetWidth, ticketElement.offsetHeight);
@@ -158,8 +158,10 @@ export default function TicketsAdminPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="p-4 bg-secondary/20">
-                    <TravelTicket ref={ticketRefs[ticket.id]} ticket={ticket} />
+                  <div className="bg-secondary/20 p-4">
+                    <div ref={ticketRefs[ticket.id]} className="bg-white p-1">
+                        <TravelTicket ticket={ticket} />
+                    </div>
                     <div className="mt-4 flex justify-end">
                       <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
                         <Download className="mr-2 h-4 w-4" />
