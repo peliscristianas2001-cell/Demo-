@@ -3,14 +3,13 @@
 import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DatePicker } from "@/components/ui/date-picker"
 import { TourCard } from "@/components/tour-card"
 import { mockTours } from "@/lib/mock-data"
-import { CalendarIcon, MapPinIcon, SearchIcon, ArrowRight, PlaneIcon, SparklesIcon } from "lucide-react"
+import { MapPinIcon, ArrowRight, PlaneIcon, SparklesIcon } from "lucide-react"
 import type { Tour } from "@/lib/types"
 import {
   Select,
@@ -23,6 +22,7 @@ import {
 export default function Home() {
   const [tours, setTours] = useState<Tour[]>([])
   const [isClient, setIsClient] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     setIsClient(true)
@@ -40,6 +40,12 @@ export default function Home() {
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
   const featuredTours = activeTours.slice(0, 3);
   
+  const handleDestinationSelect = (tourId: string) => {
+    if (tourId) {
+      router.push(`/booking/${tourId}`)
+    }
+  }
+
   if (!isClient) {
     return null; // Or a loading skeleton
   }
@@ -65,31 +71,23 @@ export default function Home() {
             <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down" style={{ animationDelay: '0.2s' }}>
               Explora los destinos más increíbles. Encontrá tu viaje soñado con YO TE LLEVO.
             </p>
-            <div className="max-w-3xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="max-w-xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="flex flex-col gap-4 p-4 rounded-2xl shadow-2xl md:flex-row bg-background/80 backdrop-blur-lg border border-white/20">
                 <div className="relative flex-1">
                   <MapPinIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                  <Select>
-                    <SelectTrigger className="pl-12 h-12 text-base md:h-14 md:text-lg border-2 border-transparent focus:border-primary focus:bg-white text-muted-foreground">
-                      <SelectValue placeholder="¿A dónde querés ir?" />
+                  <Select onValueChange={handleDestinationSelect}>
+                    <SelectTrigger className="pl-12 h-14 text-base md:text-lg border-2 border-transparent focus:border-primary focus:bg-white text-muted-foreground w-full">
+                      <SelectValue placeholder="Elegí tu próximo destino..." />
                     </SelectTrigger>
                     <SelectContent>
                       {activeTours.map(tour => (
-                        <SelectItem key={tour.id} value={tour.destination}>
+                        <SelectItem key={tour.id} value={tour.id}>
                           {tour.destination}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="relative flex-1">
-                  <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                   <DatePicker placeholder="Seleccioná una fecha" className="h-12 pl-12 text-base md:h-14 md:text-lg border-2 border-transparent focus:border-primary focus:bg-white" />
-                </div>
-                <Button className="w-full md:w-auto h-12 md:h-14 text-lg" size="lg">
-                  <SearchIcon className="w-5 h-5 mr-2" />
-                  Buscar
-                </Button>
               </div>
             </div>
           </div>
