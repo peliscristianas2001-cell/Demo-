@@ -21,6 +21,7 @@ import { Printer, TicketCheck } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockTickets } from "@/lib/mock-data"
 import type { Tour, Ticket } from "@/lib/types"
+import { Label } from "@/components/ui/label"
 
 export default function TicketsAdminPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
