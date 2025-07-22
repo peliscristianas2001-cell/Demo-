@@ -6,7 +6,7 @@ import React, { useState } from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet"
-import { MenuIcon, LogInIcon } from "lucide-react"
+import { MenuIcon, LogInIcon, UserPlus } from "lucide-react"
 
 export function SiteHeader() {
   const navLinks = [
@@ -34,7 +34,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center justify-end flex-1 gap-4">
+        <div className="flex items-center justify-end flex-1 gap-2">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -59,23 +59,37 @@ export function SiteHeader() {
                     </Link>
                   ))}
                 </nav>
-                <div className="p-6 mt-auto">
-                    <Button asChild className="w-full">
-                    <Link href="/admin">
+                <div className="p-6 mt-auto space-y-4">
+                    <Button asChild className="w-full" variant="outline">
+                      <Link href="/admin">
                         <LogInIcon className="w-4 h-4 mr-2" />
-                        Admin Login
-                    </Link>
+                        Inicio de Sesión
+                      </Link>
+                    </Button>
+                    <Button asChild className="w-full">
+                      <Link href="/admin">
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Registro
+                      </Link>
                     </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-           <Button asChild className="hidden md:flex">
-              <Link href="/admin">
-                <LogInIcon className="w-4 h-4 mr-2" />
-                Admin Login
-              </Link>
-            </Button>
+           <div className="hidden md:flex items-center gap-2">
+             <Button asChild variant="ghost">
+                <Link href="/admin">
+                  <LogInIcon className="w-4 h-4 mr-2" />
+                  Inicio de Sesión
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/admin">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Registro
+                </Link>
+              </Button>
+           </div>
         </div>
       </div>
     </header>
