@@ -12,7 +12,6 @@ export function SiteHeader() {
   const navLinks = [
     { href: "/", label: "Inicio" },
     { href: "/tours", label: "Viajes" },
-    { href: "/vouchers", label: "Vouchers" },
     { href: "/flyers", label: "Flyers" },
     { href: "/contact", label: "Contacto" },
   ]
