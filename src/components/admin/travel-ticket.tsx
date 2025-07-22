@@ -36,7 +36,6 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
-                    <h2 className="text-xl font-bold font-headline">YO TE LLEVO</h2>
                     <p className="text-sm text-muted-foreground">Boleto de Transporte</p>
                 </div>
                  <div className="text-right">
@@ -100,3 +99,4 @@ const InfoItem = ({ label, value, largeValue = false }: InfoItemProps) => (
         )}>{value}</p>
     </div>
 );
+
