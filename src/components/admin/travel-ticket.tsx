@@ -5,13 +5,15 @@ import React from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Logo } from "@/components/logo"
 import type { Ticket as TicketType } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface TravelTicketProps {
   ticket: TicketType;
 }
+
+const defaultLogo = "https://instagram.fepa9-2.fna.fbcdn.net/v/t51.2885-19/478145482_2050373918705456_5085497722998866930_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fepa9-2.fna.fbcdn.net&_nc_cat=108&_nc_oc=Q6cZ2QFzjVvSlHCf0Z2hstJHws97y0Q1b3iIKZskWlJOzKkzsXA5d7w5jeqV3MF8EUnkXK0&_nc_ohc=0kFfIMnvmBwQ7kNvwHJGNkB&_nc_gid=9W3okjmGr8DgZuyMHj14tg&edm=AEYEu-QBAAAA&ccb=7-5&oh=00_AfSWH7AGXQ1um0uq2Vfz-d6jjRHQIyOiIFf90fiE8TXyiA&oe=687DAD20&_nc_sid=ead929";
+
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket }, ref) => {
   return (
@@ -23,7 +25,13 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
         {/* Pink Vertical Bar */}
         <div className="flex flex-col items-center justify-between w-20 p-4 bg-primary text-primary-foreground">
            <div className="p-1 bg-white rounded-md">
-             <Logo />
+             <Image
+                src={defaultLogo}
+                alt="YO TE LLEVO Logo"
+                width={36}
+                height={36}
+                className="rounded-full"
+              />
            </div>
            <div className="transform -rotate-90 whitespace-nowrap">
                 <p className="text-xl font-bold tracking-widest uppercase font-headline">Pase de Abordar</p>
@@ -36,7 +44,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="text-sm text-muted-foreground">Boleto de Transporte</p>
+                    <h2 className="text-xl font-bold font-headline">YO TE LLEVO</h2>
                 </div>
                  <div className="text-right">
                     <p className="font-semibold">ID: {ticket.id}</p>
@@ -99,4 +107,3 @@ const InfoItem = ({ label, value, largeValue = false }: InfoItemProps) => (
         )}>{value}</p>
     </div>
 );
-
