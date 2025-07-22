@@ -18,7 +18,7 @@ const defaultLogoUrl = "https://instagram.fepa9-2.fna.fbcdn.net/v/t51.2885-19/47
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket }, ref) => {
   return (
-    <div ref={ref} className="p-1 bg-white">
+    <div ref={ref} className="bg-white">
       <div className={cn(
           "bg-card rounded-xl shadow-md overflow-hidden border flex",
           "w-[700px] h-[300px]" // Fixed size for consistent PDF generation
@@ -27,11 +27,12 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
         <div className="flex flex-col items-center justify-between w-20 p-4 bg-primary text-primary-foreground">
            <div className="p-1 bg-white rounded-md">
              <Image
-                src={defaultLogoUrl}
+                src={`/api/image-proxy?url=${encodeURIComponent(defaultLogoUrl)}`}
                 alt="YO TE LLEVO Logo"
                 width={36}
                 height={36}
                 className="rounded-full"
+                unoptimized
               />
            </div>
            <div className="transform -rotate-90 whitespace-nowrap">
@@ -67,12 +68,13 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                 </div>
                 <div className="col-span-1 flex flex-col items-center justify-center">
                      <Image 
-                        src={ticket.qrCodeUrl}
+                        src={`/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`}
                         alt="QR Code"
                         width={120}
                         height={120}
                         className="rounded-lg shadow-md bg-white p-1 border"
                         data-ai-hint="qr code"
+                        unoptimized
                     />
                     <p className="text-xs text-muted-foreground mt-2 text-center">Presente este código al abordar</p>
                 </div>

@@ -79,11 +79,17 @@ export default function TicketsAdminPage() {
         style: {
           transform: 'scale(1)',
           transformOrigin: 'top left'
+        },
+        // This helps with external images by fetching them through a proxy if needed
+        fetchRequestInit: {
+            headers: new Headers(),
+            mode: 'cors'
         }
       });
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
+        // Ensure the PDF size matches the ticket element size
         format: [ticketElement.offsetWidth, ticketElement.offsetHeight]
       });
       pdf.addImage(dataUrl, 'PNG', 0, 0, ticketElement.offsetWidth, ticketElement.offsetHeight);
