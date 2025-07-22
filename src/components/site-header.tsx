@@ -61,13 +61,13 @@ export function SiteHeader() {
                 </nav>
                 <div className="p-6 mt-auto space-y-4">
                     <Button asChild className="w-full" variant="outline">
-                      <Link href="/admin">
+                      <Link href="/login">
                         <LogInIcon className="w-4 h-4 mr-2" />
                         Iniciar Sesión
                       </Link>
                     </Button>
                     <Button asChild className="w-full">
-                      <Link href="/admin">
+                      <Link href="/login?mode=register">
                           <UserPlus className="w-4 h-4 mr-2" />
                           Registro
                       </Link>
@@ -78,13 +78,13 @@ export function SiteHeader() {
           </Sheet>
            <div className="hidden md:flex items-center gap-2">
              <Button asChild variant="ghost">
-                <Link href="/admin">
+                <Link href="/login">
                   <LogInIcon className="w-4 h-4 mr-2" />
                   Iniciar Sesión
                 </Link>
               </Button>
               <Button asChild>
-                <Link href="/admin">
+                <Link href="/login?mode=register">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Registro
                 </Link>
