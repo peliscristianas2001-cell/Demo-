@@ -63,7 +63,7 @@ export function SiteHeader() {
                     <Button asChild className="w-full" variant="outline">
                       <Link href="/admin">
                         <LogInIcon className="w-4 h-4 mr-2" />
-                        Inicio de Sesión
+                        Iniciar Sesión
                       </Link>
                     </Button>
                     <Button asChild className="w-full">
@@ -80,7 +80,7 @@ export function SiteHeader() {
              <Button asChild variant="ghost">
                 <Link href="/admin">
                   <LogInIcon className="w-4 h-4 mr-2" />
-                  Inicio de Sesión
+                  Iniciar Sesión
                 </Link>
               </Button>
               <Button asChild>
