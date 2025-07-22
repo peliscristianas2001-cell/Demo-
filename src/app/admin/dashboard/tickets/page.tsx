@@ -79,7 +79,6 @@ export default function TicketsAdminPage() {
         style: {
           transform: 'scale(1)',
           transformOrigin: 'top left',
-          backgroundColor: 'white'
         },
         fetchRequestInit: {
             headers: new Headers(),
@@ -158,11 +157,9 @@ export default function TicketsAdminPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="bg-secondary/20 p-4">
-                    <div ref={ticketRefs[ticket.id]} className="bg-white p-1">
-                        <TravelTicket ticket={ticket} />
-                    </div>
-                    <div className="mt-4 flex justify-end">
+                  <div className="bg-secondary/20 p-4 space-y-4">
+                    <TravelTicket ticket={ticket} ref={ticketRefs[ticket.id]}/>
+                    <div className="flex justify-end">
                       <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
                         <Download className="mr-2 h-4 w-4" />
                         Descargar PDF

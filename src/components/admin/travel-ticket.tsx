@@ -17,7 +17,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   return (
     <div ref={ref} className={cn(
       "bg-card rounded-xl shadow-md overflow-hidden border flex",
-      "w-[700px] h-[300px]"
+      "w-[700px] h-auto"
     )}>
       {/* Pink Vertical Bar */}
       <div className="flex flex-col items-center justify-center w-20 p-4 bg-primary text-primary-foreground">
@@ -67,11 +67,11 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
 
           {/* Footer */}
           <div className="border-t-2 border-dashed my-4"/>
-          <footer className="mt-auto">
+          <div className="mt-auto">
                <p className="text-xs text-muted-foreground text-center">
                   Este boleto es personal e intransferible. ¡Que tengas un excelente viaje!
                </p>
-          </footer>
+          </div>
       </div>
     </div>
   )
