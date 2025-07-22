@@ -13,9 +13,6 @@ interface TravelTicketProps {
   ticket: TicketType;
 }
 
-const defaultLogoUrl = "https://instagram.fepa9-2.fna.fbcdn.net/v/t51.2885-19/478145482_2050373918705456_5085497722998866930_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fepa9-2.fna.fbcdn.net&_nc_cat=108&_nc_oc=Q6cZ2QFzjVvSlHCf0Z2hstJHws97y0Q1b3iIKZskWlJOzKkzsXA5d7w5jeqV3MF8EUnkXK0&_nc_ohc=0kFfIMnvmBwQ7kNvwHJGNkB&_nc_gid=9W3okjmGr8DgZuyMHj14tg&edm=AEYEu-QBAAAA&ccb=7-5&oh=00_AfSWH7AGXQ1um0uq2Vfz-d6jjRHQIyOiIFf90fiE8TXyiA&oe=687DAD20&_nc_sid=ead929";
-
-
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket }, ref) => {
   return (
     <div ref={ref} className="bg-white">
@@ -24,21 +21,10 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
           "w-[700px] h-[300px]" // Fixed size for consistent PDF generation
       )}>
         {/* Pink Vertical Bar */}
-        <div className="flex flex-col items-center justify-between w-20 p-4 bg-primary text-primary-foreground">
-           <div className="p-1 bg-white rounded-md">
-             <Image
-                src={`/api/image-proxy?url=${encodeURIComponent(defaultLogoUrl)}`}
-                alt="YO TE LLEVO Logo"
-                width={36}
-                height={36}
-                className="rounded-full"
-                unoptimized
-              />
-           </div>
+        <div className="flex flex-col items-center justify-center w-20 p-4 bg-primary text-primary-foreground">
            <div className="transform -rotate-90 whitespace-nowrap">
                 <p className="text-xl font-bold tracking-widest uppercase font-headline">Pase de Abordar</p>
             </div>
-            <div />
         </div>
 
         {/* Main Ticket Content */}
