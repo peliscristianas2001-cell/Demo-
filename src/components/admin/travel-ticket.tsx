@@ -45,7 +45,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                     <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                         <InfoItem label="Pasajero/a" value={ticket.passengerName} Icon={User} />
                         <InfoItem label="DNI" value={ticket.passengerDni} />
-                        <Info-item label="Destino" value={ticket.tripDestination} Icon={MapPin} />
+                        <InfoItem label="Destino" value={ticket.tripDestination} Icon={MapPin} />
                         <InfoItem label="Fecha y Hora" value={format(new Date(ticket.tripDate), "dd MMM yyyy, HH:mm 'hs'", { locale: es })} Icon={Calendar} />
                         <InfoItem label="Asiento" value={ticket.seat.seatId} Icon={Armchair} largeValue/>
                         <InfoItem label="Micro" value={String(ticket.seat.bus)} Icon={Bus} largeValue/>
