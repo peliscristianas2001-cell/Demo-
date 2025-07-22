@@ -12,6 +12,13 @@ import { TourCard } from "@/components/tour-card"
 import { mockTours } from "@/lib/mock-data"
 import { CalendarIcon, MapPinIcon, SearchIcon, ArrowRight, PlaneIcon, SparklesIcon } from "lucide-react"
 import type { Tour } from "@/lib/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function Home() {
   const [tours, setTours] = useState<Tour[]>([])
@@ -62,7 +69,18 @@ export default function Home() {
               <div className="flex flex-col gap-4 p-4 rounded-2xl shadow-2xl md:flex-row bg-background/80 backdrop-blur-lg border border-white/20">
                 <div className="relative flex-1">
                   <MapPinIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                  <Input type="text" placeholder="¿A dónde querés ir?" className="pl-12 h-12 text-base md:h-14 md:text-lg border-2 border-transparent focus:border-primary focus:bg-white" />
+                  <Select>
+                    <SelectTrigger className="pl-12 h-12 text-base md:h-14 md:text-lg border-2 border-transparent focus:border-primary focus:bg-white text-muted-foreground">
+                      <SelectValue placeholder="¿A dónde querés ir?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeTours.map(tour => (
+                        <SelectItem key={tour.id} value={tour.destination}>
+                          {tour.destination}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="relative flex-1">
                   <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
