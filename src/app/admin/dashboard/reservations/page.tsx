@@ -244,7 +244,7 @@ export default function ReservationsPage() {
                                                                     <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-md h-auto max-h-[90vh] flex flex-col p-0">
+                                                            <DialogContent className="max-w-md flex flex-col max-h-[90vh]">
                                                                 <DialogHeader className="p-6 pb-4">
                                                                     <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
@@ -267,15 +267,17 @@ export default function ReservationsPage() {
                                                                         </div>
                                                                     )}
                                                                 </DialogHeader>
-                                                                <ScrollArea className="flex-1 px-6">
-                                                                    <SeatSelector
-                                                                        totalSeats={totalSeatsForSelector}
-                                                                        occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus, res.id)}
-                                                                        selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId)}
-                                                                        onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus)}
-                                                                        passengerSeats={[]} 
-                                                                    />
-                                                                </ScrollArea>
+                                                                <div className="flex-1 overflow-y-auto">
+                                                                    <div className="px-6 pb-4">
+                                                                        <SeatSelector
+                                                                            totalSeats={totalSeatsForSelector}
+                                                                            occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus, res.id)}
+                                                                            selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId)}
+                                                                            onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus)}
+                                                                            passengerSeats={[]} 
+                                                                        />
+                                                                    </div>
+                                                                </div>
                                                                 <DialogFooter className="p-6 pt-4 mt-auto border-t">
                                                                     <DialogClose asChild>
                                                                         <Button type="button">Cerrar</Button>
@@ -326,5 +328,7 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    
 
     
