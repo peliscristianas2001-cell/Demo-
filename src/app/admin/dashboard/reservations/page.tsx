@@ -266,7 +266,15 @@ export default function ReservationsPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Dialog onOpenChange={(open) => !open && setActiveBus(null)} onOpen={() => handleDialogOpen(tour)}>
+                                                        <Dialog
+                                                          onOpenChange={(open) => {
+                                                            if (open) {
+                                                              handleDialogOpen(tour);
+                                                            } else {
+                                                              setActiveBus(null);
+                                                            }
+                                                          }}
+                                                        >
                                                             <DialogTrigger asChild>
                                                                 <Button variant="outline" size="sm">
                                                                     <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
@@ -283,11 +291,11 @@ export default function ReservationsPage() {
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
                                                                             <Select 
+                                                                              value={`${activeBus.type}_${activeBus.busNumber}`}
                                                                               onValueChange={(val) => {
                                                                                 const [type, num] = val.split('_');
                                                                                 setActiveBus({ busNumber: parseInt(num), type: type as VehicleType });
                                                                               }} 
-                                                                              defaultValue={`${activeBus.type}_${activeBus.busNumber}`}
                                                                             >
                                                                                 <SelectTrigger className="w-[220px]">
                                                                                     <SelectValue placeholder="Seleccionar vehículo" />
