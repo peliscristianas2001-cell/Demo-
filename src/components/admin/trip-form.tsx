@@ -33,15 +33,15 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
   const [price, setPrice] = useState("")
-  const [vehicles, setVehicles] = useState<Partial<Record<VehicleType, number>>>({})
+  const [vehicles, setVehicles] = useState<Partial<Record<VehicleType, number | undefined>>>({})
   const { toast } = useToast()
 
   useEffect(() => {
     if (isOpen) {
         if (tour) {
             setDestination(tour.destination)
-            setDate(new Date(tour.date))
-            setPrice(String(tour.price))
+            setDate(tour.date ? new Date(tour.date) : undefined)
+            setPrice(tour.price ? String(tour.price) : "")
             setVehicles(tour.vehicles || {})
         } else {
             // Reset form for new trip
@@ -69,7 +69,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     if (!isNaN(numCount) && numCount > 0) {
         newVehicles[type] = numCount;
     } else {
-        // if user clears the input, keep it associated with the vehicle
+        // if user clears the input, keep it associated with the vehicle but as undefined count
         newVehicles[type] = undefined;
     }
      setVehicles(newVehicles);
@@ -90,7 +90,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             acc[key as VehicleType] = value;
         }
         return acc;
-    }, {} as Partial<Record<VehicleType, number>>);
+    }, {} as Record<VehicleType, number>);
 
     if (Object.keys(finalVehicles).length === 0) {
        toast({
@@ -128,13 +128,12 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               </div>
               <div className="space-y-2">
                   <Label htmlFor="date">Fecha</Label>
-                  <DatePicker date={date} setDate={setDate} className="h-10 w-full" />
+                  <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="price">Precio</Label>
                   <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0"/>
               </div>
-
               <div className="space-y-4 pt-2">
                   <Label className="text-base font-medium">Configuración de Vehículos</Label>
                   <div className="space-y-3 rounded-md border p-4">
@@ -143,7 +142,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                           <div className="flex items-center gap-2 w-40">
                           <Checkbox 
                               id={type}
-                              checked={!!vehicles[type]}
+                              checked={vehicles[type] !== undefined}
                               onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
                           />
                           <Label htmlFor={type} className="font-normal cursor-pointer">
