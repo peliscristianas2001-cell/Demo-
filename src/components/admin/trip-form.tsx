@@ -2,6 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -32,8 +33,11 @@ const vehicleTypes = Object.keys(vehicleConfig) as VehicleType[];
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
-  const [price, setPrice] = useState("")
+  const [price, setPrice] = useState<number | "">("")
   const [vehicles, setVehicles] = useState<Partial<Record<VehicleType, number | undefined>>>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [flyerPreviewUrl, setFlyerPreviewUrl] = useState<string | null>(null)
+
   const { toast } = useToast()
 
   useEffect(() => {
@@ -41,15 +45,18 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         if (tour) {
             setDestination(tour.destination)
             setDate(tour.date ? new Date(tour.date) : undefined)
-            setPrice(tour.price ? String(tour.price) : "")
+            setPrice(tour.price || "")
             setVehicles(tour.vehicles || {})
+            setFlyerPreviewUrl(tour.flyerUrl)
         } else {
             // Reset form for new trip
             setDestination("")
             setDate(undefined)
             setPrice("")
             setVehicles({})
+            setFlyerPreviewUrl(null)
         }
+        setIsLoading(false); // Reset loading state when dialog opens/changes
     }
   }, [tour, isOpen])
 
@@ -63,23 +70,24 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     setVehicles(newVehicles);
   }
 
-  const handleVehicleCountChange = (type: VehicleType, count: string) => {
+  const handleVehicleCountChange = (type: VehicleType, countStr: string) => {
     const newVehicles = { ...vehicles };
-    const numCount = parseInt(count);
-    if (!isNaN(numCount) && numCount > 0) {
-        newVehicles[type] = numCount;
+    const count = parseInt(countStr);
+    
+    if (!isNaN(count) && count > 0) {
+        newVehicles[type] = count;
     } else {
-        // if user clears the input, keep it associated with the vehicle but as undefined count
+        // Allow clearing the input, but treat it as if count is not set for validation
         newVehicles[type] = undefined;
     }
-     setVehicles(newVehicles);
+    setVehicles(newVehicles);
   }
 
   const handleSubmit = () => {
-    if (!destination || !date || !price || parseFloat(price) <= 0) {
+    if (!destination || !date || price === "" || price <= 0) {
       toast({
         title: "Faltan datos",
-        description: "Por favor, completa destino, fecha y precio.",
+        description: "Por favor, completa destino, fecha y un precio válido.",
         variant: "destructive"
       })
       return
@@ -101,14 +109,18 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       return
     }
 
+    setIsLoading(true);
+    
     onSave({
       id: tour?.id || "",
       destination,
       date,
-      price: parseFloat(price),
+      price: price,
       vehicles: finalVehicles,
-      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
+      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png", // Keep existing or use placeholder for new
     })
+    
+    // setLoading(false) should be handled by onOpenChange or after onSave completes in parent
   }
 
   return (
@@ -120,8 +132,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             {tour ? "Modifica los detalles del viaje." : "Completa los detalles para crear un nuevo viaje."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow">
-            <div className="py-4 pr-6 space-y-4">
+        <ScrollArea className="flex-grow pr-6 -mr-6">
+            <div className="py-4 space-y-4">
               <div className="space-y-2">
                   <Label htmlFor="destination">Destino</Label>
                   <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
@@ -132,8 +144,27 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               </div>
               <div className="space-y-2">
                   <Label htmlFor="price">Precio</Label>
-                  <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0"/>
+                  <Input 
+                    id="price" 
+                    type="number" 
+                    value={price} 
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setPrice(val === '' ? '' : parseFloat(val));
+                    }} 
+                    placeholder="0"
+                  />
               </div>
+
+               {flyerPreviewUrl && (
+                <div className="space-y-2">
+                  <Label>Flyer Actual</Label>
+                  <div className="p-2 border rounded-md bg-muted w-fit">
+                    <Image src={flyerPreviewUrl} alt="Vista previa del flyer" width={80} height={100} className="rounded-sm object-cover aspect-[4/5]" data-ai-hint="travel flyer"/>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4 pt-2">
                   <Label className="text-base font-medium">Configuración de Vehículos</Label>
                   <div className="space-y-3 rounded-md border p-4">
@@ -166,8 +197,10 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             </div>
         </ScrollArea>
         <DialogFooter className="mt-auto pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>Guardar Cambios</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? "Guardando..." : "Guardar Cambios"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
