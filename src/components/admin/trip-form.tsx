@@ -2,7 +2,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -35,7 +34,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [price, setPrice] = useState<number | "">("")
   const [vehicles, setVehicles] = useState<Partial<Record<VehicleType, number | undefined>>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [flyerPreviewUrl, setFlyerPreviewUrl] = useState<string | null>(null)
 
   const { toast } = useToast()
 
@@ -46,14 +44,12 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setDate(tour.date ? new Date(tour.date) : undefined)
             setPrice(tour.price || "")
             setVehicles(tour.vehicles || {})
-            setFlyerPreviewUrl(tour.flyerUrl)
         } else {
             // Reset form for new trip
             setDestination("")
             setDate(undefined)
             setPrice("")
             setVehicles({})
-            setFlyerPreviewUrl(null)
         }
         setIsLoading(false); // Reset loading state when dialog opens/changes
     }
@@ -119,7 +115,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png", // Keep existing or use placeholder for new
     })
     
-    // setLoading(false) should be handled by onOpenChange or after onSave completes in parent
   }
 
   return (
@@ -133,68 +128,59 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto">
-          <div className="py-4 pr-4 space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="destination">Destino</Label>
-                <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="date">Fecha</Label>
-                <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="price">Precio</Label>
-                <Input 
-                  id="price" 
-                  type="number" 
-                  value={price} 
-                  onChange={(e) => {
+            <div className="py-4 pr-6 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="destination">Destino</Label>
+                    <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="date">Fecha</Label>
+                    <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="price">Precio</Label>
+                    <Input 
+                    id="price" 
+                    type="number" 
+                    value={price} 
+                    onChange={(e) => {
                       const val = e.target.value;
                       setPrice(val === '' ? '' : parseFloat(val));
-                  }} 
-                  placeholder="0"
-                />
-            </div>
-
-            {flyerPreviewUrl && (
-              <div className="space-y-2">
-                <Label>Flyer Actual</Label>
-                <div className="p-2 border rounded-md bg-muted w-fit">
-                  <Image src={flyerPreviewUrl} alt="Vista previa del flyer" width={80} height={100} className="rounded-sm object-cover aspect-[4/5]" data-ai-hint="travel flyer"/>
+                    }} 
+                    placeholder="0"
+                    />
                 </div>
-              </div>
-            )}
 
-            <div className="space-y-4 pt-2">
-                <Label className="text-base font-medium">Configuración de Vehículos</Label>
-                <div className="space-y-3 rounded-md border p-4">
-                {vehicleTypes.map(type => (
-                    <div key={type} className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 w-40">
-                        <Checkbox 
-                            id={type}
-                            checked={vehicles[type] !== undefined}
-                            onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
-                        />
-                        <Label htmlFor={type} className="font-normal cursor-pointer">
-                            {vehicleConfig[type].name}
-                        </Label>
-                        </div>
-                        {vehicles[type] !== undefined && (
-                        <Input 
-                                type="number"
-                                min="1"
-                                className="h-9 w-24"
-                                value={vehicles[type] || ""}
-                                placeholder="Cant."
-                                onChange={(e) => handleVehicleCountChange(type, e.target.value)}
+                <div className="space-y-4 pt-2">
+                    <Label className="text-base font-medium">Configuración de Vehículos</Label>
+                    <div className="space-y-3 rounded-md border p-4">
+                    {vehicleTypes.map(type => (
+                        <div key={type} className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 w-40">
+                            <Checkbox 
+                                id={type}
+                                checked={vehicles[type] !== undefined}
+                                onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
                             />
-                        )}
+                            <Label htmlFor={type} className="font-normal cursor-pointer">
+                                {vehicleConfig[type].name}
+                            </Label>
+                            </div>
+                            {vehicles[type] !== undefined && (
+                            <Input 
+                                    type="number"
+                                    min="1"
+                                    className="h-9 w-24"
+                                    value={vehicles[type] || ""}
+                                    placeholder="Cant."
+                                    onChange={(e) => handleVehicleCountChange(type, e.target.value)}
+                                />
+                            )}
+                        </div>
+                    ))}
                     </div>
-                ))}
                 </div>
             </div>
-          </div>
         </div>
 
         <DialogFooter className="mt-auto pt-4 border-t">
