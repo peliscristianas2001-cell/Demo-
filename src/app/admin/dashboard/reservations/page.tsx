@@ -137,6 +137,11 @@ export default function ReservationsPage() {
     return busList;
   }
 
+  const getVehicleCount = (tour: Tour) => {
+    if (!tour.vehicles) return 0;
+    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
+  }
+
   const getSeatsForVehicleType = (type: VehicleType) => {
     return vehicleConfig[type]?.seats || 0;
   }
@@ -290,7 +295,7 @@ export default function ReservationsPage() {
                                                                                 <SelectContent>
                                                                                     {expandedBusList.map(bus => (
                                                                                         <SelectItem key={bus.globalBusNum} value={`${bus.type}_${bus.globalBusNum}`}>
-                                                                                          {bus.typeName} {tour.vehicles?.[bus.type]??0 > 1 ? bus.instanceNum : ''}
+                                                                                          {bus.typeName} {getVehicleCount(tour) > 1 ? bus.instanceNum : ''}
                                                                                         </SelectItem>
                                                                                     ))}
                                                                                 </SelectContent>
@@ -361,3 +366,5 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    
