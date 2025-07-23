@@ -142,11 +142,6 @@ export default function ReservationsPage() {
     return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
   }
 
-  const getSeatsForVehicleType = (type: VehicleType) => {
-    return vehicleConfig[type]?.seats || 0;
-  }
-
-
   const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
     setReservations(reservations.map(res => 
       res.id === reservationId ? { ...res, status: newStatus } : res
@@ -280,7 +275,7 @@ export default function ReservationsPage() {
                                                                     <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-md flex flex-col max-h-[90vh]">
+                                                            <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
                                                                 <DialogHeader className="p-6 pb-4">
                                                                     <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
@@ -315,11 +310,12 @@ export default function ReservationsPage() {
                                                                     <div className="px-6 pb-4">
                                                                         {activeBus && (
                                                                           <SeatSelector
-                                                                              totalSeats={getSeatsForVehicleType(activeBus.type)}
+                                                                              vehicleType={activeBus.type}
                                                                               occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus.busNumber, res.id)}
                                                                               selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus.busNumber).map(s => s.seatId)}
                                                                               onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus.busNumber)}
                                                                               passengerSeats={[]} 
+                                                                              maxSeats={res.seatsCount}
                                                                           />
                                                                         )}
                                                                     </div>

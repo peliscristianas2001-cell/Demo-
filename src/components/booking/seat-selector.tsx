@@ -3,97 +3,120 @@
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { VehicleType } from "@/lib/types"
+import { getLayoutForVehicle } from "@/lib/layouts"
+import { Armchair, Ban, PersonStanding, Utensils, Waves } from "lucide-react"
 
 interface SeatSelectorProps {
-  totalSeats: number
+  vehicleType: VehicleType
   occupiedSeats: string[]
   selectedSeats: string[]
   onSeatSelect: (seatId: string) => void
   passengerSeats: (string | null)[]
+  maxSeats: number
 }
 
+const SpecialCell = ({ type }: { type: string }) => {
+    let content = null;
+    const className = "text-muted-foreground/80 flex flex-col items-center justify-center text-center text-[10px] leading-tight";
+    switch(type) {
+        case 'pasillo':
+            return <div className="w-full h-full" />;
+        case 'escalera':
+            content = <> <PersonStanding className="w-5 h-5 mb-1" /> Escalera </>;
+            break;
+        case 'baño':
+            content = <> <Waves className="w-5 h-5 mb-1" /> Baño </>;
+            break;
+        case 'cafetera':
+            content = <> <Utensils className="w-5 h-5 mb-1" /> Cafetera </>;
+            break;
+         case 'chofer':
+            content = <> <Ban className="w-5 h-5 mb-1" /> Chofer </>;
+            break;
+        default:
+            return <div className="w-full h-full" />;
+    }
+    return <div className={className}>{content}</div>;
+};
+
 export function SeatSelector({
-  totalSeats,
+  vehicleType,
   occupiedSeats,
   selectedSeats,
   onSeatSelect,
-  passengerSeats
+  maxSeats,
 }: SeatSelectorProps) {
-  const rows = Array.from({ length: Math.ceil(totalSeats / 4) }, (_, i) => i + 1)
-  const cols = ["A", "B", "C", "D"]
+    const layout = getLayoutForVehicle(vehicleType);
+
+    const handleSeatClick = (seatId: string) => {
+        if (selectedSeats.includes(seatId)) {
+            onSeatSelect(seatId); // Deselect
+        } else if (selectedSeats.length < maxSeats) {
+            onSeatSelect(seatId); // Select
+        }
+    }
 
   return (
-    <div className="p-4 border rounded-lg bg-card">
-      <div className="flex justify-center mb-4">
-        <div className="w-48 p-2 text-center border-2 border-dashed rounded-md border-muted-foreground text-muted-foreground">
-          Frente del Colectivo
-        </div>
-      </div>
-      <div className="flex flex-col items-center space-y-2">
-        {rows.map((row) => (
-          <div key={row} className="flex items-center w-full gap-2 md:gap-4">
-            <div className="flex justify-around flex-1 gap-2 md:gap-4">
-              {cols.slice(0, 2).map((col) => {
-                const seatId = `${row}${col}`
-                const isOccupied = occupiedSeats.includes(seatId) && !selectedSeats.includes(seatId)
-                const isSelected = selectedSeats.includes(seatId)
-                const passengerIndex = passengerSeats.findIndex(s => s === seatId);
+    <div className="p-2 border rounded-lg bg-card md:p-4">
+        {layout.floors.map((floor, floorIndex) => (
+            <div key={floorIndex}>
+                {layout.floors.length > 1 && (
+                    <h3 className="mt-4 mb-2 text-lg font-bold text-center first:mt-0">
+                        {floor.name}
+                    </h3>
+                )}
+                 <div className="flex justify-center mb-4">
+                    <div className="w-48 p-2 text-center border-2 border-dashed rounded-md border-muted-foreground text-muted-foreground">
+                        Frente del Colectivo
+                    </div>
+                </div>
 
-                return (
-                    <button
-                        key={seatId}
-                        onClick={() => onSeatSelect(seatId)}
-                        disabled={isOccupied}
-                        className={cn(
-                        "relative flex items-center justify-center w-10 h-10 rounded-md transition-colors font-mono",
-                        isOccupied ? "bg-destructive/50 text-destructive-foreground/70 cursor-not-allowed" :
-                        isSelected ? "bg-primary text-primary-foreground ring-2 ring-offset-2 ring-primary" :
-                        "bg-secondary hover:bg-primary/20",
-                        "text-sm"
-                        )}
-                    >
-                        {seatId}
-                         {isSelected && passengerIndex > -1 &&
-                            <Badge variant="destructive" className="absolute -top-2 -right-2 p-0 w-5 h-5 flex justify-center text-xs">{passengerIndex + 1}</Badge>
-                         }
-                    </button>
-                )
-              })}
+                <div className="grid justify-center" style={{ gridTemplateColumns: `repeat(${floor.grid[0].length}, minmax(0, 1fr))` }}>
+                    {floor.grid.map((row, rowIndex) => (
+                        row.map((cell, cellIndex) => {
+                            const key = `${floorIndex}-${rowIndex}-${cellIndex}`;
+                            if (cell === null || typeof cell !== 'object') {
+                                return <div key={key} className="w-10 h-10 md:w-12 md:h-12" />;
+                            }
+                            
+                            if (cell.type !== 'seat') {
+                                return (
+                                    <div key={key} className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12">
+                                       <SpecialCell type={cell.type} />
+                                    </div>
+                                )
+                            }
+                           
+                            const seatId = cell.number.toString();
+                            const isOccupied = occupiedSeats.includes(seatId);
+                            const isSelected = selectedSeats.includes(seatId);
+                            const isDisabled = isOccupied;
+
+                            return (
+                                <div key={key} className="flex items-center justify-center w-10 h-10 p-1 md:w-12 md:h-12">
+                                    <button
+                                        onClick={() => handleSeatClick(seatId)}
+                                        disabled={isDisabled}
+                                        className={cn(
+                                        "relative flex items-center justify-center w-full h-full rounded-md transition-colors font-mono",
+                                        isDisabled ? "bg-destructive/50 text-destructive-foreground/70 cursor-not-allowed" :
+                                        isSelected ? "bg-primary text-primary-foreground ring-2 ring-offset-2 ring-primary" :
+                                        "bg-secondary hover:bg-primary/20",
+                                        "text-xs"
+                                        )}
+                                    >
+                                        <Armchair className="w-4 h-4 md:w-5 md:h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+                                        <span className="relative font-bold">{seatId}</span>
+                                    </button>
+                                </div>
+                            )
+                        })
+                    ))}
+                </div>
             </div>
-
-            <div className="w-8 text-center text-muted-foreground">{row}</div>
-
-            <div className="flex justify-around flex-1 gap-2 md:gap-4">
-              {cols.slice(2, 4).map((col) => {
-                const seatId = `${row}${col}`
-                const isOccupied = occupiedSeats.includes(seatId) && !selectedSeats.includes(seatId)
-                const isSelected = selectedSeats.includes(seatId)
-                const passengerIndex = passengerSeats.findIndex(s => s === seatId);
-
-                return (
-                     <button
-                        key={seatId}
-                        onClick={() => onSeatSelect(seatId)}
-                        disabled={isOccupied}
-                        className={cn(
-                        "relative flex items-center justify-center w-10 h-10 rounded-md transition-colors font-mono",
-                        isOccupied ? "bg-destructive/50 text-destructive-foreground/70 cursor-not-allowed" :
-                        isSelected ? "bg-primary text-primary-foreground ring-2 ring-offset-2 ring-primary" :
-                        "bg-secondary hover:bg-primary/20",
-                        "text-sm"
-                        )}
-                    >
-                        {seatId}
-                         {isSelected && passengerIndex > -1 &&
-                            <Badge variant="destructive" className="absolute -top-2 -right-2 p-0 w-5 h-5 flex justify-center text-xs">{passengerIndex + 1}</Badge>
-                         }
-                    </button>
-                )
-              })}
-            </div>
-          </div>
         ))}
-      </div>
+     
        <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-sm bg-secondary border"></div>
