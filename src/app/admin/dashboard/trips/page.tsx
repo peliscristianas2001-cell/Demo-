@@ -71,13 +71,16 @@ export default function TripsPage() {
   }
 
   const getTourCapacity = (tour: Tour) => {
+    if (!tour.vehicles) return 0;
     return Object.entries(tour.vehicles).reduce((total, [type, count]) => {
       const vehicle = vehicleConfig[type as VehicleType];
+      if (!vehicle) return total;
       return total + (vehicle.seats * (count || 0));
     }, 0);
   }
 
   const getVehicleCount = (tour: Tour) => {
+    if (!tour.vehicles) return 0;
     return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
   }
 
@@ -168,7 +171,7 @@ export default function TripsPage() {
                     </TableCell>
                     <TableCell>${tour.price.toLocaleString("es-AR")}</TableCell>
                     <TableCell>
-                      <Badge variant={occupiedCount / totalSeats > 0.8 ? "destructive" : "secondary"}>
+                      <Badge variant={totalSeats > 0 && occupiedCount / totalSeats > 0.8 ? "destructive" : "secondary"}>
                         {occupiedCount} / {totalSeats}
                       </Badge>
                     </TableCell>
