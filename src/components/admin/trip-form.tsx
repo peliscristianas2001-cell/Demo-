@@ -99,6 +99,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       date,
       price: parseFloat(price),
       vehicles,
+      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
     })
   }
 
@@ -156,7 +157,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             </div>
             </div>
         </ScrollArea>
-        <DialogFooter className="mt-auto pt-4">
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit}>Guardar Cambios</Button>
         </DialogFooter>
