@@ -40,7 +40,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     if (isOpen) {
         if (tour) {
             setDestination(tour.destination)
-            setDate(tour.date)
+            setDate(new Date(tour.date))
             setPrice(String(tour.price))
             setVehicles(tour.vehicles || {})
         } else {
@@ -69,7 +69,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     if (!isNaN(numCount) && numCount > 0) {
         newVehicles[type] = numCount;
     } else {
-        newVehicles[type] = 1; // Fallback to 1 if input is invalid
+        // if user clears the input, keep it associated with the vehicle
+        newVehicles[type] = undefined;
     }
      setVehicles(newVehicles);
   }
@@ -84,7 +85,14 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       return
     }
 
-    if (Object.keys(vehicles).length === 0 || Object.values(vehicles).every(v => v === 0 || v === null)) {
+    const finalVehicles = Object.entries(vehicles).reduce((acc, [key, value]) => {
+        if (value && value > 0) {
+            acc[key as VehicleType] = value;
+        }
+        return acc;
+    }, {} as Partial<Record<VehicleType, number>>);
+
+    if (Object.keys(finalVehicles).length === 0) {
        toast({
         title: "Faltan vehículos",
         description: "Debes seleccionar y asignar una cantidad a al menos un tipo de vehículo.",
@@ -92,13 +100,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       })
       return
     }
-
-    const finalVehicles = Object.entries(vehicles).reduce((acc, [key, value]) => {
-        if (value && value > 0) {
-            acc[key as VehicleType] = value;
-        }
-        return acc;
-    }, {} as Partial<Record<VehicleType, number>>);
 
     onSave({
       id: tour?.id || "",
@@ -119,8 +120,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             {tour ? "Modifica los detalles del viaje." : "Completa los detalles para crear un nuevo viaje."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea>
-            <div className="grid gap-4 py-4">
+        <ScrollArea className="flex-grow">
+            <div className="py-4 pr-6 space-y-4">
               <div className="space-y-2">
                   <Label htmlFor="destination">Destino</Label>
                   <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
@@ -149,12 +150,13 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                               {vehicleConfig[type].name}
                           </Label>
                           </div>
-                          {vehicles[type] && (
+                          {vehicles[type] !== undefined && (
                           <Input 
                                   type="number"
                                   min="1"
                                   className="h-9 w-24"
-                                  value={vehicles[type] || "1"}
+                                  value={vehicles[type] || ""}
+                                  placeholder="Cant."
                                   onChange={(e) => handleVehicleCountChange(type, e.target.value)}
                               />
                           )}
