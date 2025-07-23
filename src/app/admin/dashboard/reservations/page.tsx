@@ -244,7 +244,7 @@ export default function ReservationsPage() {
                                                                     <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-md md:h-auto h-[90vh] flex flex-col p-0">
+                                                            <DialogContent className="max-w-md h-auto max-h-[90vh] flex flex-col p-0">
                                                                 <DialogHeader className="p-6 pb-4">
                                                                     <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
@@ -326,3 +326,5 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    
