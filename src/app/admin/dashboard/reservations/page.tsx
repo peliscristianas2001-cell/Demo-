@@ -113,6 +113,7 @@ export default function ReservationsPage() {
   }, [reservations, activeTours]);
 
   const getVehicleCount = (tour: Tour) => {
+    if (!tour.vehicles) return 0;
     return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
   }
 
@@ -201,7 +202,7 @@ export default function ReservationsPage() {
                        const vehicleCount = getVehicleCount(tour);
                        // This logic is simplified. A real app would need to know which vehicle type corresponds to which bus number.
                        // For now, we assume a single vehicle type, or we use a default seat count.
-                       const mainVehicleType = Object.keys(tour.vehicles)[0] as VehicleType;
+                       const mainVehicleType = tour.vehicles ? Object.keys(tour.vehicles)[0] as VehicleType : 'micro_bajo';
                        const totalSeatsForSelector = getSeatsForVehicleType(mainVehicleType) || 40;
 
                        return (
