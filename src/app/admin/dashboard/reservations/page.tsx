@@ -51,18 +51,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, AssignedSeat, VehicleType } from "@/lib/types"
 import { vehicleConfig } from "@/lib/types"
 
+type ActiveBusInfo = {
+  busNumber: number;
+  type: VehicleType;
+} | null;
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
-  const [activeBus, setActiveBus] = useState(1);
+  const [activeBus, setActiveBus] = useState<ActiveBusInfo>(null);
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -112,9 +115,26 @@ export default function ReservationsPage() {
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
   }, [reservations, activeTours]);
 
-  const getVehicleCount = (tour: Tour) => {
-    if (!tour.vehicles) return 0;
-    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
+  const getExpandedBusList = (tour: Tour): { type: VehicleType, typeName: string, instanceNum: number, globalBusNum: number }[] => {
+    if (!tour.vehicles) return [];
+    
+    let globalBusCounter = 1;
+    const busList = [];
+
+    for (const [type, count] of Object.entries(tour.vehicles)) {
+        if (count && count > 0) {
+            for (let i = 1; i <= count; i++) {
+                busList.push({
+                    type: type as VehicleType,
+                    typeName: vehicleConfig[type as VehicleType]?.name || 'Vehículo',
+                    instanceNum: i,
+                    globalBusNum: globalBusCounter
+                });
+                globalBusCounter++;
+            }
+        }
+    }
+    return busList;
   }
 
   const getSeatsForVehicleType = (type: VehicleType) => {
@@ -178,6 +198,15 @@ export default function ReservationsPage() {
     }
   }
 
+  const handleDialogOpen = (tour: Tour) => {
+    const busList = getExpandedBusList(tour);
+    if (busList.length > 0) {
+      setActiveBus({ busNumber: busList[0].globalBusNum, type: busList[0].type });
+    } else {
+      setActiveBus(null);
+    }
+  };
+
   if (!isClient) {
     return null; // Don't render server-side
   }
@@ -199,11 +228,8 @@ export default function ReservationsPage() {
             ) : (
                 <Accordion type="multiple" className="w-full">
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
-                       const vehicleCount = getVehicleCount(tour);
-                       // This logic is simplified. A real app would need to know which vehicle type corresponds to which bus number.
-                       // For now, we assume a single vehicle type, or we use a default seat count.
-                       const mainVehicleType = tour.vehicles ? Object.keys(tour.vehicles)[0] as VehicleType : 'micro_bajo';
-                       const totalSeatsForSelector = getSeatsForVehicleType(mainVehicleType) || 40;
+                       const expandedBusList = getExpandedBusList(tour);
+                       const totalVehicleCount = expandedBusList.length;
 
                        return (
                        <AccordionItem value={tour.id} key={tour.id}>
@@ -222,9 +248,6 @@ export default function ReservationsPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {tripReservations.map((res) => {
-                                            const occupiedSeatsForSelector = getOccupiedSeatsForTour(tour.id, activeBus, res.id);
-                                            const selectedSeatsForBus = res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId);
-                                            
                                             return (
                                                 <TableRow key={res.id}>
                                                     <TableCell>{res.passenger}</TableCell>
@@ -238,7 +261,7 @@ export default function ReservationsPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Dialog onOpenChange={(open) => !open && setActiveBus(1)}>
+                                                        <Dialog onOpenChange={(open) => !open && setActiveBus(null)} onOpen={() => handleDialogOpen(tour)}>
                                                             <DialogTrigger asChild>
                                                                 <Button variant="outline" size="sm">
                                                                     <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
@@ -251,16 +274,24 @@ export default function ReservationsPage() {
                                                                         Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
                                                                         Selecciona su/s lugar/es en el mapa.
                                                                     </DialogDescription>
-                                                                    {vehicleCount > 1 && (
+                                                                    {totalVehicleCount > 1 && activeBus && (
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
-                                                                            <Select onValueChange={(v) => setActiveBus(parseInt(v))} defaultValue="1">
-                                                                                <SelectTrigger className="w-[180px]">
-                                                                                    <SelectValue placeholder="Seleccionar micro" />
+                                                                            <Select 
+                                                                              onValueChange={(val) => {
+                                                                                const [type, num] = val.split('_');
+                                                                                setActiveBus({ busNumber: parseInt(num), type: type as VehicleType });
+                                                                              }} 
+                                                                              defaultValue={`${activeBus.type}_${activeBus.busNumber}`}
+                                                                            >
+                                                                                <SelectTrigger className="w-[220px]">
+                                                                                    <SelectValue placeholder="Seleccionar vehículo" />
                                                                                 </SelectTrigger>
                                                                                 <SelectContent>
-                                                                                    {Array.from({ length: vehicleCount }, (_, i) => i + 1).map(busNum => (
-                                                                                        <SelectItem key={busNum} value={String(busNum)}>Micro {busNum}</SelectItem>
+                                                                                    {expandedBusList.map(bus => (
+                                                                                        <SelectItem key={bus.globalBusNum} value={`${bus.type}_${bus.globalBusNum}`}>
+                                                                                          {bus.typeName} {tour.vehicles?.[bus.type]??0 > 1 ? bus.instanceNum : ''}
+                                                                                        </SelectItem>
                                                                                     ))}
                                                                                 </SelectContent>
                                                                             </Select>
@@ -269,13 +300,15 @@ export default function ReservationsPage() {
                                                                 </DialogHeader>
                                                                 <div className="flex-1 overflow-y-auto">
                                                                     <div className="px-6 pb-4">
-                                                                        <SeatSelector
-                                                                            totalSeats={totalSeatsForSelector}
-                                                                            occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus, res.id)}
-                                                                            selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId)}
-                                                                            onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus)}
-                                                                            passengerSeats={[]} 
-                                                                        />
+                                                                        {activeBus && (
+                                                                          <SeatSelector
+                                                                              totalSeats={getSeatsForVehicleType(activeBus.type)}
+                                                                              occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus.busNumber, res.id)}
+                                                                              selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus.busNumber).map(s => s.seatId)}
+                                                                              onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus.busNumber)}
+                                                                              passengerSeats={[]} 
+                                                                          />
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                                 <DialogFooter className="p-6 pt-4 mt-auto border-t">
@@ -328,7 +361,3 @@ export default function ReservationsPage() {
     </div>
   )
 }
-
-    
-
-    
