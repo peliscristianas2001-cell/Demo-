@@ -10,8 +10,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-08-15T09:00:00'),
     price: 150000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 2, // This trip has two buses
+    vehicles: { 'doble_piso': 2 }, 
   },
   {
     id: '2',
@@ -19,8 +18,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-09-20T21:00:00'),
     price: 125000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 1,
+    vehicles: { 'micro_largo': 1 },
   },
   {
     id: '3',
@@ -28,8 +26,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-10-05T10:00:00'),
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 1,
+    vehicles: { 'micro_bajo': 1 },
   },
   {
     id: '4',
@@ -37,8 +34,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-11-12T08:00:00'),
     price: 180000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 1,
+    vehicles: { 'micro_bajo': 1, 'combi': 1 },
   },
   {
     id: '5',
@@ -46,8 +42,7 @@ export const mockTours: Tour[] = [
     date: new Date('2026-02-20T22:00:00'),
     price: 250000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 1,
+    vehicles: { 'doble_piso': 1 },
   },
   {
     id: '6',
@@ -55,8 +50,7 @@ export const mockTours: Tour[] = [
     date: new Date('2026-01-15T07:00:00'),
     price: 85000,
     flyerUrl: 'https://placehold.co/400x500.png',
-    totalSeats: 40,
-    busCount: 1,
+    vehicles: { 'combi': 3 },
   },
 ];
 

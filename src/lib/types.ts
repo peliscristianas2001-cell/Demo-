@@ -1,13 +1,21 @@
 
 
+export type VehicleType = 'doble_piso' | 'micro_largo' | 'micro_bajo' | 'combi';
+
+export const vehicleConfig: Record<VehicleType, { name: string; seats: number }> = {
+  doble_piso: { name: 'Doble piso', seats: 60 },
+  micro_largo: { name: 'Micro largo', seats: 58 },
+  micro_bajo: { name: 'Micro bajo', seats: 46 },
+  combi: { name: 'Combi', seats: 19 },
+};
+
 export interface Tour {
   id: string;
   destination: string;
   date: Date;
   price: number;
   flyerUrl: string;
-  totalSeats: number; // Seats per bus
-  busCount: number;
+  vehicles: Partial<Record<VehicleType, number>>;
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";

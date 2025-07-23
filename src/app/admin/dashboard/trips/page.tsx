@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation } from "@/lib/types"
+import type { Tour, Reservation, VehicleType } from "@/lib/types"
+import { vehicleConfig } from "@/lib/types"
 import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
@@ -69,8 +70,15 @@ export default function TripsPage() {
         .reduce((acc, r) => acc + r.assignedSeats.length, 0);
   }
 
-  const getTotalSeatCount = (tour: Tour) => {
-    return tour.totalSeats * tour.busCount;
+  const getTourCapacity = (tour: Tour) => {
+    return Object.entries(tour.vehicles).reduce((total, [type, count]) => {
+      const vehicle = vehicleConfig[type as VehicleType];
+      return total + (vehicle.seats * (count || 0));
+    }, 0);
+  }
+
+  const getVehicleCount = (tour: Tour) => {
+    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
   }
 
   const handleCreate = () => {
@@ -145,7 +153,8 @@ export default function TripsPage() {
                 </TableRow>
               ) : activeTours.map((tour) => {
                 const occupiedCount = getOccupiedSeatCount(tour.id);
-                const totalSeats = getTotalSeatCount(tour);
+                const totalSeats = getTourCapacity(tour);
+                const vehicleCount = getVehicleCount(tour);
 
                 return (
                   <TableRow key={tour.id}>
@@ -164,7 +173,7 @@ export default function TripsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{tour.busCount}</Badge>
+                      <Badge variant="outline">{vehicleCount}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -196,5 +205,3 @@ export default function TripsPage() {
     </div>
   )
 }
-
-    

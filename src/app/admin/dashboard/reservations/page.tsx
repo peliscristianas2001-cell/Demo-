@@ -55,7 +55,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, AssignedSeat } from "@/lib/types"
+import type { Tour, Reservation, ReservationStatus, AssignedSeat, VehicleType } from "@/lib/types"
+import { vehicleConfig } from "@/lib/types"
 
 
 export default function ReservationsPage() {
@@ -110,6 +111,14 @@ export default function ReservationsPage() {
         return acc;
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
   }, [reservations, activeTours]);
+
+  const getVehicleCount = (tour: Tour) => {
+    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
+  }
+
+  const getSeatsForVehicleType = (type: VehicleType) => {
+    return vehicleConfig[type]?.seats || 0;
+  }
 
 
   const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
@@ -188,7 +197,14 @@ export default function ReservationsPage() {
                 </div>
             ) : (
                 <Accordion type="multiple" className="w-full">
-                    {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => (
+                    {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
+                       const vehicleCount = getVehicleCount(tour);
+                       // This logic is simplified. A real app would need to know which vehicle type corresponds to which bus number.
+                       // For now, we assume a single vehicle type, or we use a default seat count.
+                       const mainVehicleType = Object.keys(tour.vehicles)[0] as VehicleType;
+                       const totalSeatsForSelector = getSeatsForVehicleType(mainVehicleType) || 40;
+
+                       return (
                        <AccordionItem value={tour.id} key={tour.id}>
                            <AccordionTrigger className="text-lg font-medium hover:no-underline">
                                {tour.destination} ({tripReservations.length} reservas)
@@ -234,7 +250,7 @@ export default function ReservationsPage() {
                                                                         Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
                                                                         Selecciona su/s lugar/es en el mapa.
                                                                     </DialogDescription>
-                                                                    {tour.busCount > 1 && (
+                                                                    {vehicleCount > 1 && (
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
                                                                             <Select onValueChange={(v) => setActiveBus(parseInt(v))} defaultValue="1">
@@ -242,7 +258,7 @@ export default function ReservationsPage() {
                                                                                     <SelectValue placeholder="Seleccionar micro" />
                                                                                 </SelectTrigger>
                                                                                 <SelectContent>
-                                                                                    {Array.from({ length: tour.busCount }, (_, i) => i + 1).map(busNum => (
+                                                                                    {Array.from({ length: vehicleCount }, (_, i) => i + 1).map(busNum => (
                                                                                         <SelectItem key={busNum} value={String(busNum)}>Micro {busNum}</SelectItem>
                                                                                     ))}
                                                                                 </SelectContent>
@@ -252,7 +268,7 @@ export default function ReservationsPage() {
                                                                 </DialogHeader>
                                                                 <ScrollArea className="flex-1 px-6">
                                                                     <SeatSelector
-                                                                        totalSeats={tour.totalSeats}
+                                                                        totalSeats={totalSeatsForSelector}
                                                                         occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus, res.id)}
                                                                         selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus).map(s => s.seatId)}
                                                                         onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus)}
@@ -300,7 +316,8 @@ export default function ReservationsPage() {
                                 </Table>
                            </AccordionContent>
                        </AccordionItem>
-                    ))}
+                       )
+                    })}
                 </Accordion>
             )}
         </CardContent>
@@ -308,7 +325,3 @@ export default function ReservationsPage() {
     </div>
   )
 }
-
-    
-
-    
