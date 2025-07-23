@@ -17,8 +17,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Tour, VehicleType } from "@/lib/types"
 import { vehicleConfig } from "@/lib/types"
-import { Checkbox } from "../ui/checkbox"
-import { ScrollArea } from "../ui/scroll-area"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface TripFormProps {
   isOpen: boolean
@@ -84,77 +84,84 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       return
     }
 
-    if (Object.keys(vehicles).length === 0 || Object.values(vehicles).every(v => v === 0)) {
+    if (Object.keys(vehicles).length === 0 || Object.values(vehicles).every(v => v === 0 || v === null)) {
        toast({
         title: "Faltan vehículos",
-        description: "Debes seleccionar al menos un tipo de vehículo.",
+        description: "Debes seleccionar y asignar una cantidad a al menos un tipo de vehículo.",
         variant: "destructive"
       })
       return
     }
+
+    const finalVehicles = Object.entries(vehicles).reduce((acc, [key, value]) => {
+        if (value && value > 0) {
+            acc[key as VehicleType] = value;
+        }
+        return acc;
+    }, {} as Partial<Record<VehicleType, number>>);
 
     onSave({
       id: tour?.id || "",
       destination,
       date,
       price: parseFloat(price),
-      vehicles,
+      vehicles: finalVehicles,
       flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
     })
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md flex flex-col">
+      <DialogContent className="sm:max-w-md flex flex-col h-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{tour ? "Editar Viaje" : "Crear Nuevo Viaje"}</DialogTitle>
           <DialogDescription>
             {tour ? "Modifica los detalles del viaje." : "Completa los detalles para crear un nuevo viaje."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-6">
+        <ScrollArea className="flex-grow pr-6 -mr-6">
             <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-                <Label htmlFor="destination">Destino</Label>
-                <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="date">Fecha</Label>
-                <DatePicker date={date} setDate={setDate} className="h-10 w-full" />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="price">Precio</Label>
-                <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0"/>
-            </div>
+              <div className="space-y-2">
+                  <Label htmlFor="destination">Destino</Label>
+                  <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="date">Fecha</Label>
+                  <DatePicker date={date} setDate={setDate} className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="price">Precio</Label>
+                  <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0"/>
+              </div>
 
-            <div className="space-y-4 pt-2">
-                <Label className="text-base font-medium">Configuración de Vehículos</Label>
-                <div className="space-y-3 rounded-md border p-4">
-                {vehicleTypes.map(type => (
-                    <div key={type} className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 w-40">
-                        <Checkbox 
-                            id={type}
-                            checked={!!vehicles[type]}
-                            onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
-                        />
-                        <Label htmlFor={type} className="font-normal cursor-pointer">
-                            {vehicleConfig[type].name}
-                        </Label>
-                        </div>
-                        {vehicles[type] && (
-                        <Input 
-                                type="number"
-                                min="1"
-                                className="h-9 w-24"
-                                value={vehicles[type] || "1"}
-                                onChange={(e) => handleVehicleCountChange(type, e.target.value)}
-                            />
-                        )}
-                    </div>
-                ))}
-                </div>
-            </div>
+              <div className="space-y-4 pt-2">
+                  <Label className="text-base font-medium">Configuración de Vehículos</Label>
+                  <div className="space-y-3 rounded-md border p-4">
+                  {vehicleTypes.map(type => (
+                      <div key={type} className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 w-40">
+                          <Checkbox 
+                              id={type}
+                              checked={!!vehicles[type]}
+                              onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
+                          />
+                          <Label htmlFor={type} className="font-normal cursor-pointer">
+                              {vehicleConfig[type].name}
+                          </Label>
+                          </div>
+                          {vehicles[type] && (
+                          <Input 
+                                  type="number"
+                                  min="1"
+                                  className="h-9 w-24"
+                                  value={vehicles[type] || "1"}
+                                  onChange={(e) => handleVehicleCountChange(type, e.target.value)}
+                              />
+                          )}
+                      </div>
+                  ))}
+                  </div>
+              </div>
             </div>
         </ScrollArea>
         <DialogFooter className="mt-auto pt-4 border-t">
