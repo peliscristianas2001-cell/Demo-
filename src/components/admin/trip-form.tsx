@@ -112,14 +112,14 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md flex flex-col h-auto max-h-[90vh]">
+      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{tour ? "Editar Viaje" : "Crear Nuevo Viaje"}</DialogTitle>
           <DialogDescription>
             {tour ? "Modifica los detalles del viaje." : "Completa los detalles para crear un nuevo viaje."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6">
+        <ScrollArea>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                   <Label htmlFor="destination">Destino</Label>
