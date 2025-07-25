@@ -85,12 +85,8 @@ function LoginForm() {
     const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
     const seller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
 
-    // For this example, we'll simulate a client match with the admin's credentials
-    const isClient = credential === "Angela Rojas" && password === "AngelaRojasYTL";
-    
-    // Clear any previous employee session
     localStorage.removeItem("ytl_employee_id");
-
+    
     if (isAdmin && seller) {
         setMatchedSeller(seller);
         setShowRoleSelector(true);
@@ -101,13 +97,8 @@ function LoginForm() {
     if (isAdmin) {
       handleRoleSelection('admin');
     } else if (seller) {
-      setMatchedSeller(seller);
-      // If user is only a seller, log them in directly
       handleRoleSelection('seller', seller);
-    } else if (isClient) {
-       handleRoleSelection('client');
-    }
-    else {
+    } else {
       toast({
         title: "Error de autenticación",
         description: "Las credenciales son incorrectas.",
@@ -119,13 +110,14 @@ function LoginForm() {
 
   const handleRoleSelection = (role: 'admin' | 'seller' | 'client', sellerInfo?: Seller) => {
       setShowRoleSelector(false);
+      const sellerToLogin = sellerInfo || matchedSeller;
+
       switch(role) {
           case 'admin':
               toast({ title: "¡Bienvenida, Angela!", description: "Has iniciado sesión como administradora." });
               router.push("/admin/dashboard");
               break;
           case 'seller':
-              const sellerToLogin = sellerInfo || matchedSeller;
               if (sellerToLogin) {
                 toast({ title: `¡Bienvenido/a, ${sellerToLogin.name}!`, description: "Has iniciado sesión en tu panel." });
                 localStorage.setItem("ytl_employee_id", sellerToLogin.id);
@@ -133,7 +125,11 @@ function LoginForm() {
               }
               break;
           case 'client':
-              toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo.` });
+              if (sellerToLogin) {
+                toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${sellerToLogin.name}.` });
+              } else {
+                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo.` });
+              }
               router.push("/");
               break;
       }
