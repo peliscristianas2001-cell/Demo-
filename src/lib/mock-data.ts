@@ -68,47 +68,52 @@ export const mockReservations: Reservation[] = [
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');
 
 export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
-    // Create a ticket for each assigned seat in the reservation
     const ticketsForReservation: Ticket[] = [];
     const tour = mockTours.find(t => t.id === res.tripId);
     if (!tour) return [];
 
     const passengerDni = 'XX.XXX.XXX'; // Placeholder DNI
 
-    (res.assignedSeats || []).forEach((seat, index) => {
-        const ticketId = `${res.id}-S${index + 1}`;
-        // Use a relative URL for navigation within the app
-        const verificationUrl = `/verify/${ticketId}`;
-        const qrData = new URL(verificationUrl, "https://yotellevo.app").href;
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-        
-        ticketsForReservation.push({
-            id: ticketId,
-            reservationId: res.id,
-            tripId: res.tripId,
-            passengerName: res.passenger,
-            passengerDni: passengerDni,
-            assignment: seat,
-            qrCodeUrl: qrCodeUrl,
-        });
-    });
+    const generateTicketsForAssignments = (assignments: (AssignedSeat | { cabinId: string, unit: number })[], type: 'seat' | 'cabin') => {
+        assignments.forEach((assignment, index) => {
+            const isSeat = type === 'seat';
+            const assignmentId = isSeat ? (assignment as AssignedSeat).seatId : (assignment as { cabinId: string }).cabinId;
+            const ticketId = `${res.id}-${isSeat ? 'S' : 'C'}${index + 1}`;
+            
+            const qrData = {
+                tId: ticketId,
+                rId: res.id,
+                pax: res.passenger,
+                dni: passengerDni,
+                dest: tour.destination,
+                date: tour.date.toISOString(),
+                asg: {
+                    type: type,
+                    val: assignmentId,
+                    unit: assignment.unit,
+                },
+            };
 
-    (res.assignedCabins || []).forEach((cabin, index) => {
-        const ticketId = `${res.id}-C${index + 1}`;
-        const verificationUrl = `/verify/${ticketId}`;
-        const qrData = new URL(verificationUrl, "https://yotellevo.app").href;
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`;
 
-        ticketsForReservation.push({
-            id: ticketId,
-            reservationId: res.id,
-            tripId: res.tripId,
-            passengerName: res.passenger,
-            passengerDni: passengerDni,
-            assignment: cabin,
-            qrCodeUrl: qrCodeUrl,
+            ticketsForReservation.push({
+                id: ticketId,
+                reservationId: res.id,
+                tripId: res.tripId,
+                passengerName: res.passenger,
+                passengerDni: passengerDni,
+                assignment: assignment as any, // Cast because the structures are compatible
+                qrCodeUrl: qrCodeUrl,
+            });
         });
-    });
+    };
+
+    if (res.assignedSeats) {
+        generateTicketsForAssignments(res.assignedSeats, 'seat');
+    }
+    if (res.assignedCabins) {
+        generateTicketsForAssignments(res.assignedCabins, 'cabin');
+    }
 
     return ticketsForReservation;
 });
