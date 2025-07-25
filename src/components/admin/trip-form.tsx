@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Tour, VehicleType } from "@/lib/types"
-import { vehicleConfig } from "@/lib/types"
+import { getVehicleConfig } from "@/lib/vehicle-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
   Select,
@@ -39,6 +39,7 @@ type VehicleEntry = {
     count: number | '';
 }
 
+const vehicleConfig = getVehicleConfig();
 const allVehicleTypes = Object.keys(vehicleConfig) as VehicleType[];
 
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
@@ -261,3 +262,5 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
+
+    

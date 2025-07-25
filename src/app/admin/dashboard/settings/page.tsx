@@ -8,12 +8,17 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus } from "lucide-react"
+import { getVehicleConfig, defaultVehicleConfig } from "@/lib/vehicle-config"
+import type { VehicleType } from "@/lib/types"
+
+type VehicleConfigState = Record<VehicleType, { name: string; seats: number }>;
 
 export default function SettingsPage() {
     const { toast } = useToast()
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [vehicleConfig, setVehicleConfig] = useState<VehicleConfigState>(() => getVehicleConfig(true));
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -48,6 +53,30 @@ export default function SettingsPage() {
             toast({
                 title: "Error al guardar",
                 description: "No se pudo guardar el logo en el almacenamiento local.",
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handleVehicleNameChange = (type: VehicleType, newName: string) => {
+        setVehicleConfig(prev => ({
+            ...prev,
+            [type]: { ...prev[type], name: newName }
+        }));
+    }
+
+    const handleVehicleConfigSave = () => {
+        try {
+            localStorage.setItem("ytl_vehicle_config", JSON.stringify(vehicleConfig));
+            toast({
+                title: "¡Éxito!",
+                description: "Los nombres de los vehículos se han actualizado.",
+            })
+            window.dispatchEvent(new Event('storage'));
+        } catch (error) {
+             toast({
+                title: "Error al guardar",
+                description: "No se pudo guardar la configuración de vehículos.",
                 variant: "destructive"
             })
         }
@@ -94,8 +123,32 @@ export default function SettingsPage() {
                     Guardar Logo
                 </Button>
             </div>
+            <div className="space-y-4 p-4 border rounded-lg">
+                <Label className="text-lg font-medium flex items-center gap-2"><Bus className="w-5 h-5"/>Nombres de Tipos de Vehículo</Label>
+                <p className="text-sm text-muted-foreground">
+                    Edita los nombres que se mostrarán para cada tipo de vehículo en la aplicación.
+                </p>
+                <div className="space-y-4">
+                    {(Object.keys(defaultVehicleConfig) as VehicleType[]).map((type) => (
+                        <div key={type} className="space-y-2">
+                           <Label htmlFor={`vehicle-${type}`}>{defaultVehicleConfig[type].name} (por defecto)</Label>
+                            <Input
+                                id={`vehicle-${type}`}
+                                value={vehicleConfig[type]?.name || ''}
+                                onChange={(e) => handleVehicleNameChange(type, e.target.value)}
+                                placeholder={`Nombre para ${defaultVehicleConfig[type].name}`}
+                            />
+                        </div>
+                    ))}
+                </div>
+                 <Button onClick={handleVehicleConfigSave}>
+                    Guardar Nombres de Vehículos
+                </Button>
+            </div>
         </CardContent>
       </Card>
     </div>
   )
 }
+
+    

@@ -25,7 +25,7 @@ import {
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, VehicleType } from "@/lib/types"
-import { vehicleConfig } from "@/lib/types"
+import { getVehicleConfig } from "@/lib/vehicle-config"
 import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
@@ -34,6 +34,7 @@ export default function TripsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [vehicleConfig, setVehicleConfig] = useState(() => getVehicleConfig());
 
   useEffect(() => {
     setIsClient(true)
@@ -54,6 +55,13 @@ export default function TripsPage() {
     } else {
       setReservations(mockReservations)
     }
+
+    const handleStorageChange = () => {
+      setVehicleConfig(getVehicleConfig(true));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+
   }, [])
   
   useEffect(() => {
@@ -208,3 +216,5 @@ export default function TripsPage() {
     </div>
   )
 }
+
+    

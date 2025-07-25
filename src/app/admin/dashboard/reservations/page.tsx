@@ -55,7 +55,7 @@ import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, AssignedSeat, VehicleType } from "@/lib/types"
-import { vehicleConfig } from "@/lib/types"
+import { getVehicleConfig } from "@/lib/vehicle-config"
 
 type ActiveBusInfo = {
   busNumber: number;
@@ -67,6 +67,7 @@ export default function ReservationsPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeBus, setActiveBus] = useState<ActiveBusInfo>(null);
   const [isClient, setIsClient] = useState(false)
+  const [vehicleConfig, setVehicleConfig] = useState(getVehicleConfig(true));
 
   useEffect(() => {
     setIsClient(true)
@@ -90,6 +91,12 @@ export default function ReservationsPage() {
     } else {
         setTours(mockTours);
     }
+
+    const handleStorageChange = () => {
+      setVehicleConfig(getVehicleConfig(true));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [])
 
   useEffect(() => {
@@ -291,7 +298,7 @@ export default function ReservationsPage() {
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
                                                                             <Select
-                                                                                value={activeBus ? getBusIdentifier(activeBus) : ''}
+                                                                                value={activeBus ? getBusIdentifier({ type: activeBus.type, busNumber: activeBus.busNumber }) : ''}
                                                                                 onValueChange={(val) => {
                                                                                     const selectedBus = expandedBusList.find(b => getBusIdentifier({ type: b.type, busNumber: b.globalBusNum }) === val);
                                                                                     if (selectedBus) {
@@ -377,5 +384,7 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    
 
     
