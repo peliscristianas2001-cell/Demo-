@@ -13,7 +13,7 @@ import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, LayoutItemType } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
-type LayoutConfigState = Record<LayoutCategory, Record<LayoutItemType, CustomLayoutConfig>>;
+type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
 
 export default function SettingsPage() {
     const { toast } = useToast()
@@ -25,6 +25,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
       const handleStorageChange = () => {
+        // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
       };
       window.addEventListener('storage', handleStorageChange);
@@ -81,28 +82,35 @@ export default function SettingsPage() {
 
     const handleDeleteLayout = (category: LayoutCategory, keyToDelete: string) => {
       const currentConfig = getLayoutConfig();
-      delete currentConfig[category][keyToDelete];
-      saveLayoutConfig(currentConfig);
-      setLayoutConfig(currentConfig); // Update state to reflect deletion
+      if (currentConfig[category] && currentConfig[category][keyToDelete]) {
+        delete currentConfig[category][keyToDelete];
+        saveLayoutConfig(currentConfig);
+        setLayoutConfig(currentConfig);
+      }
       toast({ title: "Elemento Eliminado", description: "El tipo fue eliminado." });
     };
 
     const handleSaveLayout = (originalKey: string | null, newConfig: CustomLayoutConfig) => {
         if (!editingLayout) return;
+
         const { category } = editingLayout;
-
         const newKey = newConfig.name.toLowerCase().replace(/\s+/g, '_');
-        
-        // Read the latest config directly from storage to avoid state closure issues
-        const currentFullConfig = getLayoutConfig();
-        const categoryConfig = currentFullConfig[category];
 
-        // If it's an existing layout and its key is changing, remove the old one
+        const currentFullConfig = getLayoutConfig();
+
+        // Ensure category object exists
+        if (!currentFullConfig[category]) {
+            currentFullConfig[category] = {};
+        }
+
+        const categoryConfig = currentFullConfig[category];
+        
+        // If it's an existing layout and its key is changing, remove the old one first
         if (originalKey && originalKey !== newKey) {
             delete categoryConfig[originalKey];
         }
         
-        // Add/update the layout with the new key
+        // Add or update the layout with the new key
         categoryConfig[newKey] = newConfig;
         
         // Save the entire updated configuration object back to storage
@@ -113,6 +121,7 @@ export default function SettingsPage() {
 
         setIsEditorOpen(false);
         setEditingLayout(null);
+        toast({ title: "¡Guardado!", description: `El layout "${newConfig.name}" se ha guardado.` });
     };
 
     const layoutCategoryDetails = {
