@@ -22,7 +22,9 @@ import { useToast } from "@/hooks/use-toast"
 import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
 import type { Tour, Reservation, Passenger, Seller, PricingTier } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2, Group } from "lucide-react"
+import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, PlusIcon, TicketIcon, UsersIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2 } from "lucide-react"
+
+type BookingPassenger = Omit<Passenger, 'fullName'> & { firstName: string; lastName: string };
 
 const adultTier: PricingTier = { id: 'adult', name: 'Adulto', price: 0 };
 
@@ -37,8 +39,7 @@ export default function BookingPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [sellers, setSellers] = useState<Seller[]>([])
   const [selectedSellerId, setSelectedSellerId] = useState<string>("");
-  const [bookingPassengers, setBookingPassengers] = useState<Passenger[]>([])
-  const [familyName, setFamilyName] = useState("");
+  const [bookingPassengers, setBookingPassengers] = useState<BookingPassenger[]>([])
   const [isClient, setIsClient] = useState(false)
   const [loggedInSellerId, setLoggedInSellerId] = useState<string | null>(null)
   
@@ -72,7 +73,8 @@ export default function BookingPage() {
             setTour(foundTour)
             setBookingPassengers([{
                 id: `P${Date.now()}`,
-                fullName: "",
+                firstName: "",
+                lastName: "",
                 dni: "",
                 dob: undefined,
                 phone: "",
@@ -91,7 +93,8 @@ export default function BookingPage() {
   const addPassenger = () => {
     setBookingPassengers(prev => [...prev, {
         id: `P${Date.now()}`,
-        fullName: "",
+        firstName: "",
+        lastName: "",
         dni: "",
         dob: undefined,
         phone: "",
@@ -105,17 +108,18 @@ export default function BookingPage() {
     setBookingPassengers(prev => prev.filter(p => p.id !== passengerId));
   }
 
-  const handlePassengerChange = (passengerId: string, field: keyof Passenger, value: any) => {
+  const handlePassengerChange = (passengerId: string, field: keyof BookingPassenger, value: any) => {
     setBookingPassengers(prev => prev.map(p => 
         p.id === passengerId ? { ...p, [field]: value } : p
     ));
   }
 
   const handleConfirmReservation = () => {
-    if (bookingPassengers.some(p => !p.fullName || !p.dni) || !bookingPassengers[0]?.phone) {
+    const mainPassenger = bookingPassengers[0];
+    if (!mainPassenger?.firstName || !mainPassenger?.lastName || !mainPassenger?.dni || !mainPassenger?.phone) {
       toast({
         title: "Faltan datos",
-        description: "Por favor, complete nombre, DNI y teléfono del pasajero principal.",
+        description: "Por favor, complete nombre, apellido, DNI y teléfono del pasajero principal.",
         variant: "destructive",
       })
       return
@@ -129,11 +133,17 @@ export default function BookingPage() {
       })
       return
     }
+    
+    const familyName = `Familia ${mainPassenger.lastName}`;
 
     // Save new passengers to the main list
     const updatedPassengers = [...allPassengers];
-    const newPassengerList = bookingPassengers.map(bp => {
-        const finalPassenger: Passenger = { ...bp, family: familyName };
+    const newPassengerList: Passenger[] = bookingPassengers.map(bp => {
+        const finalPassenger: Passenger = { 
+            ...bp, 
+            fullName: `${bp.firstName} ${bp.lastName}`.trim(),
+            family: familyName 
+        };
         const existingIndex = updatedPassengers.findIndex(p => p.dni === bp.dni);
         if (existingIndex > -1) {
             updatedPassengers[existingIndex] = { ...updatedPassengers[existingIndex], ...finalPassenger };
@@ -250,19 +260,9 @@ export default function BookingPage() {
               <Card className="shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl"><UsersIcon className="w-8 h-8 text-primary"/> Datos de los Pasajeros</CardTitle>
+                   <CardDescription>El primer pasajero es el responsable de la reserva. Su teléfono es obligatorio.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="space-y-2 max-w-sm">
-                        <Label htmlFor="family-name">Nombre de Familia o Grupo</Label>
-                        <Input 
-                            id="family-name" 
-                            value={familyName} 
-                            onChange={(e) => setFamilyName(e.target.value)} 
-                            placeholder="Ej: Familia Pérez"
-                        />
-                         <p className="text-xs text-muted-foreground">Este nombre agrupará a todos los pasajeros de esta reserva.</p>
-                    </div>
-                    <Separator />
                     {bookingPassengers.map((passenger, index) => (
                     <div key={passenger.id} className="p-4 border rounded-lg space-y-4 relative bg-background">
                          {bookingPassengers.length > 1 && (
@@ -270,18 +270,22 @@ export default function BookingPage() {
                                 <Trash2 className="w-4 h-4"/>
                             </Button>
                          )}
-                        <p className="font-semibold">Pasajero {index + 1} {index === 0 && '(Responsable de la reserva)'}</p>
+                        <p className="font-semibold">Pasajero {index + 1}</p>
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor={`fullName-${passenger.id}`}>Nombre completo</Label>
-                                <Input id={`fullName-${passenger.id}`} value={passenger.fullName} onChange={(e) => handlePassengerChange(passenger.id, 'fullName', e.target.value)} placeholder="Ej: Juan Pérez" />
+                             <div className="space-y-2">
+                                <Label htmlFor={`firstName-${passenger.id}`}>Nombres</Label>
+                                <Input id={`firstName-${passenger.id}`} value={passenger.firstName} onChange={(e) => handlePassengerChange(passenger.id, 'firstName', e.target.value)} placeholder="Ej: Juan Carlos" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor={`lastName-${passenger.id}`}>Apellido</Label>
+                                <Input id={`lastName-${passenger.id}`} value={passenger.lastName} onChange={(e) => handlePassengerChange(passenger.id, 'lastName', e.target.value)} placeholder="Ej: Pérez" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor={`dni-${passenger.id}`}>DNI</Label>
                                 <Input id={`dni-${passenger.id}`} value={passenger.dni} onChange={(e) => handlePassengerChange(passenger.id, 'dni', e.target.value)} placeholder="Sin puntos ni espacios" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor={`phone-${passenger.id}`}>Teléfono {index === 0 ? '(Obligatorio)' : '(Opcional)'}</Label>
+                                <Label htmlFor={`phone-${passenger.id}`}>Teléfono {index > 0 && '(Opcional)'}</Label>
                                 <Input id={`phone-${passenger.id}`} value={passenger.phone} onChange={(e) => handlePassengerChange(passenger.id, 'phone', e.target.value)} placeholder="Ej: 1122334455" />
                             </div>
                             <div className="space-y-2">
@@ -393,5 +397,3 @@ export default function BookingPage() {
     </div>
   )
 }
-
-    
