@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket, AssignedSeat, Seller } from './types';
+import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -81,6 +81,17 @@ export const mockSellers: Seller[] = [
     { id: 'S002', name: 'Marcos Gil', dni: '30654987', phone: '1166778899', commission: 12 },
     { id: 'S003', name: 'Sofía Acosta', dni: '35789123', phone: '1133445566', commission: 10 },
 ]
+
+export const mockPassengers: Passenger[] = [
+    { id: "P001", fullName: "Juan Pérez", dni: "30123456", dob: new Date('1983-05-10'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "adult" },
+    { id: "P002", fullName: "María García", dni: "32654987", dob: new Date('1987-11-22'), phone: "1147859632", family: "García", nationality: "Argentina", tierId: "adult" },
+    { id: "P003", fullName: "Carlos López", dni: "28789123", dob: new Date('1980-01-15'), phone: "1132145698", family: "López", nationality: "Argentina", tierId: "adult" },
+    { id: "P004", fullName: "Ana Martínez", dni: "35987654", dob: new Date('1992-09-30'), phone: "1154789632", family: "López", nationality: "Argentina", tierId: "adult" },
+    { id: "P005", fullName: "Lucía Hernández", dni: "38456789", dob: new Date('1995-07-18'), phone: "1165893214", family: "Hernández", nationality: "Argentina", tierId: "adult" },
+    { id: "P006", fullName: "Jorge Rodriguez", dni: "25123789", dob: new Date('1975-03-05'), phone: "1121458796", family: "Rodriguez", nationality: "Argentina", tierId: "adult" },
+    { id: "P007", fullName: "Laura Pérez", dni: "45123456", dob: new Date('2015-08-12'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "T1_CHILD" },
+]
+
 
 export const mockReservations: Reservation[] = [
     { id: "R001", tripId: "1", passenger: "Juan Pérez", paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 310000 },

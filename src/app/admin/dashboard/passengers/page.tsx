@@ -1,9 +1,12 @@
 
 "use client"
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card"
 import {
   Table,
@@ -14,64 +17,174 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { mockPassengers } from "@/lib/mock-data"
+import type { Passenger } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { PassengerForm } from "@/components/admin/passenger-form"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock data
-const mockPassengers = [
-    { id: "P001", name: "Juan Pérez", dni: "30123456" },
-    { id: "P002", name: "María García", dni: "32654987" },
-    { id: "P003", name: "Carlos López", dni: "28789123" },
-    { id: "P004", name: "Ana Martínez", dni: "35987654" },
-    { id: "P005", name: "Lucía Hernández", dni: "38456789" },
-    { id: "P006", name: "Jorge Rodriguez", dni: "25123789" },
-]
-
+const calculateAge = (dob: Date | string) => {
+    if (!dob) return null;
+    const birthDate = typeof dob === 'string' ? new Date(dob) : dob;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
 
 export default function PassengersPage() {
+  const [passengers, setPassengers] = useState<Passenger[]>(mockPassengers)
   const [searchTerm, setSearchTerm] = useState("")
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
+  const { toast } = useToast();
 
-  const filteredPassengers = mockPassengers.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.dni.includes(searchTerm)
-  )
+  const handleEdit = (passenger: Passenger) => {
+    setSelectedPassenger(passenger)
+    setIsFormOpen(true)
+  }
+
+  const handleCreate = () => {
+    setSelectedPassenger(null)
+    setIsFormOpen(true)
+  }
+
+  const handleSave = (passengerData: Passenger) => {
+    if (selectedPassenger) {
+        setPassengers(passengers.map(p => p.id === passengerData.id ? passengerData : p))
+        toast({ title: "Pasajero actualizado", description: "Los datos se guardaron correctamente." });
+    } else {
+        setPassengers([...passengers, { ...passengerData, id: `P${Date.now()}` }])
+        toast({ title: "Pasajero creado", description: "El nuevo pasajero fue añadido al sistema." });
+    }
+    setIsFormOpen(false)
+  }
+  
+  const handleDelete = (passengerId: string) => {
+    setPassengers(passengers.filter(p => p.id !== passengerId));
+    toast({ title: "Pasajero eliminado", variant: "destructive" });
+  }
+
+  const passengersByFamily = useMemo(() => {
+    const filtered = passengers.filter(p =>
+        p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.dni.includes(searchTerm) ||
+        (p.family && p.family.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    return filtered.reduce((acc, p) => {
+        const familyKey = p.family || 'Sin familia asignada';
+        if (!acc[familyKey]) {
+            acc[familyKey] = [];
+        }
+        acc[familyKey].push(p);
+        return acc;
+    }, {} as Record<string, Passenger[]>);
+  }, [passengers, searchTerm])
 
   return (
+    <>
+    <PassengerForm 
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSave={handleSave}
+        passenger={selectedPassenger}
+    />
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Gestión de Pasajeros</h2>
-        <p className="text-muted-foreground">
-          Busca y administra la información de todos los pasajeros.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+            <h2 className="text-2xl font-bold">Gestión de Pasajeros</h2>
+            <p className="text-muted-foreground">
+            Añade, busca y administra la información de todos los pasajeros.
+            </p>
+        </div>
+         <Button onClick={handleCreate}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nuevo Pasajero
+        </Button>
       </div>
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardHeader>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input 
-                    placeholder="Buscar por nombre o DNI..."
+                    placeholder="Buscar por nombre, DNI o familia..."
                     className="pl-10"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre Completo</TableHead>
-                <TableHead>DNI</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPassengers.map((p) => (
-                <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>{p.dni}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        </CardHeader>
+        <CardContent>
+            <Accordion type="multiple" className="w-full" defaultValue={Object.keys(passengersByFamily)}>
+                {Object.entries(passengersByFamily).map(([family, members]) => (
+                    <AccordionItem value={family} key={family}>
+                        <AccordionTrigger className="text-lg font-medium">
+                            {family} ({members.length})
+                        </AccordionTrigger>
+                        <AccordionContent>
+                             <Table>
+                                <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nombre Completo</TableHead>
+                                    <TableHead>DNI</TableHead>
+                                    <TableHead>Teléfono</TableHead>
+                                    <TableHead>Edad</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
+                                </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                {members.map((p) => (
+                                    <TableRow key={p.id}>
+                                        <TableCell className="font-medium">{p.fullName}</TableCell>
+                                        <TableCell>{p.dni}</TableCell>
+                                        <TableCell>{p.phone || 'N/A'}</TableCell>
+                                        <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Abrir menú</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(p)}>
+                                                        <Edit className="mr-2 h-4 w-4" /> Editar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                </TableBody>
+                            </Table>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }

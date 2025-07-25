@@ -79,6 +79,8 @@ export interface Passenger {
   fullName: string;
   dni: string;
   dob?: Date;
+  phone?: string;
+  family?: string;
   nationality: string;
   tierId: string; // 'adult' or one of the pricingTier IDs
 }
