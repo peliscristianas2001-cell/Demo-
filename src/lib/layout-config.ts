@@ -89,8 +89,8 @@ export const defaultLayoutConfig: Record<LayoutCategory, Record<LayoutItemType, 
                 [{ type: 'seat', number: 2 }, { type: 'pasillo' }, { type: 'seat', number: 3 }, { type: 'seat', number: 4 }],
                 [{ type: 'seat', number: 5 }, { type: 'pasillo' }, { type: 'seat', number: 6 }, { type: 'seat', number: 7 }],
                 [{ type: 'seat', number: 8 }, { type: 'pasillo' }, { type: 'seat', number: 9 }, { type: 'seat', number: 10 }],
-                [{ type: 'seat', number: 11 }, { type: 'pasillo' }, { type: 'seat', number: 12 }, { type: 'seat', number: 13 }],
-                [{ type: 'seat', number: 14 }, { type: 'pasillo' }, { type: 'seat', number: 15 }, { type: 'seat', number: 16 }],
+                [{ type: 'seat', number: 11 }, { type: 'seat', number: 12 }, { type: 'pasillo' }, { type: 'seat', number: 13 }],
+                [{ type: 'seat', number: 14 }, { type: 'seat', number: 15 }, { type: 'pasillo' }, { type: 'seat', number: 16 }],
                 [{ type: 'seat', number: 17 }, { type: 'seat', number: 18 }, { type: 'seat', number: 19 }, { type: 'empty' }],
             ]
           }]
@@ -106,9 +106,14 @@ export function getLayoutConfig(forceNew = false): Record<LayoutCategory, Record
     return defaultLayoutConfig;
   }
 
+  if (forceNew) {
+      localStorage.removeItem('ytl_layout_config');
+  }
+
   const storedConfig = localStorage.getItem('ytl_layout_config');
+  
   try {
-    if (storedConfig && !forceNew) {
+    if (storedConfig) {
       const parsed = JSON.parse(storedConfig);
       // Basic validation to ensure the parsed object is in a usable state
       if (typeof parsed === 'object' && parsed !== null && ('vehicles' in parsed) && ('airplanes' in parsed) && ('cruises' in parsed)) {

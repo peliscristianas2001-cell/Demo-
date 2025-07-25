@@ -82,7 +82,9 @@ export default function SettingsPage() {
     const handleDeleteLayout = (category: LayoutCategory, keyToDelete: string) => {
       setLayoutConfig(prev => {
           const newConfig = { ...prev };
-          delete newConfig[category][keyToDelete];
+          const categoryConf = { ...newConfig[category] };
+          delete categoryConf[keyToDelete];
+          newConfig[category] = categoryConf;
           saveLayoutConfig(newConfig);
           return newConfig;
       });
@@ -96,7 +98,7 @@ export default function SettingsPage() {
         const newKey = newConfig.name.toLowerCase().replace(/\s+/g, '_');
         
         setLayoutConfig(prev => {
-            const updatedConfig = { ...prev };
+            const updatedConfig = JSON.parse(JSON.stringify(prev));
             const categoryConfig = { ...updatedConfig[category] };
 
             if (originalKey && originalKey !== newKey) {
