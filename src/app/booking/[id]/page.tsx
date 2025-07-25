@@ -85,7 +85,7 @@ export default function BookingPage() {
     } else {
         setTour(null)
     }
-  }, [id, searchParams])
+  }, [id])
 
   const addPassenger = () => {
     setBookingPassengers(prev => [...prev, {
@@ -307,11 +307,9 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
 
-              {loggedInSellerId && (
+              {loggedInSellerId ? (
                 <p className="text-sm text-center text-muted-foreground mt-2">Venta asignada a tu usuario.</p>
-              )}
-              
-              {!loggedInSellerId && (
+              ) : (
                 <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
                     <CardHeader>
                     <CardTitle className="font-body drop-shadow-xl tracking-wider flex items-center gap-2">
@@ -380,3 +378,5 @@ export default function BookingPage() {
     </div>
   )
 }
+
+    
