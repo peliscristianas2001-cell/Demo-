@@ -28,6 +28,8 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
+import { mockSellers } from "@/lib/mock-data";
+import type { Seller } from "@/lib/types";
 
 const navItems = [
   { href: "/employee/dashboard", label: "Inicio", icon: Home },
@@ -48,10 +50,14 @@ export default function EmployeeDashboardLayout({
 
   useEffect(() => {
     const employeeId = localStorage.getItem("ytl_employee_id");
-    if (!employeeId) {
+    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    const isEmployeeValid = sellers.some(s => s.id === employeeId);
+
+    if (!employeeId || !isEmployeeValid) {
+        localStorage.removeItem("ytl_employee_id"); // Clean up invalid ID
         router.replace('/employee/login');
     }
-  }, [router])
+  }, [router, pathname]); // Re-check on every route change within the dashboard
 
   const handleLogout = () => {
     localStorage.removeItem("ytl_employee_id");
