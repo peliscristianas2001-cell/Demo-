@@ -23,6 +23,7 @@ import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/
 import type { Tour, Reservation, Passenger, Seller, PricingTier } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, PlusIcon, TicketIcon, UsersIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2 } from "lucide-react"
+import Link from "next/link"
 
 type BookingPassenger = Omit<Passenger, 'fullName'> & { firstName: string; lastName: string };
 
@@ -294,6 +295,9 @@ export default function BookingPage() {
                                     date={passenger.dob} 
                                     setDate={(d) => handlePassengerChange(passenger.id, 'dob', d)} 
                                     placeholder="Seleccionar fecha"
+                                    captionLayout="dropdown-buttons"
+                                    fromYear={new Date().getFullYear() - 100}
+                                    toYear={new Date().getFullYear()}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -334,20 +338,26 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 drop-shadow-xl tracking-wider">
-                    <HeartIcon className="w-6 h-6" />
-                    ¿Querés agilizar tus próximas reservas?
-                  </CardTitle>
-                  <CardDescription className="text-primary-foreground/80">
-                    Crea una cuenta para guardar tus datos y acceder a beneficios exclusivos. ¡Es rápido y fácil!
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="secondary" className="bg-white text-primary hover:bg-white/90">Crear una cuenta <ArrowRight className="w-4 h-4 ml-2"/></Button>
-                </CardContent>
-              </Card>
+              {!loggedInSellerId && (
+                <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
+                    <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-body drop-shadow-xl tracking-wider">
+                        <HeartIcon className="w-6 h-6" />
+                        ¿Querés agilizar tus próximas reservas?
+                    </CardTitle>
+                    <CardDescription className="text-primary-foreground/80">
+                        Crea una cuenta para guardar tus datos y acceder a beneficios exclusivos. ¡Es rápido y fácil!
+                    </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <Button asChild variant="secondary" className="bg-white text-primary hover:bg-white/90">
+                        <Link href="/login?mode=register">
+                            Crear una cuenta <ArrowRight className="w-4 h-4 ml-2"/>
+                        </Link>
+                    </Button>
+                    </CardContent>
+                </Card>
+              )}
 
             </div>
 
