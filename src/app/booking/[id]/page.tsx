@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
@@ -27,7 +27,7 @@ import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, Ti
 const adultTier: PricingTier = { id: 'adult', name: 'Adulto', price: 0 };
 
 export default function BookingPage() {
-  const { id } = use(useParams())
+  const { id } = useParams()
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast()
