@@ -17,7 +17,14 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Tour, VehicleType } from "@/lib/types"
 import { vehicleConfig } from "@/lib/types"
-import { Checkbox } from "@/components/ui/checkbox"
+import { PlusCircle, Trash2 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface TripFormProps {
   isOpen: boolean
@@ -26,14 +33,21 @@ interface TripFormProps {
   tour: Tour | null
 }
 
-const vehicleTypes = Object.keys(vehicleConfig) as VehicleType[];
+type VehicleEntry = {
+    id: number;
+    type: VehicleType | '';
+    count: number | '';
+}
+
+const allVehicleTypes = Object.keys(vehicleConfig) as VehicleType[];
 
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
   const [price, setPrice] = useState<number | "">("")
-  const [vehicles, setVehicles] = useState<Partial<Record<VehicleType, number | undefined>>>({})
+  const [vehicleEntries, setVehicleEntries] = useState<VehicleEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [nextId, setNextId] = useState(1);
 
   const { toast } = useToast()
 
@@ -43,39 +57,52 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setDestination(tour.destination)
             setDate(tour.date ? new Date(tour.date) : undefined)
             setPrice(tour.price || "")
-            setVehicles(tour.vehicles || {})
+            if (tour.vehicles) {
+                const entries = Object.entries(tour.vehicles).map(([type, count], index) => ({
+                    id: index,
+                    type: type as VehicleType,
+                    count: count || 1
+                }));
+                setVehicleEntries(entries);
+                setNextId(entries.length);
+            } else {
+                setVehicleEntries([]);
+                setNextId(1);
+            }
         } else {
             // Reset form for new trip
             setDestination("")
             setDate(undefined)
             setPrice("")
-            setVehicles({})
+            setVehicleEntries([{ id: 0, type: '', count: '' }])
+            setNextId(1);
         }
-        setIsLoading(false); // Reset loading state when dialog opens/changes
+        setIsLoading(false); 
     }
   }, [tour, isOpen])
 
-  const handleVehicleCheck = (type: VehicleType, checked: boolean) => {
-    const newVehicles = { ...vehicles };
-    if (checked) {
-        newVehicles[type] = 1; // Default to 1 when checked
-    } else {
-        delete newVehicles[type];
-    }
-    setVehicles(newVehicles);
+  const handleAddVehicleEntry = () => {
+    setVehicleEntries([...vehicleEntries, { id: nextId, type: '', count: '' }]);
+    setNextId(nextId + 1);
   }
 
-  const handleVehicleCountChange = (type: VehicleType, countStr: string) => {
-    const newVehicles = { ...vehicles };
-    const count = parseInt(countStr);
-    
-    if (!isNaN(count) && count > 0) {
-        newVehicles[type] = count;
-    } else {
-        // Allow clearing the input, which will be treated as invalid during submission if the box is checked
-        newVehicles[type] = undefined;
-    }
-    setVehicles(newVehicles);
+  const handleRemoveVehicleEntry = (id: number) => {
+    setVehicleEntries(vehicleEntries.filter(entry => entry.id !== id));
+  }
+  
+  const handleVehicleChange = (id: number, field: 'type' | 'count', value: string) => {
+      setVehicleEntries(entries => entries.map(entry => {
+          if (entry.id === id) {
+              if (field === 'type') {
+                  return { ...entry, type: value as VehicleType };
+              }
+              if (field === 'count') {
+                  const count = parseInt(value, 10);
+                  return { ...entry, count: isNaN(count) ? '' : count };
+              }
+          }
+          return entry;
+      }))
   }
 
   const handleSubmit = () => {
@@ -88,17 +115,38 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       return
     }
 
-    const finalVehicles = Object.entries(vehicles).reduce((acc, [key, value]) => {
-        if (value && value > 0) {
-            acc[key as VehicleType] = value;
-        }
-        return acc;
-    }, {} as Record<VehicleType, number>);
+    const finalVehicles: Partial<Record<VehicleType, number>> = {};
+    let hasInvalidEntry = false;
 
+    for (const entry of vehicleEntries) {
+        if (!entry.type || entry.count === '' || entry.count <= 0) {
+            hasInvalidEntry = true;
+            break;
+        }
+        if (finalVehicles[entry.type]) {
+             toast({
+                title: "Tipo de vehículo duplicado",
+                description: `El tipo "${vehicleConfig[entry.type].name}" solo puede ser agregado una vez.`,
+                variant: "destructive"
+            });
+            return;
+        }
+        finalVehicles[entry.type] = entry.count;
+    }
+
+    if (hasInvalidEntry) {
+         toast({
+            title: "Datos de vehículo incompletos",
+            description: "Cada vehículo debe tener un tipo y una cantidad válida mayor a cero.",
+            variant: "destructive"
+        });
+        return;
+    }
+    
     if (Object.keys(finalVehicles).length === 0) {
        toast({
         title: "Faltan vehículos",
-        description: "Debes seleccionar y asignar una cantidad a al menos un tipo de vehículo.",
+        description: "Debes agregar y configurar al menos un tipo de vehículo.",
         variant: "destructive"
       })
       return
@@ -111,8 +159,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       destination,
       date,
       price: price,
-      vehicles: finalVehicles,
-      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png", // Keep existing or use placeholder for new
+      vehicles: finalVehicles as Record<VehicleType, number>,
+      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
     })
     
   }
@@ -154,30 +202,50 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 <div className="space-y-4 pt-2">
                     <Label className="text-base font-medium">Configuración de Vehículos</Label>
                     <div className="space-y-3 rounded-md border p-4">
-                    {vehicleTypes.map(type => (
-                        <div key={type} className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 w-40">
-                            <Checkbox 
-                                id={type}
-                                checked={vehicles[type] !== undefined}
-                                onCheckedChange={(checked) => handleVehicleCheck(type, !!checked)}
-                            />
-                            <Label htmlFor={type} className="font-normal cursor-pointer">
-                                {vehicleConfig[type].name}
-                            </Label>
-                            </div>
-                            {vehicles[type] !== undefined && (
-                            <Input 
-                                    type="number"
-                                    min="1"
-                                    className="h-9 w-24"
-                                    value={vehicles[type] || ""}
-                                    placeholder="Cant."
-                                    onChange={(e) => handleVehicleCountChange(type, e.target.value)}
-                                />
-                            )}
-                        </div>
-                    ))}
+                        {vehicleEntries.map((entry, index) => (
+                           <div key={entry.id} className="flex items-center gap-2">
+                               <Select
+                                  value={entry.type}
+                                  onValueChange={(value) => handleVehicleChange(entry.id, 'type', value)}
+                               >
+                                  <SelectTrigger>
+                                      <SelectValue placeholder="Tipo de vehículo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {allVehicleTypes.map(type => (
+                                          <SelectItem key={type} value={type}>
+                                              {vehicleConfig[type].name}
+                                          </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                               </Select>
+                               <Input
+                                   type="number"
+                                   min="1"
+                                   placeholder="Cant."
+                                   className="w-24 h-10"
+                                   value={entry.count}
+                                   onChange={(e) => handleVehicleChange(entry.id, 'count', e.target.value)}
+                               />
+                               <Button
+                                   variant="ghost"
+                                   size="icon"
+                                   className="text-destructive hover:bg-destructive/10"
+                                   onClick={() => handleRemoveVehicleEntry(entry.id)}
+                                >
+                                   <Trash2 className="w-4 h-4"/>
+                               </Button>
+                           </div>
+                        ))}
+                         <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={handleAddVehicleEntry}
+                        >
+                           <PlusCircle className="mr-2 h-4 w-4"/>
+                           Agregar tipo de vehículo
+                        </Button>
                     </div>
                 </div>
             </div>
