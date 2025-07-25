@@ -19,10 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
+import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
 import type { Tour, Reservation, Passenger, Seller, PricingTier } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2 } from "lucide-react"
+import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2, Group } from "lucide-react"
 
 const adultTier: PricingTier = { id: 'adult', name: 'Adulto', price: 0 };
 
@@ -33,10 +33,12 @@ export default function BookingPage() {
   const { toast } = useToast()
 
   const [tour, setTour] = useState<Tour | null>(null)
+  const [allPassengers, setAllPassengers] = useState<Passenger[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [sellers, setSellers] = useState<Seller[]>([])
   const [selectedSellerId, setSelectedSellerId] = useState<string>("");
-  const [passengers, setPassengers] = useState<Passenger[]>([])
+  const [bookingPassengers, setBookingPassengers] = useState<Passenger[]>([])
+  const [familyName, setFamilyName] = useState("");
   const [isClient, setIsClient] = useState(false)
   const [loggedInSellerId, setLoggedInSellerId] = useState<string | null>(null)
   
@@ -52,6 +54,9 @@ export default function BookingPage() {
     const storedSellers = localStorage.getItem("ytl_sellers");
     const currentSellers: Seller[] = storedSellers ? JSON.parse(storedSellers) : mockSellers;
     setSellers(currentSellers);
+    
+    const storedPassengers = localStorage.getItem("ytl_passengers");
+    setAllPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
 
     const employeeIdFromStorage = localStorage.getItem("ytl_employee_id");
     const employeeIdFromUrl = searchParams.get('sellerId');
@@ -65,11 +70,13 @@ export default function BookingPage() {
     if (foundTour) {
         if (new Date(foundTour.date) >= new Date()) {
             setTour(foundTour)
-            setPassengers([{
+            setBookingPassengers([{
                 id: `P${Date.now()}`,
                 fullName: "",
                 dni: "",
                 dob: undefined,
+                phone: "",
+                family: "",
                 nationality: "Argentina",
                 tierId: 'adult'
             }])
@@ -82,35 +89,33 @@ export default function BookingPage() {
   }, [id, searchParams])
 
   const addPassenger = () => {
-    setPassengers(prev => [...prev, {
+    setBookingPassengers(prev => [...prev, {
         id: `P${Date.now()}`,
         fullName: "",
         dni: "",
         dob: undefined,
+        phone: "",
+        family: "",
         nationality: "Argentina",
         tierId: 'adult'
     }]);
   }
 
   const removePassenger = (passengerId: string) => {
-    setPassengers(prev => prev.filter(p => p.id !== passengerId));
+    setBookingPassengers(prev => prev.filter(p => p.id !== passengerId));
   }
 
   const handlePassengerChange = (passengerId: string, field: keyof Passenger, value: any) => {
-    const newPassengers = passengers.map(p => {
-        if (p.id === passengerId) {
-            return { ...p, [field]: value };
-        }
-        return p;
-    });
-    setPassengers(newPassengers);
+    setBookingPassengers(prev => prev.map(p => 
+        p.id === passengerId ? { ...p, [field]: value } : p
+    ));
   }
 
   const handleConfirmReservation = () => {
-    if (passengers.some(p => !p.fullName || !p.dni)) {
+    if (bookingPassengers.some(p => !p.fullName || !p.dni) || !bookingPassengers[0]?.phone) {
       toast({
         title: "Faltan datos",
-        description: "Por favor, complete nombre y DNI de todos los pasajeros.",
+        description: "Por favor, complete nombre, DNI y teléfono del pasajero principal.",
         variant: "destructive",
       })
       return
@@ -125,13 +130,29 @@ export default function BookingPage() {
       return
     }
 
+    // Save new passengers to the main list
+    const updatedPassengers = [...allPassengers];
+    const newPassengerList = bookingPassengers.map(bp => {
+        const finalPassenger: Passenger = { ...bp, family: familyName };
+        const existingIndex = updatedPassengers.findIndex(p => p.dni === bp.dni);
+        if (existingIndex > -1) {
+            updatedPassengers[existingIndex] = { ...updatedPassengers[existingIndex], ...finalPassenger };
+        } else {
+            updatedPassengers.push(finalPassenger);
+        }
+        return finalPassenger;
+    });
+
+    localStorage.setItem("ytl_passengers", JSON.stringify(updatedPassengers));
+
+
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
     const newReservation: Reservation = {
         id: reservationId,
         tripId: tour!.id,
-        passenger: passengers[0].fullName,
-        paxCount: passengers.length,
+        passenger: newPassengerList[0].fullName,
+        paxCount: newPassengerList.length,
         assignedSeats: [],
         assignedCabins: [],
         status: "Pendiente",
@@ -160,10 +181,10 @@ export default function BookingPage() {
     router.push('/booking/confirmation');
   }
   
-  const totalPassengers = passengers.length;
+  const totalPassengers = bookingPassengers.length;
   const availableTiers = tour ? [adultTier, ...(tour.pricingTiers || [])] : [adultTier];
 
-  const tourBasePrice = passengers.reduce((total, p) => {
+  const tourBasePrice = bookingPassengers.reduce((total, p) => {
     const tier = availableTiers.find(t => t.id === p.tierId);
     return total + (tier?.id === 'adult' ? (tour?.price || 0) : (tier?.price || 0));
   }, 0);
@@ -231,14 +252,25 @@ export default function BookingPage() {
                   <CardTitle className="flex items-center gap-3 text-2xl"><UsersIcon className="w-8 h-8 text-primary"/> Datos de los Pasajeros</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {passengers.map((passenger, index) => (
+                    <div className="space-y-2 max-w-sm">
+                        <Label htmlFor="family-name">Nombre de Familia o Grupo</Label>
+                        <Input 
+                            id="family-name" 
+                            value={familyName} 
+                            onChange={(e) => setFamilyName(e.target.value)} 
+                            placeholder="Ej: Familia Pérez"
+                        />
+                         <p className="text-xs text-muted-foreground">Este nombre agrupará a todos los pasajeros de esta reserva.</p>
+                    </div>
+                    <Separator />
+                    {bookingPassengers.map((passenger, index) => (
                     <div key={passenger.id} className="p-4 border rounded-lg space-y-4 relative bg-background">
-                         {passengers.length > 1 && (
+                         {bookingPassengers.length > 1 && (
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => removePassenger(passenger.id)}>
                                 <Trash2 className="w-4 h-4"/>
                             </Button>
                          )}
-                        <p className="font-semibold">Pasajero {index + 1}</p>
+                        <p className="font-semibold">Pasajero {index + 1} {index === 0 && '(Responsable de la reserva)'}</p>
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor={`fullName-${passenger.id}`}>Nombre completo</Label>
@@ -247,6 +279,10 @@ export default function BookingPage() {
                             <div className="space-y-2">
                                 <Label htmlFor={`dni-${passenger.id}`}>DNI</Label>
                                 <Input id={`dni-${passenger.id}`} value={passenger.dni} onChange={(e) => handlePassengerChange(passenger.id, 'dni', e.target.value)} placeholder="Sin puntos ni espacios" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor={`phone-${passenger.id}`}>Teléfono {index === 0 ? '(Obligatorio)' : '(Opcional)'}</Label>
+                                <Input id={`phone-${passenger.id}`} value={passenger.phone} onChange={(e) => handlePassengerChange(passenger.id, 'phone', e.target.value)} placeholder="Ej: 1122334455" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor={`dob-${passenger.id}`}>Fecha de nacimiento</Label>
@@ -318,12 +354,12 @@ export default function BookingPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="p-4 space-y-3 rounded-lg bg-secondary/40">
-                      {passengers.map(p => {
+                      {bookingPassengers.map(p => {
                           const tier = availableTiers.find(t => t.id === p.tierId);
                           const price = tier?.id === 'adult' ? tour.price : tier?.price ?? 0;
                           return (
                             <div key={p.id} className="flex justify-between font-medium">
-                                <span>{tier?.name}</span>
+                                <span>{tier?.name || 'Adulto'}</span>
                                 <span>${price.toLocaleString('es-AR')}</span>
                             </div>
                           )
@@ -357,3 +393,5 @@ export default function BookingPage() {
     </div>
   )
 }
+
+    

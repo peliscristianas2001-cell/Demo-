@@ -50,12 +50,32 @@ const calculateAge = (dob: Date | string) => {
 }
 
 export default function PassengersPage() {
-  const [passengers, setPassengers] = useState<Passenger[]>(mockPassengers)
+  const [passengers, setPassengers] = useState<Passenger[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
   const [prefilledFamily, setPrefilledFamily] = useState<string | undefined>(undefined);
+  const [isClient, setIsClient] = useState(false)
   const { toast } = useToast();
+  
+  useEffect(() => {
+    setIsClient(true);
+    const storedPassengers = localStorage.getItem("ytl_passengers");
+    setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
+
+     const handleStorageChange = () => {
+        const newStoredPassengers = localStorage.getItem("ytl_passengers")
+        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("ytl_passengers", JSON.stringify(passengers));
+    }
+  }, [passengers, isClient]);
 
   const handleEdit = (passenger: Passenger) => {
     setSelectedPassenger(passenger)
@@ -120,6 +140,8 @@ export default function PassengersPage() {
         return acc;
     }, {} as Record<string, Passenger[]>);
   }, [passengers, searchTerm])
+  
+  if (!isClient) return null;
 
   return (
     <>
@@ -166,8 +188,9 @@ export default function PassengersPage() {
                                     onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
                                     onClick={(e) => e.stopPropagation()}
                                     className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
+                                    disabled={family === 'Sin familia asignada'}
                                 />
-                                <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                {family !== 'Sin familia asignada' && <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />}
                                 <span>({members.length})</span>
                             </div>
                         </AccordionTrigger>
