@@ -11,18 +11,35 @@ export interface CustomLayoutConfig {
   layout: Layout;
 }
 
+export interface Insurance {
+  active: boolean;
+  coverage: string;
+  cost: number;
+  minAge: number;
+  maxAge: number;
+}
+
+export interface Pension {
+  active: boolean;
+  type: 'Media' | 'Completa' | 'Desayuno';
+  description: string;
+}
+
 export interface Tour {
   id: string;
   destination: string;
   date: Date;
   price: number;
   flyerUrl: string;
+  insurance?: Insurance;
+  pension?: Pension;
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";
+export type PaymentStatus = "Pagado" | "Parcial" | "Pendiente";
 
 export type AssignedSeat = { 
   seatId: string; 
@@ -45,11 +62,13 @@ export type Reservation = {
     id: string;
     tripId: string;
     passenger: string;
-    // This can represent seats or people in a cabin
     paxCount: number; 
     assignedSeats: AssignedSeat[];
     assignedCabins: AssignedCabin[];
     status: ReservationStatus;
+    paymentStatus: PaymentStatus;
+    sellerId: string;
+    finalPrice: number;
 }
 
 export type Ticket = {
@@ -62,4 +81,10 @@ export type Ticket = {
   qrCodeUrl: string;
 }
 
-    
+export type Seller = {
+    id: string;
+    name: string;
+    dni: string;
+    phone: string;
+    commission: number; // Percentage
+}

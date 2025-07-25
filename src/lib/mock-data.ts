@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket, AssignedSeat } from './types';
+import type { Tour, Reservation, Ticket, AssignedSeat, Seller } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -11,6 +11,8 @@ export const mockTours: Tour[] = [
     price: 150000,
     flyerUrl: 'https://placehold.co/400x500.png',
     vehicles: { 'doble_piso': 2 }, 
+    insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
+    pension: { active: true, type: 'Media', description: "Desayuno y cena incluidos."}
   },
   {
     id: '2',
@@ -27,6 +29,7 @@ export const mockTours: Tour[] = [
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
     vehicles: { 'micro_bajo': 1 },
+     pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
   },
   {
     id: '4',
@@ -54,15 +57,20 @@ export const mockTours: Tour[] = [
   },
 ];
 
+export const mockSellers: Seller[] = [
+    { id: 'S001', name: 'Laura Fernández', dni: '28123456', phone: '1122334455', commission: 10 },
+    { id: 'S002', name: 'Marcos Gil', dni: '30654987', phone: '1166778899', commission: 12 },
+    { id: 'S003', name: 'Sofía Acosta', dni: '35789123', phone: '1133445566', commission: 10 },
+]
 
 export const mockReservations: Reservation[] = [
-    { id: "R001", tripId: "1", passenger: "Juan Pérez", paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado" },
-    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado" },
-    { id: "R002", tripId: "2", passenger: "María García", paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente" },
-    { id: "R003", tripId: "1", passenger: "Carlos López", paxCount: 4, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado" },
-    { id: "R004", tripId: "3", passenger: "Ana Martínez", paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente" },
-    { id: "R005", tripId: "2", passenger: "Lucía Hernández", paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado" },
-    { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado" },
+    { id: "R001", tripId: "1", passenger: "Juan Pérez", paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 310000 },
+    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", finalPrice: 155000 },
+    { id: "R002", tripId: "2", passenger: "María García", paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "S001", finalPrice: 125000 },
+    { id: "R003", tripId: "1", passenger: "Carlos López", paxCount: 4, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 620000 },
+    { id: "R004", tripId: "3", passenger: "Ana Martínez", paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "S002", finalPrice: 270000 },
+    { id: "R005", tripId: "2", passenger: "Lucía Hernández", paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000 },
+    { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');

@@ -1,0 +1,237 @@
+
+"use client"
+
+import { useState, useMemo, useEffect } from "react"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog"
+import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { mockSellers } from "@/lib/mock-data"
+import type { Seller } from "@/lib/types"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
+
+export default function SellersPage() {
+  const [sellers, setSellers] = useState<Seller[]>([])
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
+  const [isClient, setIsClient] = useState(false)
+  const [formData, setFormData] = useState({ name: '', dni: '', phone: '', commission: '' });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClient(true)
+    const storedSellers = localStorage.getItem("ytl_sellers")
+    setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
+
+    const handleStorageChange = () => {
+      const newStoredSellers = localStorage.getItem("ytl_sellers")
+      setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [])
+  
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
+    }
+  }, [sellers, isClient])
+  
+  useEffect(() => {
+    if (selectedSeller) {
+        setFormData({
+            name: selectedSeller.name,
+            dni: selectedSeller.dni,
+            phone: selectedSeller.phone,
+            commission: String(selectedSeller.commission)
+        });
+    } else {
+        setFormData({ name: '', dni: '', phone: '', commission: '' });
+    }
+  }, [selectedSeller, isFormOpen]);
+
+  const handleCreate = () => {
+    setSelectedSeller(null)
+    setIsFormOpen(true)
+  }
+
+  const handleEdit = (seller: Seller) => {
+    setSelectedSeller(seller)
+    setIsFormOpen(true)
+  }
+  
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
+  }
+
+  const handleSave = () => {
+    const { name, dni, phone, commission } = formData;
+    if (!name || !dni || !phone || commission === '') {
+        toast({ title: "Datos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
+        return;
+    }
+
+    const commissionNumber = parseFloat(commission);
+    if (isNaN(commissionNumber) || commissionNumber < 0) {
+        toast({ title: "Comisión inválida", description: "La comisión debe ser un número positivo.", variant: "destructive" });
+        return;
+    }
+
+    const sellerData: Seller = {
+        id: selectedSeller?.id || `S${Date.now()}`,
+        name,
+        dni,
+        phone,
+        commission: commissionNumber
+    }
+
+    if (selectedSeller) {
+      setSellers(sellers.map(s => s.id === sellerData.id ? sellerData : s))
+    } else {
+      setSellers([...sellers, sellerData])
+    }
+    
+    setIsFormOpen(false)
+    setSelectedSeller(null)
+    toast({ title: "¡Éxito!", description: "La vendedora ha sido guardada." });
+  }
+
+  const handleDelete = (sellerId: string) => {
+    setSellers(sellers.filter(s => s.id !== sellerId))
+    toast({ title: "Vendedora eliminada", description: "La vendedora ha sido eliminada del sistema." });
+  }
+
+  if (!isClient) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-6">
+       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{selectedSeller ? "Editar Vendedora" : "Nueva Vendedora"}</DialogTitle>
+                <DialogDescription>
+                {selectedSeller ? "Modifica los datos de la vendedora." : "Añade una nueva vendedora al sistema."}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Nombre Completo</Label>
+                    <Input id="name" value={formData.name} onChange={handleFormChange}/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="dni">DNI</Label>
+                    <Input id="dni" value={formData.dni} onChange={handleFormChange}/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input id="phone" value={formData.phone} onChange={handleFormChange}/>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="commission">Comisión (%)</Label>
+                    <Input id="commission" type="number" value={formData.commission} onChange={handleFormChange} placeholder="Ej: 10"/>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSave}>Guardar</Button>
+            </DialogFooter>
+        </DialogContent>
+       </Dialog>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Gestión de Vendedoras</h2>
+          <p className="text-muted-foreground">
+            Añade, edita o elimina a las vendedoras de viajes.
+          </p>
+        </div>
+        <Button onClick={handleCreate}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Nueva Vendedora
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>DNI</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>Comisión</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sellers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    No hay vendedoras registradas.
+                  </TableCell>
+                </TableRow>
+              ) : sellers.map((seller) => (
+                  <TableRow key={seller.id}>
+                    <TableCell className="font-medium">{seller.name}</TableCell>
+                    <TableCell>{seller.dni}</TableCell>
+                    <TableCell>{seller.phone}</TableCell>
+                    <TableCell>{seller.commission}%</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menú</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(seller)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(seller.id)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

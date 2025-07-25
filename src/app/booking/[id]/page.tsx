@@ -11,11 +11,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, Passenger } from "@/lib/types"
+import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
+import type { Tour, Reservation, Passenger, Seller } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight } from "lucide-react"
+import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck } from "lucide-react"
 
 export default function BookingPage() {
   const { id } = use(useParams())
@@ -24,6 +31,8 @@ export default function BookingPage() {
 
   const [tour, setTour] = useState<Tour | null>(null)
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [sellers, setSellers] = useState<Seller[]>([])
+  const [selectedSellerId, setSelectedSellerId] = useState<string>("");
   const [adults, setAdults] = useState(1)
   const [children, setChildren] = useState(0)
   const [passengers, setPassengers] = useState<Passenger[]>([])
@@ -32,14 +41,15 @@ export default function BookingPage() {
   useEffect(() => {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
-    const tours: Tour[] = storedTours ? JSON.parse(storedTours, (key, value) => {
-        if (key === 'date') return new Date(value);
-        return value;
-      }) : mockTours;
+    const tours: Tour[] = storedTours ? JSON.parse(storedTours) : mockTours;
     
     const storedReservations = localStorage.getItem("ytl_reservations");
     const currentReservations: Reservation[] = storedReservations ? JSON.parse(storedReservations) : mockReservations;
     setReservations(currentReservations);
+
+    const storedSellers = localStorage.getItem("ytl_sellers");
+    const currentSellers: Seller[] = storedSellers ? JSON.parse(storedSellers) : mockSellers;
+    setSellers(currentSellers);
     
     const foundTour = tours.find((t) => t.id === id)
     if (foundTour && new Date(foundTour.date) >= new Date()) {
@@ -76,6 +86,15 @@ export default function BookingPage() {
       return
     }
 
+    if (!selectedSellerId) {
+       toast({
+        title: "Vendedora no seleccionada",
+        description: "Por favor, selecciona quién te vendió el viaje.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
     const newReservation: Reservation = {
@@ -85,7 +104,10 @@ export default function BookingPage() {
         paxCount: passengers.length,
         assignedSeats: [],
         assignedCabins: [],
-        status: "Pendiente"
+        status: "Pendiente",
+        paymentStatus: "Pendiente",
+        sellerId: selectedSellerId,
+        finalPrice: totalPrice
     };
 
     const updatedReservations = [...reservations, newReservation];
@@ -103,7 +125,9 @@ export default function BookingPage() {
   }
   
   const totalPassengers = adults + children;
-  const totalPrice = tour ? totalPassengers * tour.price : 0
+  const insuranceCost = tour?.insurance ? totalPassengers * tour.insurance.cost : 0;
+  const tourBasePrice = tour ? totalPassengers * tour.price : 0;
+  const totalPrice = tourBasePrice + insuranceCost;
 
   if (!isClient) {
     return null; // Don't render anything on the server
@@ -189,6 +213,23 @@ export default function BookingPage() {
                   </div>
                 </CardContent>
               </Card>
+              
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-2xl"><PercentSquare className="w-8 h-8 text-primary" /> Vendedora</CardTitle>
+                   <CardDescription>¿Quién te vendió este increíble viaje?</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
+                        <SelectTrigger className="h-12 text-base">
+                            <SelectValue placeholder="Selecciona una vendedora..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+              </Card>
 
               {passengers.map((passenger, index) => (
                 <Card key={index} className="shadow-lg">
@@ -248,13 +289,15 @@ export default function BookingPage() {
                 <CardContent className="space-y-4">
                   <div className="p-4 space-y-3 rounded-lg bg-secondary/40">
                       <div className="flex justify-between font-medium">
-                        <span>Adultos</span>
-                        <span>{adults} x ${tour.price.toLocaleString('es-AR')}</span>
+                        <span>Pasajeros</span>
+                        <span>{totalPassengers} x ${tour.price.toLocaleString('es-AR')}</span>
                       </div>
-                      <div className="flex justify-between font-medium">
-                        <span>Niños</span>
-                        <span>{children} x ${tour.price.toLocaleString('es-AR')}</span>
-                      </div>
+                      {tour.insurance && tour.insurance.cost > 0 && (
+                         <div className="flex justify-between font-medium">
+                            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-green-600"/>Seguro</span>
+                            <span>{totalPassengers} x ${tour.insurance.cost.toLocaleString('es-AR')}</span>
+                        </div>
+                      )}
                   </div>
                   <Separator />
                   <div className="flex items-baseline justify-between text-2xl font-bold">
@@ -278,5 +321,3 @@ export default function BookingPage() {
     </div>
   )
 }
-
-    

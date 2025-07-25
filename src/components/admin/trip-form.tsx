@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Tour, LayoutItemType, LayoutCategory } from "@/lib/types"
+import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
@@ -31,6 +31,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 
 interface TripFormProps {
   isOpen: boolean
@@ -45,11 +47,16 @@ type LayoutEntry = {
     count: number | '';
 }
 
+const defaultInsurance: Insurance = { active: false, coverage: '', cost: 0, minAge: 0, maxAge: 99 };
+const defaultPension: Pension = { active: false, type: 'Media', description: '' };
+
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
   const [price, setPrice] = useState<number | "">("")
   const [layoutEntries, setLayoutEntries] = useState<Record<LayoutCategory, LayoutEntry[]>>({ vehicles: [], airplanes: [], cruises: [] });
+  const [insurance, setInsurance] = useState<Insurance>(defaultInsurance);
+  const [pension, setPension] = useState<Pension>(defaultPension);
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
@@ -75,6 +82,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setDestination(tour.destination)
             setDate(tour.date ? new Date(tour.date) : undefined)
             setPrice(tour.price || "")
+            setInsurance(tour.insurance || defaultInsurance);
+            setPension(tour.pension || defaultPension);
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
             let currentId = 0;
@@ -96,6 +105,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setDate(undefined);
             setPrice("");
             setLayoutEntries({ vehicles: [], airplanes: [], cruises: [] });
+            setInsurance(defaultInsurance);
+            setPension(defaultPension);
             setNextId(1);
         }
         setIsLoading(false); 
@@ -135,6 +146,14 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
       }))
   }
 
+  const handleInsuranceChange = (field: keyof Insurance, value: any) => {
+    setInsurance(prev => ({ ...prev, [field]: value }));
+  }
+  
+  const handlePensionChange = (field: keyof Pension, value: any) => {
+    setPension(prev => ({ ...prev, [field]: value }));
+  }
+
   const handleSubmit = () => {
     if (!destination || !date || price === "" || price <= 0) {
       toast({ title: "Faltan datos", description: "Por favor, completa destino, fecha y un precio válido.", variant: "destructive" });
@@ -147,6 +166,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         date,
         price,
         flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
+        insurance: insurance.active ? insurance : undefined,
+        pension: pension.active ? pension : undefined,
     };
 
     let totalTransportUnits = 0;
@@ -186,7 +207,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{tour ? "Editar Viaje" : "Crear Nuevo Viaje"}</DialogTitle>
           <DialogDescription>
@@ -205,41 +226,103 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                     <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="price">Precio</Label>
+                    <Label htmlFor="price">Precio Base (por pasajero)</Label>
                     <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} placeholder="0"/>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <Label className="text-base font-medium">Configuración de Transporte</Label>
-                    <Accordion type="multiple" className="w-full">
-                        {(Object.keys(layoutConfig) as LayoutCategory[]).map(category => (
-                            <AccordionItem value={category} key={category}>
-                                <AccordionTrigger>{categoryNames[category]}</AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="space-y-3 rounded-md border p-4">
-                                        {layoutEntries[category].map((entry) => (
-                                           <div key={entry.id} className="flex items-center gap-2">
-                                               <Select value={entry.type} onValueChange={(value) => handleEntryChange(category, entry.id, 'type', value)}>
-                                                  <SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger>
-                                                  <SelectContent>
-                                                      {Object.entries(layoutConfig[category] || {}).map(([key, config]) => (
-                                                          <SelectItem key={key} value={key}>{config.name}</SelectItem>
-                                                      ))}
-                                                  </SelectContent>
-                                               </Select>
-                                               <Input type="number" min="1" placeholder="Cant." className="w-24 h-10" value={entry.count} onChange={(e) => handleEntryChange(category, entry.id, 'count', e.target.value)}/>
-                                               <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemoveEntry(category, entry.id)}>
-                                                   <Trash2 className="w-4 h-4"/>
-                                               </Button>
-                                           </div>
-                                        ))}
-                                         <Button variant="outline" size="sm" className="mt-2" onClick={() => handleAddEntry(category)}>
-                                           <PlusCircle className="mr-2 h-4 w-4"/> Añadir
-                                        </Button>
+                    <Accordion type="multiple" className="w-full" defaultValue={['transport', 'services']}>
+                         <AccordionItem value="transport">
+                            <AccordionTrigger className="text-base font-medium">Configuración de Transporte</AccordionTrigger>
+                            <AccordionContent>
+                                {(Object.keys(layoutConfig) as LayoutCategory[]).map(category => (
+                                    <div key={category} className="mb-4 last:mb-0">
+                                        <h4 className="font-semibold text-muted-foreground mb-2">{categoryNames[category]}</h4>
+                                        <div className="space-y-3 rounded-md border p-4">
+                                            {layoutEntries[category].map((entry) => (
+                                            <div key={entry.id} className="flex items-center gap-2">
+                                                <Select value={entry.type} onValueChange={(value) => handleEntryChange(category, entry.id, 'type', value)}>
+                                                    <SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {Object.entries(layoutConfig[category] || {}).map(([key, config]) => (
+                                                            <SelectItem key={key} value={key}>{config.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input type="number" min="1" placeholder="Cant." className="w-24 h-10" value={entry.count} onChange={(e) => handleEntryChange(category, entry.id, 'count', e.target.value)}/>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemoveEntry(category, entry.id)}>
+                                                    <Trash2 className="w-4 h-4"/>
+                                                </Button>
+                                            </div>
+                                            ))}
+                                            <Button variant="outline" size="sm" className="mt-2" onClick={() => handleAddEntry(category)}>
+                                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir
+                                            </Button>
+                                        </div>
                                     </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
+                                ))}
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="services">
+                             <AccordionTrigger className="text-base font-medium">Servicios Adicionales</AccordionTrigger>
+                             <AccordionContent className="space-y-6 pt-4">
+                                {/* Insurance Section */}
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="insurance-active" className="text-lg font-medium">Seguro</Label>
+                                        <Switch id="insurance-active" checked={insurance.active} onCheckedChange={(c) => handleInsuranceChange('active', c)} />
+                                    </div>
+                                    {insurance.active && (
+                                        <div className="space-y-4">
+                                             <div className="space-y-2">
+                                                <Label htmlFor="insurance-coverage">Cobertura</Label>
+                                                <Textarea id="insurance-coverage" placeholder="Detalles de la cobertura del seguro..." value={insurance.coverage} onChange={(e) => handleInsuranceChange('coverage', e.target.value)}/>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                 <div className="space-y-2">
+                                                    <Label htmlFor="insurance-cost">Costo</Label>
+                                                    <Input id="insurance-cost" type="number" value={insurance.cost} onChange={e => handleInsuranceChange('cost', parseFloat(e.target.value) || 0)}/>
+                                                </div>
+                                                 <div className="space-y-2">
+                                                    <Label htmlFor="insurance-minAge">Edad Mín.</Label>
+                                                    <Input id="insurance-minAge" type="number" value={insurance.minAge} onChange={e => handleInsuranceChange('minAge', parseInt(e.target.value) || 0)}/>
+                                                </div>
+                                                 <div className="space-y-2">
+                                                    <Label htmlFor="insurance-maxAge">Edad Máx.</Label>
+                                                    <Input id="insurance-maxAge" type="number" value={insurance.maxAge} onChange={e => handleInsuranceChange('maxAge', parseInt(e.target.value) || 0)}/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Pension Section */}
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                     <div className="flex items-center justify-between">
+                                        <Label htmlFor="pension-active" className="text-lg font-medium">Pensión</Label>
+                                        <Switch id="pension-active" checked={pension.active} onCheckedChange={(c) => handlePensionChange('active', c)} />
+                                    </div>
+                                    {pension.active && (
+                                        <div className="space-y-4">
+                                             <div className="space-y-2">
+                                                <Label htmlFor="pension-type">Tipo de Pensión</Label>
+                                                <Select value={pension.type} onValueChange={(v) => handlePensionChange('type', v)}>
+                                                    <SelectTrigger id="pension-type"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Media">Media Pensión</SelectItem>
+                                                        <SelectItem value="Completa">Pensión Completa</SelectItem>
+                                                        <SelectItem value="Desayuno">Solo Desayuno</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="pension-description">Descripción</Label>
+                                                <Textarea id="pension-description" placeholder="Ej: Incluye desayuno y cena, sin bebidas." value={pension.description} onChange={(e) => handlePensionChange('description', e.target.value)}/>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                             </AccordionContent>
+                        </AccordionItem>
                     </Accordion>
                 </div>
             </div>

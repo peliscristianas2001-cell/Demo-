@@ -52,10 +52,12 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship } from "lucide-react"
-import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType } from "@/lib/types"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit } from "lucide-react"
+import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -71,38 +73,39 @@ type ExpandedTransportUnit = {
     globalUnitNum: number;
 };
 
+type EditReservationState = {
+  isOpen: boolean;
+  reservation: Reservation | null;
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
+  const [editingReservation, setEditingReservation] = useState<EditReservationState>({ isOpen: false, reservation: null });
 
   useEffect(() => {
     setIsClient(true)
+    // Load data from localStorage or fall back to mock data
     const storedReservations = localStorage.getItem("ytl_reservations")
     const storedTours = localStorage.getItem("ytl_tours")
+    const storedSellers = localStorage.getItem("ytl_sellers")
     
-    if (storedReservations) {
-        setReservations(JSON.parse(storedReservations, (key, value) => {
-            if (key === 'date') return new Date(value);
-            return value;
-        }));
-    } else {
-        setReservations(mockReservations)
-    }
-
-    if (storedTours) {
-        setTours(JSON.parse(storedTours, (key, value) => {
-             if (key === 'date') return new Date(value);
-            return value;
-        }));
-    } else {
-        setTours(mockTours);
-    }
+    setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
+    setTours(storedTours ? JSON.parse(storedTours) : mockTours)
+    setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
+       const newStoredReservations = localStorage.getItem("ytl_reservations")
+       const newStoredTours = localStorage.getItem("ytl_tours")
+       const newStoredSellers = localStorage.getItem("ytl_sellers")
+       setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
+       setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
+       setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -173,6 +176,12 @@ export default function ReservationsPage() {
     ))
   }
 
+  const handleUpdateReservation = () => {
+    if (!editingReservation.reservation) return;
+    setReservations(prev => prev.map(res => res.id === editingReservation.reservation!.id ? editingReservation.reservation! : res));
+    setEditingReservation({isOpen: false, reservation: null});
+  }
+
   const handleDelete = (reservationId: string) => {
     setReservations(reservations.filter(res => res.id !== reservationId));
   }
@@ -206,7 +215,6 @@ export default function ReservationsPage() {
       .map(seat => seat.seatId);
   };
 
-
   const getStatusVariant = (status: ReservationStatus) => {
     switch (status) {
       case "Confirmado":
@@ -217,6 +225,19 @@ export default function ReservationsPage() {
         return "default"
     }
   }
+
+   const getPaymentStatusVariant = (status?: PaymentStatus) => {
+    switch (status) {
+      case "Pagado":
+        return "secondary";
+      case "Parcial":
+        return "outline";
+      case "Pendiente":
+        return "destructive";
+      default:
+        return "default";
+    }
+  };
   
   const getTransportIdentifier = (unit: ExpandedTransportUnit) => {
     return `${unit.category}_${unit.type}_${unit.globalUnitNum}`;
@@ -244,6 +265,62 @@ export default function ReservationsPage() {
   }
 
   return (
+    <>
+    <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Reserva</DialogTitle>
+          <DialogDescription>
+            Modificar detalles de la reserva para {editingReservation.reservation?.passenger}.
+          </DialogDescription>
+        </DialogHeader>
+        {editingReservation.reservation && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="seller">Vendedora</Label>
+               <Select
+                  value={editingReservation.reservation.sellerId}
+                  onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, sellerId: val}}))}
+                >
+                  <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentStatus">Estado de Pago</Label>
+               <Select
+                  value={editingReservation.reservation.paymentStatus}
+                  onValueChange={(val: PaymentStatus) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, paymentStatus: val}}))}
+                >
+                  <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pagado">Pagado</SelectItem>
+                    <SelectItem value="Parcial">Parcial</SelectItem>
+                    <SelectItem value="Pendiente">Pendiente</SelectItem>
+                  </SelectContent>
+                </Select>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="totalPrice">Precio Final</Label>
+              <Input
+                id="totalPrice"
+                type="number"
+                value={editingReservation.reservation.finalPrice}
+                onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+          <Button onClick={handleUpdateReservation}>Guardar Cambios</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+
     <div className="space-y-6">
        <div>
         <h2 className="text-2xl font-bold">Gestión de Reservas</h2>
@@ -272,8 +349,10 @@ export default function ReservationsPage() {
                                <Table>
                                     <TableHeader>
                                     <TableRow>
-                                        <TableHead>Pasajero Principal</TableHead>
+                                        <TableHead>Pasajero</TableHead>
+                                        <TableHead>Vendedora</TableHead>
                                         <TableHead>Asientos</TableHead>
+                                        <TableHead>Pago</TableHead>
                                         <TableHead>Estado</TableHead>
                                         <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
@@ -281,11 +360,18 @@ export default function ReservationsPage() {
                                     <TableBody>
                                         {tripReservations.map((res) => {
                                             const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
+                                            const seller = sellers.find(s => s.id === res.sellerId);
                                             return (
                                                 <TableRow key={res.id}>
                                                     <TableCell>{res.passenger}</TableCell>
+                                                    <TableCell>{seller?.name || 'N/A'}</TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline">{assignedCount} / {res.paxCount}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={getPaymentStatusVariant(res.paymentStatus)}>
+                                                          {res.paymentStatus || "Pendiente"}
+                                                        </Badge>
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant={getStatusVariant(res.status)}>
@@ -294,6 +380,9 @@ export default function ReservationsPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => setEditingReservation({ isOpen: true, reservation: res })}>
+                                                          <Edit className="mr-2 h-4 w-4" /> Editar
+                                                        </Button>
                                                         <Dialog
                                                           onOpenChange={(open) => {
                                                             if (open) {
@@ -408,5 +497,6 @@ export default function ReservationsPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }
