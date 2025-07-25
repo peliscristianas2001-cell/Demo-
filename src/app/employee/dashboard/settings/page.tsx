@@ -43,6 +43,15 @@ export default function EmployeeSettingsPage() {
     const handleSaveChanges = () => {
         if (!employeeId) return;
 
+        if (!formData.dni || !formData.phone) {
+             toast({
+                title: "Datos incompletos",
+                description: "El DNI y el Teléfono son obligatorios.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         const updatedSellers = sellers.map(s => {
             if (s.id === employeeId) {
                 return { ...s, ...formData };
@@ -67,7 +76,7 @@ export default function EmployeeSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><SettingsIcon className="w-6 h-6"/> Mi Perfil</CardTitle>
           <CardDescription>
-            Actualiza tu información personal.
+            Actualiza tu información personal. El DNI y el teléfono son obligatorios para el registro de tus ventas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -77,12 +86,12 @@ export default function EmployeeSettingsPage() {
                     <Input id="name" value={formData.name} onChange={handleFormChange}/>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="dni">DNI</Label>
-                    <Input id="dni" value={formData.dni} onChange={handleFormChange}/>
+                    <Label htmlFor="dni">DNI (obligatorio)</Label>
+                    <Input id="dni" value={formData.dni} onChange={handleFormChange} placeholder="Tu número de DNI sin puntos"/>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input id="phone" value={formData.phone} onChange={handleFormChange}/>
+                    <Label htmlFor="phone">Teléfono (obligatorio)</Label>
+                    <Input id="phone" value={formData.phone} onChange={handleFormChange} placeholder="Tu número de teléfono"/>
                 </div>
                 <Button onClick={handleSaveChanges}>
                     <Save className="mr-2 h-4 w-4" />
