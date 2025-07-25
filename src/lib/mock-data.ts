@@ -80,6 +80,7 @@ export const mockSellers: Seller[] = [
     { id: 'S001', name: 'Laura Fernández', dni: '28123456', phone: '1122334455', commission: 10 },
     { id: 'S002', name: 'Marcos Gil', dni: '30654987', phone: '1166778899', commission: 12 },
     { id: 'S003', name: 'Sofía Acosta', dni: '35789123', phone: '1133445566', commission: 10 },
+    { id: 'S004', name: 'Jose Luis Godoy', dni: '43580345', phone: '', commission: 10, password: '@Vector2016' }
 ]
 
 export const mockPassengers: Passenger[] = [
@@ -90,6 +91,7 @@ export const mockPassengers: Passenger[] = [
     { id: "P005", fullName: "Lucía Hernández", dni: "38456789", dob: new Date('1995-07-18'), phone: "1165893214", family: "Hernández", nationality: "Argentina", tierId: "adult" },
     { id: "P006", fullName: "Jorge Rodriguez", dni: "25123789", dob: new Date('1975-03-05'), phone: "1121458796", family: "Rodriguez", nationality: "Argentina", tierId: "adult" },
     { id: "P007", fullName: "Laura Pérez", dni: "45123456", dob: new Date('2015-08-12'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "T1_CHILD" },
+    { id: "P008", fullName: "Jose Luis Godoy", dni: "43580345", dob: new Date('2001-08-11'), phone: "", family: "Godoy", nationality: "Argentina", tierId: "adult" },
 ]
 
 
