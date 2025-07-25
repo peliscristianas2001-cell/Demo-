@@ -15,7 +15,7 @@ const layouts: Record<VehicleType, Layout> = {
         floors: [{
             name: "Planta Única",
             grid: [
-                [{type: 'chofer'}, {type: 'seat', number: 1}, null, null],
+                [{type: 'chofer'}, {type: 'pasillo'}, {type: 'seat', number: 1}, null],
                 [{type: 'seat', number: 2}, {type: 'pasillo'}, {type: 'seat', number: 3}, {type: 'seat', number: 4}],
                 [{type: 'seat', number: 5}, {type: 'pasillo'}, {type: 'seat', number: 6}, {type: 'seat', number: 7}],
                 [{type: 'seat', number: 8}, {type: 'pasillo'}, {type: 'seat', number: 9}, {type: 'seat', number: 10}],
@@ -31,7 +31,7 @@ const layouts: Record<VehicleType, Layout> = {
             grid: ((): Cell[][] => {
                 const grid: Cell[][] = [];
                 let seat = 1;
-                // Fila 1 a 11
+                // Fila 1 a 11 (44 asientos)
                 for(let i=0; i<11; i++) {
                     grid.push([
                         { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ },
@@ -39,8 +39,8 @@ const layouts: Record<VehicleType, Layout> = {
                         { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ }
                     ]);
                 }
-                // Fila 12
-                grid.push([ { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ }, { type: 'pasillo' }, { type: 'baño' }, { type: 'baño' } ]);
+                // Fila 12 (asientos 45 y 46 + baño)
+                grid.push([ { type: 'seat', number: 45 }, { type: 'seat', number: 46 }, { type: 'pasillo' }, { type: 'baño' }, { type: 'baño' } ]);
                 return grid;
             })(),
         }]
@@ -51,7 +51,7 @@ const layouts: Record<VehicleType, Layout> = {
             grid: ((): Cell[][] => {
                 const grid: Cell[][] = [];
                 let seat = 1;
-                // Fila 1 a 14
+                // Fila 1 a 14 (56 asientos)
                 for(let i=0; i<14; i++) {
                     grid.push([
                         { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ },
@@ -59,8 +59,8 @@ const layouts: Record<VehicleType, Layout> = {
                         { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ }
                     ]);
                 }
-                // Últimos asientos
-                grid.push([ { type: 'baño' }, { type: 'pasillo' }, { type: 'seat', number: 57 }, { type: 'seat', number: 58 } ]);
+                // Última fila (asientos 57 y 58 + baño)
+                grid.push([ { type: 'seat', number: 57 }, { type: 'seat', number: 58 }, { type: 'pasillo' }, { type: 'baño' }, { type: 'baño' } ]);
                 return grid;
             })(),
         }]
@@ -70,27 +70,32 @@ const layouts: Record<VehicleType, Layout> = {
             { // Planta Baja
                 name: "Planta Baja",
                 grid: [
-                    [ {type: 'seat', number: 1}, {type: 'seat', number: 2}, {type: 'pasillo'}, {type: 'seat', number: 3}, {type: 'seat', number: 4}],
-                    [ {type: 'seat', number: 5}, {type: 'seat', number: 6}, {type: 'pasillo'}, {type: 'seat', number: 7}, {type: 'seat', number: 8}],
-                    [ {type: 'seat', number: 9}, {type: 'seat', number: 10}, {type: 'pasillo'}, {type: 'escalera'}, {type: 'escalera'}],
-                    [ null, null, {type: 'pasillo'}, {type: 'baño'}, {type: 'baño'} ],
-                    [ {type: 'seat', number: 11}, {type: 'seat', number: 12}, {type: 'pasillo'}, null, null]
+                    [ {type: 'baño'}, {type: 'pasillo'}, {type: 'chofer'}, {type: 'chofer'}],
+                    [ {type: 'seat', number: 49}, {type: 'pasillo'}, {type: 'seat', number: 50}, {type: 'seat', number: 51}],
+                    [ {type: 'seat', number: 52}, {type: 'pasillo'}, {type: 'seat', number: 53}, {type: 'seat', number: 54}],
+                    [ {type: 'seat', number: 55}, {type: 'pasillo'}, {type: 'seat', number: 56}, {type: 'seat', number: 57}],
+                    [ {type: 'seat', number: 58}, {type: 'pasillo'}, {type: 'seat', number: 59}, {type: 'seat', number: 60}],
                 ]
             },
             { // Planta Alta
                 name: "Planta Alta",
-                grid: ((): Cell[][] => {
-                    const grid: Cell[][] = [];
-                    let seat = 13;
-                     for(let i=0; i<12; i++) {
-                        grid.push([
-                            { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ },
-                            { type: 'pasillo' },
-                            { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ }
-                        ]);
-                    }
-                    return grid;
-                })()
+                grid: [
+                    [ {type: 'seat', number: 1}, {type: 'seat', number: 2}, {type: 'pasillo'}, {type: 'seat', number: 3}, {type: 'seat', number: 4}],
+                    [ {type: 'seat', number: 5}, {type: 'seat', number: 6}, {type: 'pasillo'}, {type: 'escalera'}, {type: 'escalera'}],
+                    [ {type: 'seat', number: 7}, {type: 'seat', number: 8}, {type: 'pasillo'}, {type: 'cafetera'}, {type: 'cafetera'}],
+                    ...((() => {
+                        const rows: Cell[][] = [];
+                        let seat = 9;
+                        for(let i = 0; i < 10; i++) {
+                            rows.push([
+                                { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ },
+                                { type: 'pasillo' },
+                                { type: 'seat', number: seat++ }, { type: 'seat', number: seat++ }
+                            ]);
+                        }
+                        return rows;
+                    })())
+                ]
             }
         ]
     }
