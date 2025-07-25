@@ -71,31 +71,49 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
     // Create a ticket for each assigned seat in the reservation
     const ticketsForReservation: Ticket[] = [];
 
-    res.assignedSeats.forEach((seat, index) => {
+    (res.assignedSeats || []).forEach((seat, index) => {
+        const ticketId = `${res.id}-S${index + 1}`;
+        const qrData = JSON.stringify({
+            ticketId: ticketId,
+            reservationId: res.id,
+            passenger: res.passenger,
+            destination: mockTours.find(t => t.id === res.tripId)?.destination,
+            assignment: `Asiento ${seat.seatId} (Unidad ${seat.unit})`,
+        });
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+        
         ticketsForReservation.push({
-            id: `${res.id}-S${index + 1}`,
+            id: ticketId,
             reservationId: res.id,
             tripId: res.tripId,
             passengerName: res.passenger,
             passengerDni: 'XX.XXX.XXX', // Placeholder DNI
             assignment: seat,
-            qrCodeUrl: 'https://placehold.co/150x150.png', // Placeholder QR Code
+            qrCodeUrl: qrCodeUrl,
         });
     });
 
-    res.assignedCabins.forEach((cabin, index) => {
+    (res.assignedCabins || []).forEach((cabin, index) => {
+        const ticketId = `${res.id}-C${index + 1}`;
+         const qrData = JSON.stringify({
+            ticketId: ticketId,
+            reservationId: res.id,
+            passenger: res.passenger,
+            destination: mockTours.find(t => t.id === res.tripId)?.destination,
+            assignment: `Camarote ${cabin.cabinId} (Unidad ${cabin.unit})`,
+        });
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+
         ticketsForReservation.push({
-            id: `${res.id}-C${index + 1}`,
+            id: ticketId,
             reservationId: res.id,
             tripId: res.tripId,
             passengerName: res.passenger,
             passengerDni: 'XX.XXX.XXX',
             assignment: cabin,
-            qrCodeUrl: 'https://placehold.co/150x150.png',
+            qrCodeUrl: qrCodeUrl,
         });
     });
 
     return ticketsForReservation;
 });
-
-    
