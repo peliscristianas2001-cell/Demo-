@@ -13,7 +13,8 @@ import {
   Globe,
   LayoutDashboard,
   TicketCheck,
-  PercentSquare
+  PercentSquare,
+  BarChart3
 } from "lucide-react";
 
 import {
@@ -39,6 +40,7 @@ const navItems = [
   { href: "/admin/dashboard/sellers", label: "Vendedoras", icon: PercentSquare },
   { href: "/admin/dashboard/flyers", label: "Flyers", icon: ImageIcon },
   { href: "/admin/dashboard/tickets", label: "Tickets", icon: TicketCheck },
+  { href: "/admin/dashboard/reports", label: "Reportes", icon: BarChart3 },
   { href: "/admin/dashboard/settings", label: "Configuración", icon: Settings },
 ];
 
