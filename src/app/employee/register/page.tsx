@@ -33,11 +33,14 @@ export default function EmployeeRegisterPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // This effect ensures we only run logic that needs the window object on the client.
     setIsClient(true);
     const id = searchParams.get('sellerId');
-    setSellerId(id);
-    const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    setSellers(storedSellers);
+    if (id) {
+        setSellerId(id);
+        const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+        setSellers(storedSellers);
+    }
   }, [searchParams]);
 
   const seller = useMemo(() => sellers.find(s => s.id === sellerId), [sellers, sellerId]);
@@ -74,6 +77,8 @@ export default function EmployeeRegisterPage() {
   };
 
   if (!isClient) {
+    // Render nothing on the server to avoid hydration mismatches,
+    // and wait for the client-side useEffect to run.
     return null;
   }
 
@@ -142,7 +147,9 @@ export default function EmployeeRegisterPage() {
                     </Button>
                 </form>
             ) : (
-                <p className="text-center text-muted-foreground">Cargando información...</p>
+                 <p className="text-center text-muted-foreground p-4">
+                    {sellerId ? "Verificando datos del vendedor..." : "Link inválido o no se encontró el ID del vendedor."}
+                </p>
             )}
         </CardContent>
       </Card>
