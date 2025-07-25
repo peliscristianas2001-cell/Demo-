@@ -33,6 +33,7 @@ export function DatePicker({ id, date, setDate, placeholder, className }: DatePi
   }
 
   const displayDate = date ?? internalDate;
+  const currentYear = new Date().getFullYear();
 
   return (
     <Popover>
@@ -57,6 +58,9 @@ export function DatePicker({ id, date, setDate, placeholder, className }: DatePi
           onSelect={handleDateChange}
           initialFocus
           locale={es}
+          captionLayout="dropdown-buttons"
+          fromYear={currentYear - 100}
+          toYear={currentYear}
         />
       </PopoverContent>
     </Popover>
