@@ -80,7 +80,16 @@ function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    let sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    
+    // Safety check: ensure mock users exist to prevent issues with localStorage
+    const testUserDNI = "43580345";
+    if (!sellers.some(s => s.dni === testUserDNI)) {
+      sellers = mockSellers;
+      localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
+    }
+
+
     const foundSeller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
     const isAdmin = credential === "Angela Rojas" && password === "AngelaRojasYTL";
 
@@ -128,8 +137,6 @@ function LoginForm() {
               localStorage.removeItem("ytl_employee_id");
               if (sellerToLogin) {
                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${sellerToLogin.name}.` });
-              } else {
-                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo.` });
               }
               router.push("/");
               break;
@@ -271,5 +278,4 @@ export default function AuthPage() {
   );
 }
 
-
-
+    

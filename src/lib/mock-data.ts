@@ -159,3 +159,5 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
 
     return ticketsForReservation;
 });
+
+    
