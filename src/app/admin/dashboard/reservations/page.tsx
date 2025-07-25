@@ -284,6 +284,7 @@ export default function ReservationsPage() {
                 >
                   <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="unassigned">Sin asignar</SelectItem>
                     {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -364,7 +365,7 @@ export default function ReservationsPage() {
                                             return (
                                                 <TableRow key={res.id}>
                                                     <TableCell>{res.passenger}</TableCell>
-                                                    <TableCell>{seller?.name || 'N/A'}</TableCell>
+                                                    <TableCell>{seller?.name || <Badge variant="outline">Sin Asignar</Badge>}</TableCell>
                                                     <TableCell>
                                                         <Badge variant="outline">{assignedCount} / {res.paxCount}</Badge>
                                                     </TableCell>
@@ -498,5 +499,3 @@ export default function ReservationsPage() {
     </>
   )
 }
-
-    

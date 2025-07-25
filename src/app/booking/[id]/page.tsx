@@ -39,7 +39,6 @@ export default function BookingPage() {
   const [allPassengers, setAllPassengers] = useState<Passenger[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [sellers, setSellers] = useState<Seller[]>([])
-  const [selectedSellerId, setSelectedSellerId] = useState<string>("");
   const [bookingPassengers, setBookingPassengers] = useState<BookingPassenger[]>([])
   const [isClient, setIsClient] = useState(false)
   const [loggedInSellerId, setLoggedInSellerId] = useState<string | null>(null)
@@ -61,11 +60,8 @@ export default function BookingPage() {
     setAllPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
 
     const employeeIdFromStorage = localStorage.getItem("ytl_employee_id");
-    const employeeIdFromUrl = searchParams.get('sellerId');
-    const finalSellerId = employeeIdFromUrl || employeeIdFromStorage;
-    if (finalSellerId) {
-        setLoggedInSellerId(finalSellerId);
-        setSelectedSellerId(finalSellerId);
+    if (employeeIdFromStorage) {
+        setLoggedInSellerId(employeeIdFromStorage);
     }
     
     const foundTour = tours.find((t) => t.id === id)
@@ -126,14 +122,7 @@ export default function BookingPage() {
       return
     }
 
-    if (!selectedSellerId) {
-       toast({
-        title: "Vendedor no seleccionado",
-        description: "Por favor, selecciona quién te vendió el viaje.",
-        variant: "destructive",
-      })
-      return
-    }
+    const sellerToAssign = loggedInSellerId || 'unassigned';
     
     const familyName = `Familia ${mainPassenger.lastName}`;
 
@@ -168,7 +157,7 @@ export default function BookingPage() {
         assignedCabins: [],
         status: "Pendiente",
         paymentStatus: "Pendiente",
-        sellerId: selectedSellerId,
+        sellerId: sellerToAssign,
         finalPrice: totalPrice
     };
 
@@ -184,7 +173,7 @@ export default function BookingPage() {
     const confirmationData = {
         reservation: newReservation,
         tour: tour,
-        seller: sellers.find(s => s.id === selectedSellerId)
+        seller: sellers.find(s => s.id === sellerToAssign)
     }
     
     sessionStorage.setItem('ytl_last_reservation', JSON.stringify(confirmationData));
@@ -317,31 +306,15 @@ export default function BookingPage() {
                     </Button>
                 </CardContent>
               </Card>
-              
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-2xl"><PercentSquare className="w-8 h-8 text-primary" /> Vendedor/a</CardTitle>
-                   <CardDescription>¿Quién te vendió este increíble viaje?</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Select value={selectedSellerId} onValueChange={setSelectedSellerId} disabled={!!loggedInSellerId}>
-                        <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="Selecciona un vendedor/a..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     {loggedInSellerId && (
-                        <p className="text-sm text-muted-foreground mt-2">Venta asignada a tu usuario.</p>
-                    )}
-                </CardContent>
-              </Card>
 
+              {loggedInSellerId && (
+                <p className="text-sm text-center text-muted-foreground mt-2">Venta asignada a tu usuario.</p>
+              )}
+              
               {!loggedInSellerId && (
                 <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
                     <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-body drop-shadow-xl tracking-wider">
+                    <CardTitle className="font-body drop-shadow-xl tracking-wider flex items-center gap-2">
                         <HeartIcon className="w-6 h-6" />
                         ¿Querés agilizar tus próximas reservas?
                     </CardTitle>
