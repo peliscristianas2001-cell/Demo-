@@ -26,6 +26,7 @@ export default function EmployeeRegisterPage() {
   
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [sellerId, setSellerId] = useState<string | null>(null);
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,13 @@ export default function EmployeeRegisterPage() {
   useEffect(() => {
     const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
     setSellers(storedSellers);
-    setSellerId(searchParams.get('sellerId'));
+    const id = searchParams.get('sellerId');
+    setSellerId(id);
+
+    const currentSeller = storedSellers.find((s: Seller) => s.id === id);
+    if (currentSeller && currentSeller.name) {
+      setName(currentSeller.name);
+    }
   }, [searchParams]);
 
   const seller = useMemo(() => sellers.find(s => s.id === sellerId), [sellers, sellerId]);
@@ -43,6 +50,10 @@ export default function EmployeeRegisterPage() {
     e.preventDefault();
     if (!seller) {
         toast({ title: "Error", description: "Link de registro inválido o expirado.", variant: "destructive" });
+        return;
+    }
+     if (!name) {
+        toast({ title: "Falta el nombre", description: "Por favor, ingresa tu nombre y apellido.", variant: "destructive" });
         return;
     }
     if (password !== confirmPassword) {
@@ -56,13 +67,13 @@ export default function EmployeeRegisterPage() {
 
     setIsLoading(true);
 
-    const updatedSeller = { ...seller, password };
+    const updatedSeller = { ...seller, name, password };
     const updatedSellers = sellers.map(s => s.id === sellerId ? updatedSeller : s);
     localStorage.setItem("ytl_sellers", JSON.stringify(updatedSellers));
 
     toast({
         title: "¡Registro completado!",
-        description: "Tu contraseña ha sido creada. Ahora puedes iniciar sesión.",
+        description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
     });
 
     setTimeout(() => {
@@ -81,12 +92,23 @@ export default function EmployeeRegisterPage() {
                 Completar Registro de Vendedor/a
             </CardTitle>
             <CardDescription>
-                {seller ? `¡Hola, ${seller.name}! Crea tu contraseña para acceder a tu panel.` : "Cargando información..."}
+                {seller ? `Completa tus datos para crear tu cuenta y acceder a tu panel.` : "Cargando información..."}
             </CardDescription>
         </CardHeader>
         <CardContent>
             {seller ? (
                 <form onSubmit={handleRegister} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Nombre y Apellido</Label>
+                        <Input 
+                            id="name" 
+                            placeholder="Ej: Juan Pérez" 
+                            required 
+                            className="h-11"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                        />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Crea tu Contraseña</Label>
                         <Input 
