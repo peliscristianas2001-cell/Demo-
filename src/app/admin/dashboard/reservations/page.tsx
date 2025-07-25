@@ -55,7 +55,7 @@ import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType } from "@/lib/types"
-import { getLayoutConfig } from "@/lib/vehicle-config"
+import { getLayoutConfig } from "@/lib/layout-config"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;

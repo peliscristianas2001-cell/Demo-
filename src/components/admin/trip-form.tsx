@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Tour, LayoutItemType, LayoutCategory } from "@/lib/types"
-import { getLayoutConfig } from "@/lib/vehicle-config"
+import { getLayoutConfig } from "@/lib/layout-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
   Select,
@@ -71,14 +71,14 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
   useEffect(() => {
     if (isOpen) {
-        let currentId = 0;
-        const newLayoutEntries: Record<LayoutCategory, LayoutEntry[]> = { vehicles: [], airplanes: [], cruises: [] };
         if (tour) {
             setDestination(tour.destination)
             setDate(tour.date ? new Date(tour.date) : undefined)
             setPrice(tour.price || "")
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+            let currentId = 0;
+            const newLayoutEntries: Record<LayoutCategory, LayoutEntry[]> = { vehicles: [], airplanes: [], cruises: [] };
             categories.forEach(cat => {
                 if (tour[cat]) {
                     newLayoutEntries[cat] = Object.entries(tour[cat]!).map(([type, count]) => ({
@@ -88,9 +88,16 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                     }));
                 }
             })
+            setLayoutEntries(newLayoutEntries);
+            setNextId(currentId);
+        } else {
+            // Reset form for new trip
+            setDestination("");
+            setDate(undefined);
+            setPrice("");
+            setLayoutEntries({ vehicles: [], airplanes: [], cruises: [] });
+            setNextId(1);
         }
-        setLayoutEntries(newLayoutEntries);
-        setNextId(currentId);
         setIsLoading(false); 
     }
   }, [tour, isOpen])
@@ -215,7 +222,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                                <Select value={entry.type} onValueChange={(value) => handleEntryChange(category, entry.id, 'type', value)}>
                                                   <SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger>
                                                   <SelectContent>
-                                                      {Object.entries(layoutConfig[category]).map(([key, config]) => (
+                                                      {Object.entries(layoutConfig[category] || {}).map(([key, config]) => (
                                                           <SelectItem key={key} value={key}>{config.name}</SelectItem>
                                                       ))}
                                                   </SelectContent>

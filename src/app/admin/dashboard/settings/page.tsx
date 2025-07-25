@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane } from "lucide-react"
-import { getLayoutConfig, saveLayoutConfig } from "@/lib/vehicle-config"
+import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, LayoutItemType } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
@@ -128,7 +128,7 @@ export default function SettingsPage() {
         onSave={handleSaveLayout}
         layoutKey={editingLayout?.key}
         category={editingLayout?.category}
-        layoutConfig={editingLayout && editingLayout.key ? layoutConfig[editingLayout.category][editingLayout.key] : undefined}
+        layoutConfig={editingLayout?.key && editingLayout?.category ? layoutConfig[editingLayout.category][editingLayout.key] : undefined}
       />
     <div className="space-y-6">
       <Card>
@@ -217,5 +217,3 @@ export default function SettingsPage() {
     </>
   )
 }
-
-    

@@ -25,7 +25,7 @@ import {
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, LayoutItemType, LayoutCategory } from "@/lib/types"
-import { getLayoutConfig } from "@/lib/vehicle-config"
+import { getLayoutConfig } from "@/lib/layout-config"
 import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
@@ -233,5 +233,3 @@ export default function TripsPage() {
     </div>
   )
 }
-
-    
