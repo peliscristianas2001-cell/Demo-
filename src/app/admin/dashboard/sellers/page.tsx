@@ -114,14 +114,9 @@ export default function SellersPage() {
   }
 
   const handleSave = () => {
-    const { name, dni, phone, commission } = formData;
-    if (!name || !dni || !phone || commission === null) {
-        toast({ title: "Datos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
-        return;
-    }
-
-    if (commission < 0) {
-        toast({ title: "Comisión inválida", description: "La comisión debe ser un número positivo.", variant: "destructive" });
+    const { name, commission } = formData;
+    if (!name || commission === null || commission < 0) {
+        toast({ title: "Datos incompletos", description: "El nombre y una comisión válida son obligatorios.", variant: "destructive" });
         return;
     }
 
@@ -155,9 +150,9 @@ export default function SellersPage() {
        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{selectedSeller ? "Editar Vendedor/a" : "Nuevo Vendedor/a"}</DialogTitle>
+                <DialogTitle>{selectedSeller ? "Editar Vendedor" : "Nuevo Vendedor"}</DialogTitle>
                 <DialogDescription>
-                {selectedSeller ? "Modifica los datos del vendedor/a." : "Añade un nuevo vendedor/a al sistema."}
+                {selectedSeller ? "Modifica los datos del vendedor." : "Añade un nuevo vendedor al sistema."}
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -187,7 +182,7 @@ export default function SellersPage() {
                                 <Clipboard className="w-4 h-4"/>
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor/a pueda registrarse y crear su contraseña.</p>
+                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor pueda registrarse y crear su contraseña.</p>
                     </div>
                 )}
             </div>
@@ -207,7 +202,7 @@ export default function SellersPage() {
         </div>
         <Button onClick={handleCreate}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Nuevo Vendedor/a
+          Nuevo Vendedor
         </Button>
       </div>
       <Card>
@@ -264,3 +259,5 @@ export default function SellersPage() {
     </div>
   )
 }
+
+    
