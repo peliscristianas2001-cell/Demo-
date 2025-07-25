@@ -31,6 +31,18 @@ export interface PricingTier {
   price: number;
 }
 
+export interface ExtraCost {
+    id: string;
+    description: string;
+    amount: number;
+}
+
+export interface TourCosts {
+    transport?: number;
+    hotel?: number;
+    extras?: ExtraCost[];
+}
+
 export interface Tour {
   id: string;
   destination: string;
@@ -40,6 +52,7 @@ export interface Tour {
   insurance?: Insurance;
   pension?: Pension;
   pricingTiers?: PricingTier[];
+  costs?: TourCosts;
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;

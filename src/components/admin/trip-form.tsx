@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension, PricingTier } from "@/lib/types"
+import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension, PricingTier, TourCosts, ExtraCost } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
@@ -49,6 +49,7 @@ type LayoutEntry = {
 
 const defaultInsurance: Insurance = { active: false, coverage: '', cost: 0, minAge: 0, maxAge: 99 };
 const defaultPension: Pension = { active: false, type: 'Media', description: '' };
+const defaultCosts: TourCosts = { transport: 0, hotel: 0, extras: [] };
 
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
   const [destination, setDestination] = useState("")
@@ -58,6 +59,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [insurance, setInsurance] = useState<Insurance>(defaultInsurance);
   const [pension, setPension] = useState<Pension>(defaultPension);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
+  const [costs, setCosts] = useState<TourCosts>(defaultCosts);
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
@@ -86,6 +88,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setInsurance(tour.insurance || defaultInsurance);
             setPension(tour.pension || defaultPension);
             setPricingTiers(tour.pricingTiers || []);
+            setCosts(tour.costs || defaultCosts);
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
             let currentId = 0;
@@ -110,6 +113,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setInsurance(defaultInsurance);
             setPension(defaultPension);
             setPricingTiers([]);
+            setCosts(defaultCosts);
             setNextId(1);
         }
         setIsLoading(false); 
@@ -170,6 +174,22 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const handleRemoveTier = (id: string) => {
     setPricingTiers(prev => prev.filter(tier => tier.id !== id));
   }
+  
+  const handleCostChange = (field: 'transport' | 'hotel', value: string) => {
+    setCosts(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
+  }
+
+  const handleAddExtraCost = () => {
+    setCosts(prev => ({...prev, extras: [...(prev.extras || []), {id: `E${Date.now()}`, description: '', amount: 0}]}));
+  }
+
+  const handleExtraCostChange = (id: string, field: 'description' | 'amount', value: string | number) => {
+    setCosts(prev => ({ ...prev, extras: prev.extras?.map(c => c.id === id ? {...c, [field]: value} : c)}));
+  }
+
+  const handleRemoveExtraCost = (id: string) => {
+    setCosts(prev => ({ ...prev, extras: prev.extras?.filter(c => c.id !== id)}));
+  }
 
 
   const handleSubmit = () => {
@@ -187,6 +207,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         insurance: insurance.active ? insurance : undefined,
         pension: pension.active ? pension : undefined,
         pricingTiers: pricingTiers.length > 0 ? pricingTiers : undefined,
+        costs: costs,
     };
 
     let totalTransportUnits = 0;
@@ -280,6 +301,47 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                         </div>
                                     </div>
                                 ))}
+                            </AccordionContent>
+                        </AccordionItem>
+                        
+                         <AccordionItem value="costs">
+                            <AccordionTrigger className="text-base font-medium">Costos del Viaje</AccordionTrigger>
+                            <AccordionContent className="pt-4 space-y-4">
+                               <div className="space-y-2">
+                                   <Label htmlFor="cost-transport">Costo Transporte (Micro)</Label>
+                                   <Input id="cost-transport" type="number" value={costs.transport || ''} onChange={(e) => handleCostChange('transport', e.target.value)} placeholder="0"/>
+                               </div>
+                               <div className="space-y-2">
+                                   <Label htmlFor="cost-hotel">Costo Hotel</Label>
+                                   <Input id="cost-hotel" type="number" value={costs.hotel || ''} onChange={(e) => handleCostChange('hotel', e.target.value)} placeholder="0"/>
+                               </div>
+                               <div className="space-y-4 p-4 border rounded-lg">
+                                  <Label className="text-lg font-medium">Gastos Extras</Label>
+                                  <div className="space-y-3">
+                                    {(costs.extras || []).map(cost => (
+                                       <div key={cost.id} className="flex items-center gap-2">
+                                        <Input 
+                                          placeholder="Descripción del gasto" 
+                                          value={cost.description}
+                                          onChange={e => handleExtraCostChange(cost.id, 'description', e.target.value)}
+                                        />
+                                        <Input 
+                                          type="number" 
+                                          placeholder="Monto" 
+                                          value={cost.amount}
+                                          onChange={e => handleExtraCostChange(cost.id, 'amount', parseFloat(e.target.value) || 0)}
+                                          className="w-40"
+                                        />
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemoveExtraCost(cost.id)}>
+                                          <Trash2 className="w-4 h-4"/>
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                   <Button variant="outline" size="sm" className="mt-2" onClick={handleAddExtraCost}>
+                                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir Gasto
+                                  </Button>
+                               </div>
                             </AccordionContent>
                         </AccordionItem>
 

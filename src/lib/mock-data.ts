@@ -16,7 +16,15 @@ export const mockTours: Tour[] = [
     pricingTiers: [
       { id: 'T1_CHILD', name: 'Niño', price: 120000 },
       { id: 'T1_RETIREE', name: 'Jubilado', price: 135000 },
-    ]
+    ],
+    costs: {
+      transport: 1200000,
+      hotel: 800000,
+      extras: [
+        { id: 'E1', description: 'Excursión Circuito Chico', amount: 50000 },
+        { id: 'E2', description: 'Guía local', amount: 30000 },
+      ]
+    }
   },
   {
     id: '2',
@@ -27,7 +35,11 @@ export const mockTours: Tour[] = [
     vehicles: { 'micro_largo': 1 },
     pricingTiers: [
       { id: 'T2_CHILD', name: 'Menor', price: 100000 },
-    ]
+    ],
+    costs: {
+        transport: 800000,
+        hotel: 500000
+    }
   },
   {
     id: '3',

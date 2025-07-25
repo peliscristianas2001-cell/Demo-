@@ -15,7 +15,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Plane } from "lucide-react"
+import { BarChart3, TrendingUp, TrendingDown, DollarSign, Plane, Building, Package } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
 import type { Tour, Reservation, Seller } from "@/lib/types"
 
@@ -23,6 +23,7 @@ type ReportData = {
     tour: Tour;
     totalIncome: number;
     totalCommission: number;
+    totalFixedCosts: number;
     netProfit: number;
     reservationCount: number;
 }
@@ -60,16 +61,23 @@ export default function ReportsPage() {
                 return sum;
             }, 0);
 
-            const netProfit = totalIncome - totalCommission;
+            const tourCosts = tour.costs || {};
+            const transportCost = tourCosts.transport || 0;
+            const hotelCost = tourCosts.hotel || 0;
+            const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
+            const totalFixedCosts = transportCost + hotelCost + extrasCost;
+
+            const netProfit = totalIncome - totalCommission - totalFixedCosts;
 
             return {
                 tour,
                 totalIncome,
                 totalCommission,
+                totalFixedCosts,
                 netProfit,
                 reservationCount: tripReservations.length
             };
-        }).filter(data => data.reservationCount > 0);
+        }).filter(data => data.reservationCount > 0 || data.totalFixedCosts > 0);
     }, [tours, reservations, sellers]);
 
     const formatCurrency = (amount: number) => {
@@ -99,7 +107,7 @@ export default function ReportsPage() {
                 </Card>
             ) : (
                 <Accordion type="multiple" className="w-full space-y-4">
-                    {reportData.map(({ tour, totalIncome, totalCommission, netProfit, reservationCount }) => (
+                    {reportData.map(({ tour, totalIncome, totalCommission, totalFixedCosts, netProfit, reservationCount }) => (
                         <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
                             <Card className="overflow-hidden">
                                 <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 text-left">
@@ -114,7 +122,7 @@ export default function ReportsPage() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="bg-secondary/20 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="bg-secondary/20 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                        <InfoCard 
                                             title="Ingresos Totales" 
                                             value={formatCurrency(totalIncome)} 
@@ -130,11 +138,18 @@ export default function ReportsPage() {
                                             description="Total pagado a vendedoras."
                                        />
                                        <InfoCard 
+                                            title="Gastos Fijos" 
+                                            value={formatCurrency(totalFixedCosts)} 
+                                            icon={Package} 
+                                            color="text-orange-600"
+                                            description="Transporte, hotel y extras."
+                                       />
+                                       <InfoCard 
                                             title="Ganancia Neta" 
                                             value={formatCurrency(netProfit)} 
                                             icon={DollarSign} 
                                             color="text-primary"
-                                            description="Ingresos menos comisiones."
+                                            description="Ingresos menos gastos."
                                         />
                                     </div>
                                 </AccordionContent>
