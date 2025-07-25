@@ -32,17 +32,19 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog"
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Link as LinkIcon, Clipboard } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Clipboard, UserPlus, Redo } from "lucide-react"
 import { mockSellers } from "@/lib/mock-data"
 import type { Seller } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type FormData = Omit<Seller, 'id'>;
 
 export default function SellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
+  const [exSellers, setExSellers] = useState<Seller[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -65,11 +67,15 @@ export default function SellersPage() {
   useEffect(() => {
     setIsClient(true)
     const storedSellers = localStorage.getItem("ytl_sellers")
+    const storedExSellers = localStorage.getItem("ytl_ex_sellers")
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
+    setExSellers(storedExSellers ? JSON.parse(storedExSellers) : [])
 
     const handleStorageChange = () => {
       const newStoredSellers = localStorage.getItem("ytl_sellers")
+      const newStoredExSellers = localStorage.getItem("ytl_ex_sellers")
       setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
+      setExSellers(newStoredExSellers ? JSON.parse(newStoredExSellers) : [])
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -78,8 +84,9 @@ export default function SellersPage() {
   useEffect(() => {
     if (isClient) {
       localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
+      localStorage.setItem("ytl_ex_sellers", JSON.stringify(exSellers));
     }
-  }, [sellers, isClient])
+  }, [sellers, exSellers, isClient])
   
   useEffect(() => {
     if (selectedSeller) {
@@ -104,6 +111,14 @@ export default function SellersPage() {
     setSelectedSeller(seller)
     setIsFormOpen(true)
   }
+
+  const handleRehireSelect = (sellerId: string) => {
+      const sellerToRehire = exSellers.find(s => s.id === sellerId);
+      if (sellerToRehire) {
+          setSelectedSeller({ ...sellerToRehire, password: '' }); // Clear password for re-registration
+          setIsFormOpen(true);
+      }
+  }
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -126,7 +141,14 @@ export default function SellersPage() {
     }
 
     if (selectedSeller) {
-      setSellers(sellers.map(s => s.id === sellerData.id ? sellerData : s))
+      // Check if it's a re-hire
+      const isRehiring = exSellers.some(s => s.id === sellerData.id);
+      if (isRehiring) {
+        setExSellers(prev => prev.filter(s => s.id !== sellerData.id));
+        setSellers(prev => [...prev, sellerData]);
+      } else {
+        setSellers(sellers.map(s => s.id === sellerData.id ? sellerData : s))
+      }
     } else {
       setSellers([...sellers, sellerData])
     }
@@ -136,9 +158,11 @@ export default function SellersPage() {
     toast({ title: "¡Éxito!", description: "El vendedor/a ha sido guardado/a." });
   }
 
-  const handleDelete = (sellerId: string) => {
-    setSellers(sellers.filter(s => s.id !== sellerId))
-    toast({ title: "Vendedor/a eliminado/a", description: "El vendedor/a ha sido eliminado/a del sistema." });
+  const handleDelete = (sellerToDelete: Seller) => {
+    const sellerWithoutPassword = { ...sellerToDelete, password: '' };
+    setSellers(prev => prev.filter(s => s.id !== sellerToDelete.id));
+    setExSellers(prev => [...prev, sellerWithoutPassword]);
+    toast({ title: "Vendedor/a archivado/a", description: "El vendedor/a ha sido movido/a a ex-vendedores." });
   }
 
   if (!isClient) {
@@ -182,7 +206,7 @@ export default function SellersPage() {
                                 <Clipboard className="w-4 h-4"/>
                             </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor pueda registrarse y crear su contraseña.</p>
+                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor pueda (re)crear su contraseña.</p>
                     </div>
                 )}
             </div>
@@ -197,13 +221,25 @@ export default function SellersPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vendedores</h2>
           <p className="text-muted-foreground">
-            Añade, edita o elimina a los vendedores de viajes.
+            Añade, edita o archiva a los vendedores de viajes.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nuevo Vendedor
-        </Button>
+        <div className="flex items-center gap-2">
+           {exSellers.length > 0 && (
+             <Select onValueChange={handleRehireSelect}>
+                <SelectTrigger className="w-[200px] h-10">
+                    <SelectValue placeholder="Recontratar..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {exSellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+            </Select>
+           )}
+            <Button onClick={handleCreate}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Vendedor
+            </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
@@ -243,9 +279,9 @@ export default function SellersPage() {
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(seller.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={() => handleDelete(seller)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
+                            Archivar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -259,5 +295,3 @@ export default function SellersPage() {
     </div>
   )
 }
-
-    

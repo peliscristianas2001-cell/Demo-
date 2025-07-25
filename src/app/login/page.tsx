@@ -12,58 +12,143 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogInIcon, UserPlus, Eye, EyeOff } from "lucide-react";
+import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { mockSellers } from "@/lib/mock-data";
+import type { Seller } from "@/lib/types";
+
+function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'seller' | 'client') => void }) {
+    return (
+        <Dialog open={true}>
+            <DialogContent onInteractOutside={(e) => e.preventDefault()} hideCloseButton>
+                <DialogHeader>
+                    <DialogTitle>Seleccionar Rol</DialogTitle>
+                    <DialogDescription>
+                        Hemos detectado múltiples perfiles asociados a tus credenciales. ¿Cómo quieres continuar?
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4 py-4">
+                    <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('admin')}>
+                        <UserCog className="mr-4 w-6 h-6" />
+                        <div>
+                            <p className="font-bold">Panel de Administrador</p>
+                            <p className="font-normal text-sm text-muted-foreground">Acceso total al sistema.</p>
+                        </div>
+                    </Button>
+                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('seller')}>
+                        <UserRound className="mr-4 w-6 h-6" />
+                        <div>
+                             <p className="font-bold">Panel de Vendedor</p>
+                             <p className="font-normal text-sm text-muted-foreground">Gestionar mis ventas.</p>
+                        </div>
+                    </Button>
+                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('client')}>
+                        <Plane className="mr-4 w-6 h-6" />
+                        <div>
+                             <p className="font-bold">Navegar como Cliente</p>
+                             <p className="font-normal text-sm text-muted-foreground">Explorar viajes y destinos.</p>
+                        </div>
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const [name, setName] = useState("");
+  const [credential, setCredential] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const [matchedSeller, setMatchedSeller] = useState<Seller | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (name === "Angela Rojas" && password === "AngelaRojasYTL") {
-      toast({
-        title: "¡Bienvenida, Angela!",
-        description: "Has iniciado sesión como administradora.",
-      });
-      router.push("/admin/dashboard");
-    } else if (name && password) {
-      toast({
-        title: "¡Inicio de sesión exitoso!",
-        description: `Bienvenido/a de nuevo, ${name}.`,
-      });
-      // Here you would typically set user session
-      // For now, just redirect to home
-      router.push("/");
-    } else {
+    const isAdmin = credential === "Angela Rojas" && password === "AngelaRojasYTL";
+    
+    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    const seller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
+
+    // For this example, we'll simulate a client match with the admin's credentials
+    const isClient = credential === "Angela Rojas" && password === "AngelaRojasYTL";
+
+    if (isAdmin && seller) {
+        setMatchedSeller(seller);
+        setShowRoleSelector(true);
+        setIsLoading(false);
+        return;
+    }
+
+    if (isAdmin) {
+      handleRoleSelection('admin');
+    } else if (seller) {
+      setMatchedSeller(seller);
+      handleRoleSelection('seller', seller);
+    } else if (isClient) {
+       handleRoleSelection('client');
+    }
+    else {
       toast({
         title: "Error de autenticación",
-        description: "El nombre de usuario o la contraseña son incorrectos.",
+        description: "Las credenciales son incorrectas.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
+
+  const handleRoleSelection = (role: 'admin' | 'seller' | 'client', sellerInfo?: Seller) => {
+      setShowRoleSelector(false);
+      switch(role) {
+          case 'admin':
+              toast({ title: "¡Bienvenida, Angela!", description: "Has iniciado sesión como administradora." });
+              router.push("/admin/dashboard");
+              break;
+          case 'seller':
+              const sellerToLogin = sellerInfo || matchedSeller;
+              if (sellerToLogin) {
+                toast({ title: `¡Bienvenido/a, ${sellerToLogin.name}!`, description: "Has iniciado sesión en tu panel." });
+                localStorage.setItem("ytl_employee_id", sellerToLogin.id);
+                router.push("/employee/dashboard");
+              }
+              break;
+          case 'client':
+              toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo.` });
+              router.push("/");
+              break;
+      }
+  }
+  
+  if (showRoleSelector) {
+      return <RoleSelector onSelectRole={handleRoleSelection} />
+  }
 
   return (
     <form onSubmit={handleLogin} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="login-name">Nombre de Usuario</Label>
+        <Label htmlFor="login-credential">Nombre de Usuario o DNI</Label>
         <Input
-          id="login-name"
+          id="login-credential"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Tu nombre de usuario"
+          value={credential}
+          onChange={(e) => setCredential(e.target.value)}
+          placeholder="Tu nombre o DNI"
           required
           className="h-11"
         />
