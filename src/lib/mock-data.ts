@@ -70,15 +70,25 @@ const confirmedReservations = mockReservations.filter(r => r.status === 'Confirm
 export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
     // Create a ticket for each assigned seat in the reservation
     const ticketsForReservation: Ticket[] = [];
+    const tour = mockTours.find(t => t.id === res.tripId);
+    if (!tour) return [];
+
+    const passengerDni = 'XX.XXX.XXX'; // Placeholder DNI
 
     (res.assignedSeats || []).forEach((seat, index) => {
         const ticketId = `${res.id}-S${index + 1}`;
         const qrData = JSON.stringify({
-            ticketId: ticketId,
-            reservationId: res.id,
-            passenger: res.passenger,
-            destination: mockTours.find(t => t.id === res.tripId)?.destination,
-            assignment: `Asiento ${seat.seatId} (Unidad ${seat.unit})`,
+            tId: ticketId,
+            rId: res.id,
+            pax: res.passenger,
+            dni: passengerDni,
+            dest: tour.destination,
+            date: tour.date.toISOString(),
+            asg: {
+              type: 'seat',
+              val: seat.seatId,
+              unit: seat.unit,
+            }
         });
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
         
@@ -87,7 +97,7 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
             reservationId: res.id,
             tripId: res.tripId,
             passengerName: res.passenger,
-            passengerDni: 'XX.XXX.XXX', // Placeholder DNI
+            passengerDni: passengerDni,
             assignment: seat,
             qrCodeUrl: qrCodeUrl,
         });
@@ -95,12 +105,18 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
 
     (res.assignedCabins || []).forEach((cabin, index) => {
         const ticketId = `${res.id}-C${index + 1}`;
-         const qrData = JSON.stringify({
-            ticketId: ticketId,
-            reservationId: res.id,
-            passenger: res.passenger,
-            destination: mockTours.find(t => t.id === res.tripId)?.destination,
-            assignment: `Camarote ${cabin.cabinId} (Unidad ${cabin.unit})`,
+        const qrData = JSON.stringify({
+            tId: ticketId,
+            rId: res.id,
+            pax: res.passenger,
+            dni: passengerDni,
+            dest: tour.destination,
+            date: tour.date.toISOString(),
+            asg: {
+              type: 'cabin',
+              val: cabin.cabinId,
+              unit: cabin.unit
+            }
         });
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
@@ -109,7 +125,7 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
             reservationId: res.id,
             tripId: res.tripId,
             passengerName: res.passenger,
-            passengerDni: 'XX.XXX.XXX',
+            passengerDni: passengerDni,
             assignment: cabin,
             qrCodeUrl: qrCodeUrl,
         });
