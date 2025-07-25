@@ -90,7 +90,7 @@ export default function DashboardLayout({
           <SidebarFooter>
              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Salir del Panel">
-                  <Link href="/admin">
+                  <Link href="/">
                     <LogOut />
                     <span>Salir del Panel</span>
                   </Link>

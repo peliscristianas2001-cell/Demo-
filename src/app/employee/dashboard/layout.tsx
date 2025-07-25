@@ -55,13 +55,13 @@ export default function EmployeeDashboardLayout({
 
     if (!employeeId || !isEmployeeValid) {
         localStorage.removeItem("ytl_employee_id"); // Clean up invalid ID
-        router.replace('/employee/login');
+        router.replace('/login');
     }
   }, [router, pathname]); // Re-check on every route change within the dashboard
 
   const handleLogout = () => {
     localStorage.removeItem("ytl_employee_id");
-    router.push('/employee/login');
+    router.push('/');
   }
 
   return (

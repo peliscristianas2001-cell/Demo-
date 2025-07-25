@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane } from "lucide-react";
+import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { mockSellers } from "@/lib/mock-data";
 import type { Seller } from "@/lib/types";
@@ -227,38 +227,45 @@ function RegisterForm() {
 
 
 export default function AuthPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode') || 'login';
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40">
-      <Tabs defaultValue={mode} className="w-full max-w-md">
-        <Card className="shadow-2xl">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Logo />
-            </div>
-            <CardTitle className="text-2xl font-headline">
-                Acceso a YO TE LLEVO
-            </CardTitle>
-            <CardDescription>
-                Ingresá a tu cuenta o registrate para una nueva aventura.
-            </CardDescription>
-             <TabsList className="grid w-full grid-cols-2 mt-4">
-                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="register">Registro</TabsTrigger>
-            </TabsList>
-          </CardHeader>
-          <CardContent>
-            <TabsContent value="login">
-                <LoginForm />
-            </TabsContent>
-            <TabsContent value="register">
-                <RegisterForm />
-            </TabsContent>
-          </CardContent>
-        </Card>
-      </Tabs>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 p-4">
+       <div className="w-full max-w-md">
+            <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver a la tienda
+            </Button>
+            <Tabs defaultValue={mode} className="w-full">
+                <Card className="shadow-2xl">
+                <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4">
+                    <Logo />
+                    </div>
+                    <CardTitle className="text-2xl font-headline">
+                        Acceso a YO TE LLEVO
+                    </CardTitle>
+                    <CardDescription>
+                        Ingresá a tu cuenta o registrate para una nueva aventura.
+                    </CardDescription>
+                    <TabsList className="grid w-full grid-cols-2 mt-4">
+                        <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                        <TabsTrigger value="register">Registro</TabsTrigger>
+                    </TabsList>
+                </CardHeader>
+                <CardContent>
+                    <TabsContent value="login">
+                        <LoginForm />
+                    </TabsContent>
+                    <TabsContent value="register">
+                        <RegisterForm />
+                    </TabsContent>
+                </CardContent>
+                </Card>
+            </Tabs>
+        </div>
     </div>
   );
 }
