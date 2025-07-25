@@ -181,7 +181,7 @@ export default function ReservationsPage() {
     setReservations(prevReservations => {
         return prevReservations.map(res => {
             if (res.id === reservationId) {
-                let newAssignedSeats = [...res.assignedSeats];
+                let newAssignedSeats = [...(res.assignedSeats || [])];
                 const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.unit === unitNumber);
 
                 if (seatIndex > -1) {
@@ -201,7 +201,7 @@ export default function ReservationsPage() {
   const getOccupiedSeatsForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
     return reservations
       .filter(res => res.tripId === tourId && res.id !== currentReservationId)
-      .flatMap(res => res.assignedSeats)
+      .flatMap(res => res.assignedSeats || [])
       .filter(seat => seat.unit === unitNumber)
       .map(seat => seat.seatId);
   };
@@ -280,7 +280,7 @@ export default function ReservationsPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {tripReservations.map((res) => {
-                                            const assignedCount = res.assignedSeats.length + res.assignedCabins.length;
+                                            const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
                                             return (
                                                 <TableRow key={res.id}>
                                                     <TableCell>{res.passenger}</TableCell>
@@ -353,7 +353,7 @@ export default function ReservationsPage() {
                                                                               category={activeUnit.category}
                                                                               layoutType={activeUnit.type}
                                                                               occupiedSeats={getOccupiedSeatsForTour(tour.id, activeUnit.unitNumber, res.id)}
-                                                                              selectedSeats={res.assignedSeats.filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
+                                                                              selectedSeats={(res.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
                                                                               onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeUnit.unitNumber)}
                                                                               maxSeats={res.paxCount}
                                                                           />
@@ -410,5 +410,3 @@ export default function ReservationsPage() {
     </div>
   )
 }
-
-    
