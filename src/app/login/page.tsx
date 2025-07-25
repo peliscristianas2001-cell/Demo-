@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -80,31 +80,30 @@ function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const isAdmin = credential === "Angela Rojas" && password === "AngelaRojasYTL";
-    
     const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    const seller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
+    const foundSeller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
+    const isAdmin = credential === "Angela Rojas" && password === "AngelaRojasYTL";
 
     localStorage.removeItem("ytl_employee_id");
-    
-    if (isAdmin && seller) {
-        setMatchedSeller(seller);
+
+    if (foundSeller && isAdmin) {
+        setMatchedSeller(foundSeller);
         setShowRoleSelector(true);
         setIsLoading(false);
         return;
     }
 
-    if (isAdmin) {
-      handleRoleSelection('admin');
-    } else if (seller) {
-      handleRoleSelection('seller', seller);
+    if (foundSeller) {
+        handleRoleSelection('seller', foundSeller);
+    } else if (isAdmin) {
+        handleRoleSelection('admin');
     } else {
-      toast({
-        title: "Error de autenticación",
-        description: "Las credenciales son incorrectas.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
+        toast({
+            title: "Error de autenticación",
+            description: "Las credenciales son incorrectas.",
+            variant: "destructive",
+        });
+        setIsLoading(false);
     }
   };
 
@@ -125,6 +124,8 @@ function LoginForm() {
               }
               break;
           case 'client':
+             // When choosing to navigate as a client, we DON'T set the employee ID
+              localStorage.removeItem("ytl_employee_id");
               if (sellerToLogin) {
                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${sellerToLogin.name}.` });
               } else {
@@ -271,4 +272,4 @@ export default function AuthPage() {
 }
 
 
-    
+
