@@ -1,9 +1,11 @@
 
 import type { Layout } from './layouts';
 
-export type VehicleType = 'doble_piso' | 'micro_largo' | 'micro_bajo' | 'combi' | string;
+export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
 
-export interface CustomVehicleConfig {
+export type LayoutItemType = string;
+
+export interface CustomLayoutConfig {
   name: string;
   seats: number;
   layout: Layout;
@@ -15,7 +17,9 @@ export interface Tour {
   date: Date;
   price: number;
   flyerUrl: string;
-  vehicles: Partial<Record<VehicleType, number>>;
+  vehicles?: Partial<Record<LayoutItemType, number>>;
+  airplanes?: Partial<Record<LayoutItemType, number>>;
+  cruises?: Partial<Record<LayoutItemType, number>>;
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";

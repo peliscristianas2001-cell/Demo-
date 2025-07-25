@@ -8,24 +8,24 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle } from "lucide-react"
-import { getVehicleConfig, saveVehicleConfig } from "@/lib/vehicle-config"
-import type { CustomVehicleConfig } from "@/lib/types"
-import { VehicleLayoutEditor } from "@/components/admin/vehicle-layout-editor"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane } from "lucide-react"
+import { getLayoutConfig, saveLayoutConfig } from "@/lib/vehicle-config"
+import type { CustomLayoutConfig, LayoutCategory, LayoutItemType } from "@/lib/types"
+import { LayoutEditor } from "@/components/admin/layout-editor"
 
-type VehicleConfigState = Record<string, CustomVehicleConfig>;
+type LayoutConfigState = Record<LayoutCategory, Record<LayoutItemType, CustomLayoutConfig>>;
 
 export default function SettingsPage() {
     const { toast } = useToast()
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
-    const [vehicleConfig, setVehicleConfig] = useState<VehicleConfigState>(() => getVehicleConfig(true));
+    const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
     const [isEditorOpen, setIsEditorOpen] = useState(false);
-    const [editingVehicleKey, setEditingVehicleKey] = useState<string | null>(null);
+    const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
     useEffect(() => {
       const handleStorageChange = () => {
-        setVehicleConfig(getVehicleConfig(true));
+        setLayoutConfig(getLayoutConfig(true));
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
@@ -69,53 +69,66 @@ export default function SettingsPage() {
         }
     }
 
-    const handleEditVehicle = (key: string) => {
-        setEditingVehicleKey(key);
+    const handleEditLayout = (category: LayoutCategory, key: string) => {
+        setEditingLayout({ category, key });
         setIsEditorOpen(true);
     };
 
-    const handleAddNewVehicle = () => {
-        setEditingVehicleKey(null); // No existing key means it's a new one
+    const handleAddNewLayout = (category: LayoutCategory) => {
+        setEditingLayout({ category, key: null });
         setIsEditorOpen(true);
     };
 
-    const handleDeleteVehicle = (keyToDelete: string) => {
-      if (Object.keys(vehicleConfig).length <= 1) {
-        toast({ title: "No se puede eliminar", description: "Debe existir al menos un tipo de vehículo.", variant: "destructive" });
-        return;
-      }
-      const newConfig = { ...vehicleConfig };
-      delete newConfig[keyToDelete];
-      setVehicleConfig(newConfig);
-      saveVehicleConfig(newConfig);
-      toast({ title: "Vehículo Eliminado", description: "El tipo de vehículo fue eliminado." });
+    const handleDeleteLayout = (category: LayoutCategory, keyToDelete: string) => {
+      setLayoutConfig(prev => {
+          const newConfig = { ...prev };
+          delete newConfig[category][keyToDelete];
+          saveLayoutConfig(newConfig);
+          return newConfig;
+      });
+      toast({ title: "Elemento Eliminado", description: "El tipo fue eliminado." });
     };
 
-    const handleSaveLayout = (key: string, newConfig: CustomVehicleConfig) => {
+    const handleSaveLayout = (originalKey: string | null, newConfig: CustomLayoutConfig) => {
+        if (!editingLayout) return;
+        const { category } = editingLayout;
+
         const newKey = newConfig.name.toLowerCase().replace(/\s+/g, '_');
-        const updatedVehicles = { ...vehicleConfig };
-
-        if (editingVehicleKey && editingVehicleKey !== newKey) {
-            // Key has changed, delete old one
-            delete updatedVehicles[editingVehicleKey];
-        }
         
-        updatedVehicles[newKey] = newConfig;
+        setLayoutConfig(prev => {
+            const updatedConfig = { ...prev };
+            const categoryConfig = { ...updatedConfig[category] };
 
-        setVehicleConfig(updatedVehicles);
-        saveVehicleConfig(updatedVehicles);
+            if (originalKey && originalKey !== newKey) {
+                delete categoryConfig[originalKey];
+            }
+            
+            categoryConfig[newKey] = newConfig;
+            updatedConfig[category] = categoryConfig;
+            
+            saveLayoutConfig(updatedConfig);
+            return updatedConfig;
+        });
+        
         setIsEditorOpen(false);
-        setEditingVehicleKey(null);
+        setEditingLayout(null);
     };
+
+    const layoutCategoryDetails = {
+        vehicles: { icon: Bus, title: "Tipos de Vehículo" },
+        airplanes: { icon: Plane, title: "Tipos de Avión" },
+        cruises: { icon: Ship, title: "Tipos de Crucero" },
+    }
     
   return (
     <>
-     <VehicleLayoutEditor
+     <LayoutEditor
         isOpen={isEditorOpen}
         onOpenChange={setIsEditorOpen}
         onSave={handleSaveLayout}
-        vehicleKey={editingVehicleKey}
-        vehicleConfig={editingVehicleKey ? vehicleConfig[editingVehicleKey] : undefined}
+        layoutKey={editingLayout?.key}
+        category={editingLayout?.category}
+        layoutConfig={editingLayout && editingLayout.key ? layoutConfig[editingLayout.category][editingLayout.key] : undefined}
       />
     <div className="space-y-6">
       <Card>
@@ -157,39 +170,47 @@ export default function SettingsPage() {
                     Guardar Logo
                 </Button>
             </div>
-             <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle className="flex items-center gap-2"><Bus className="w-6 h-6"/> Tipos de Vehículo</CardTitle>
-                            <CardDescription>
-                                Añade, edita o elimina los tipos de vehículos y sus layouts de asientos.
-                            </CardDescription>
-                        </div>
-                        <Button onClick={handleAddNewVehicle}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir Vehículo
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                     {Object.entries(vehicleConfig).map(([key, config]) => (
-                       <div key={key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                          <div className="font-medium">{config.name}</div>
-                           <div className="flex items-center gap-2">
-                             <Button variant="outline" size="icon" onClick={() => handleEditVehicle(key)}>
-                               <Edit className="w-4 h-4" />
-                               <span className="sr-only">Editar</span>
-                             </Button>
-                             <Button variant="destructive" size="icon" onClick={() => handleDeleteVehicle(key)}>
-                               <Trash2 className="w-4 h-4" />
-                               <span className="sr-only">Eliminar</span>
-                             </Button>
-                           </div>
-                       </div>
-                    ))}
-                </CardContent>
-             </Card>
+
+            {(Object.keys(layoutCategoryDetails) as LayoutCategory[]).map(category => {
+                const details = layoutCategoryDetails[category];
+                const Icon = details.icon;
+                return (
+                    <Card key={category}>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2"><Icon className="w-6 h-6"/> {details.title}</CardTitle>
+                                    <CardDescription>Añade, edita o elimina los tipos y sus layouts.</CardDescription>
+                                </div>
+                                <Button onClick={() => handleAddNewLayout(category)}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Añadir
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            {Object.entries(layoutConfig[category] || {}).map(([key, config]) => (
+                               <div key={key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                                  <div className="font-medium">{config.name}</div>
+                                   <div className="flex items-center gap-2">
+                                     <Button variant="outline" size="icon" onClick={() => handleEditLayout(category, key)}>
+                                       <Edit className="w-4 h-4" />
+                                       <span className="sr-only">Editar</span>
+                                     </Button>
+                                     <Button variant="destructive" size="icon" onClick={() => handleDeleteLayout(category, key)}>
+                                       <Trash2 className="w-4 h-4" />
+                                       <span className="sr-only">Eliminar</span>
+                                     </Button>
+                                   </div>
+                               </div>
+                            ))}
+                            {Object.keys(layoutConfig[category] || {}).length === 0 && (
+                                <p className="text-sm text-muted-foreground p-4 text-center">No hay tipos definidos para esta categoría.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })}
         </CardContent>
       </Card>
     </div>

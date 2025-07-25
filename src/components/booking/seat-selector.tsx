@@ -2,12 +2,13 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { VehicleType } from "@/lib/types"
-import { getLayoutForVehicle, Cell } from "@/lib/layouts"
-import { Armchair, Ban, PersonStanding, Utensils, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, WindIcon } from "lucide-react"
+import { LayoutItemType, LayoutCategory } from "@/lib/types"
+import { getLayoutForType, Cell } from "@/lib/layouts"
+import { Armchair, ShieldIcon, PersonStanding, Utensils, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, WindIcon } from "lucide-react"
 
 interface SeatSelectorProps {
-  vehicleType: VehicleType
+  category: LayoutCategory;
+  layoutType: LayoutItemType;
   occupiedSeats: string[]
   selectedSeats: string[]
   onSeatSelect: (seatId: string) => void
@@ -33,6 +34,9 @@ const SpecialCell = ({ type }: { type: Cell['type'] }) => {
         case 'chofer':
             content = <> <BusIcon className="w-4 h-4 mb-0.5" /> Chofer </>;
             break;
+        case 'cabina':
+            content = <> <ShieldIcon className="w-4 h-4 mb-0.5" /> Cabina </>;
+            break;
         case 'empty':
              return <div className="w-full h-full" />;
         default:
@@ -42,21 +46,22 @@ const SpecialCell = ({ type }: { type: Cell['type'] }) => {
 };
 
 export function SeatSelector({
-  vehicleType,
+  category,
+  layoutType,
   occupiedSeats,
   selectedSeats,
   onSeatSelect,
   maxSeats,
 }: SeatSelectorProps) {
-    if (!vehicleType) return null;
+    if (!layoutType || !category) return null;
 
-    const layout = getLayoutForVehicle(vehicleType);
+    const layout = getLayoutForType(category, layoutType);
 
     const handleSeatClick = (seatId: string) => {
         if (selectedSeats.includes(seatId)) {
-            onSeatSelect(seatId); // Deselect
+            onSeatSelect(seatId); 
         } else if (selectedSeats.length < maxSeats) {
-            onSeatSelect(seatId); // Select
+            onSeatSelect(seatId);
         }
     }
 
@@ -71,7 +76,7 @@ export function SeatSelector({
                 )}
                  <div className="flex justify-center mb-4">
                     <div className="w-48 p-2 text-center border-2 border-dashed rounded-md border-muted-foreground text-muted-foreground">
-                        Frente del Colectivo
+                        Frente
                     </div>
                 </div>
 
@@ -79,7 +84,7 @@ export function SeatSelector({
                     {floor.grid.map((row, rowIndex) => (
                         row.map((cell, cellIndex) => {
                             const key = `${floorIndex}-${rowIndex}-${cellIndex}`;
-                            const cellData = cell as Cell; // Cast to be explicit
+                            const cellData = cell as Cell;
 
                             if (cellData.type !== 'seat') {
                                 return (

@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Tour, VehicleType } from "@/lib/types"
-import { getVehicleConfig } from "@/lib/vehicle-config"
+import type { Tour, LayoutItemType, LayoutCategory } from "@/lib/types"
+import { getLayoutConfig } from "@/lib/vehicle-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
   Select,
@@ -25,6 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface TripFormProps {
   isOpen: boolean
@@ -33,9 +39,9 @@ interface TripFormProps {
   tour: Tour | null
 }
 
-type VehicleEntry = {
+type LayoutEntry = {
     id: number;
-    type: VehicleType | '';
+    type: LayoutItemType | '';
     count: number | '';
 }
 
@@ -43,17 +49,21 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
   const [price, setPrice] = useState<number | "">("")
-  const [vehicleEntries, setVehicleEntries] = useState<VehicleEntry[]>([])
+  const [layoutEntries, setLayoutEntries] = useState<Record<LayoutCategory, LayoutEntry[]>>({ vehicles: [], airplanes: [], cruises: [] });
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
-  const [vehicleConfig, setVehicleConfig] = useState(() => getVehicleConfig());
+  const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
+  const { toast } = useToast();
 
-  const { toast } = useToast()
+  const categoryNames: Record<LayoutCategory, string> = {
+      vehicles: 'Vehículos',
+      airplanes: 'Aviones',
+      cruises: 'Cruceros'
+  }
 
   useEffect(() => {
-    // Update local vehicle config if it changes globally
     const handleStorageChange = () => {
-      setVehicleConfig(getVehicleConfig(true));
+      setLayoutConfig(getLayoutConfig(true));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -61,116 +71,110 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
   useEffect(() => {
     if (isOpen) {
+        let currentId = 0;
+        const newLayoutEntries: Record<LayoutCategory, LayoutEntry[]> = { vehicles: [], airplanes: [], cruises: [] };
         if (tour) {
             setDestination(tour.destination)
             setDate(tour.date ? new Date(tour.date) : undefined)
             setPrice(tour.price || "")
-            if (tour.vehicles) {
-                const entries = Object.entries(tour.vehicles).map(([type, count], index) => ({
-                    id: index,
-                    type: type as VehicleType,
-                    count: count || 1
-                }));
-                setVehicleEntries(entries);
-                setNextId(entries.length);
-            } else {
-                setVehicleEntries([]);
-                setNextId(1);
-            }
-        } else {
-            // Reset form for new trip
-            setDestination("")
-            setDate(undefined)
-            setPrice("")
-            setVehicleEntries([{ id: 0, type: '', count: '' }])
-            setNextId(1);
+            
+            const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+            categories.forEach(cat => {
+                if (tour[cat]) {
+                    newLayoutEntries[cat] = Object.entries(tour[cat]!).map(([type, count]) => ({
+                        id: currentId++,
+                        type: type as LayoutItemType,
+                        count: count || 1
+                    }));
+                }
+            })
         }
+        setLayoutEntries(newLayoutEntries);
+        setNextId(currentId);
         setIsLoading(false); 
     }
   }, [tour, isOpen])
 
-  const handleAddVehicleEntry = () => {
-    setVehicleEntries([...vehicleEntries, { id: nextId, type: '', count: '' }]);
+  const handleAddEntry = (category: LayoutCategory) => {
+    setLayoutEntries(prev => ({
+        ...prev,
+        [category]: [...prev[category], { id: nextId, type: '', count: '' }]
+    }));
     setNextId(nextId + 1);
   }
 
-  const handleRemoveVehicleEntry = (id: number) => {
-    setVehicleEntries(vehicleEntries.filter(entry => entry.id !== id));
+  const handleRemoveEntry = (category: LayoutCategory, id: number) => {
+    setLayoutEntries(prev => ({
+        ...prev,
+        [category]: prev[category].filter(entry => entry.id !== id)
+    }));
   }
   
-  const handleVehicleChange = (id: number, field: 'type' | 'count', value: string) => {
-      setVehicleEntries(entries => entries.map(entry => {
-          if (entry.id === id) {
-              if (field === 'type') {
-                  return { ...entry, type: value as VehicleType };
+  const handleEntryChange = (category: LayoutCategory, id: number, field: 'type' | 'count', value: string) => {
+      setLayoutEntries(prev => ({
+          ...prev,
+          [category]: prev[category].map(entry => {
+              if (entry.id === id) {
+                  if (field === 'type') {
+                      return { ...entry, type: value as LayoutItemType };
+                  }
+                  if (field === 'count') {
+                      const count = parseInt(value, 10);
+                      return { ...entry, count: isNaN(count) ? '' : count };
+                  }
               }
-              if (field === 'count') {
-                  const count = parseInt(value, 10);
-                  return { ...entry, count: isNaN(count) ? '' : count };
-              }
-          }
-          return entry;
+              return entry;
+          })
       }))
   }
 
   const handleSubmit = () => {
     if (!destination || !date || price === "" || price <= 0) {
-      toast({
-        title: "Faltan datos",
-        description: "Por favor, completa destino, fecha y un precio válido.",
-        variant: "destructive"
-      })
-      return
+      toast({ title: "Faltan datos", description: "Por favor, completa destino, fecha y un precio válido.", variant: "destructive" });
+      return;
     }
 
-    const finalVehicles: Partial<Record<VehicleType, number>> = {};
-    let hasInvalidEntry = false;
+    const tourDataToSave: Tour = {
+        id: tour?.id || "",
+        destination,
+        date,
+        price,
+        flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
+    };
 
-    for (const entry of vehicleEntries) {
-        if (!entry.type || entry.count === '' || entry.count <= 0) {
-            hasInvalidEntry = true;
-            break;
+    let totalTransportUnits = 0;
+    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+
+    for (const category of categories) {
+        const entries = layoutEntries[category];
+        if (entries.length > 0) {
+            const finalCategoryLayout: Partial<Record<LayoutItemType, number>> = {};
+            const typesInLayout = new Set<LayoutItemType>();
+
+            for (const entry of entries) {
+                if (!entry.type || entry.count === '' || entry.count <= 0) {
+                    toast({ title: "Datos incompletos", description: `Cada unidad en ${categoryNames[category]} debe tener un tipo y cantidad válida.`, variant: "destructive" });
+                    return;
+                }
+                if (typesInLayout.has(entry.type)) {
+                    toast({ title: "Tipo duplicado", description: `El tipo "${layoutConfig[category][entry.type].name}" solo puede ser agregado una vez en ${categoryNames[category]}.`, variant: "destructive" });
+                    return;
+                }
+                finalCategoryLayout[entry.type] = entry.count;
+                typesInLayout.add(entry.type);
+                totalTransportUnits++;
+            }
+            tourDataToSave[category] = finalCategoryLayout as Record<LayoutItemType, number>;
         }
-        if (finalVehicles[entry.type]) {
-             toast({
-                title: "Tipo de vehículo duplicado",
-                description: `El tipo "${vehicleConfig[entry.type].name}" solo puede ser agregado una vez.`,
-                variant: "destructive"
-            });
-            return;
-        }
-        finalVehicles[entry.type] = entry.count;
     }
 
-    if (hasInvalidEntry) {
-         toast({
-            title: "Datos de vehículo incompletos",
-            description: "Cada vehículo debe tener un tipo y una cantidad válida mayor a cero.",
-            variant: "destructive"
-        });
-        return;
-    }
-    
-    if (Object.keys(finalVehicles).length === 0) {
-       toast({
-        title: "Faltan vehículos",
-        description: "Debes agregar y configurar al menos un tipo de vehículo.",
-        variant: "destructive"
-      })
-      return
+    if (totalTransportUnits === 0) {
+       toast({ title: "Faltan unidades", description: "Debes agregar y configurar al menos una unidad de transporte (vehículo, avión o crucero).", variant: "destructive" });
+       return;
     }
 
     setIsLoading(true);
-    
-    onSave({
-      id: tour?.id || "",
-      destination,
-      date,
-      price: price,
-      vehicles: finalVehicles as Record<VehicleType, number>,
-      flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
-    })
-    
+    onSave(tourDataToSave);
   }
 
   return (
@@ -195,66 +199,41 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="price">Precio</Label>
-                    <Input 
-                    id="price" 
-                    type="number" 
-                    value={price} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setPrice(val === '' ? '' : parseFloat(val));
-                    }} 
-                    placeholder="0"
-                    />
+                    <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} placeholder="0"/>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <Label className="text-base font-medium">Configuración de Vehículos</Label>
-                    <div className="space-y-3 rounded-md border p-4">
-                        {vehicleEntries.map((entry) => (
-                           <div key={entry.id} className="flex items-center gap-2">
-                               <Select
-                                  value={entry.type}
-                                  onValueChange={(value) => handleVehicleChange(entry.id, 'type', value)}
-                               >
-                                  <SelectTrigger>
-                                      <SelectValue placeholder="Tipo de vehículo" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                      {Object.entries(vehicleConfig).map(([key, config]) => (
-                                          <SelectItem key={key} value={key}>
-                                              {config.name}
-                                          </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                               </Select>
-                               <Input
-                                   type="number"
-                                   min="1"
-                                   placeholder="Cant."
-                                   className="w-24 h-10"
-                                   value={entry.count}
-                                   onChange={(e) => handleVehicleChange(entry.id, 'count', e.target.value)}
-                               />
-                               <Button
-                                   variant="ghost"
-                                   size="icon"
-                                   className="text-destructive hover:bg-destructive/10"
-                                   onClick={() => handleRemoveVehicleEntry(entry.id)}
-                                >
-                                   <Trash2 className="w-4 h-4"/>
-                               </Button>
-                           </div>
+                    <Label className="text-base font-medium">Configuración de Transporte</Label>
+                    <Accordion type="multiple" className="w-full">
+                        {(Object.keys(layoutConfig) as LayoutCategory[]).map(category => (
+                            <AccordionItem value={category} key={category}>
+                                <AccordionTrigger>{categoryNames[category]}</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="space-y-3 rounded-md border p-4">
+                                        {layoutEntries[category].map((entry) => (
+                                           <div key={entry.id} className="flex items-center gap-2">
+                                               <Select value={entry.type} onValueChange={(value) => handleEntryChange(category, entry.id, 'type', value)}>
+                                                  <SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger>
+                                                  <SelectContent>
+                                                      {Object.entries(layoutConfig[category]).map(([key, config]) => (
+                                                          <SelectItem key={key} value={key}>{config.name}</SelectItem>
+                                                      ))}
+                                                  </SelectContent>
+                                               </Select>
+                                               <Input type="number" min="1" placeholder="Cant." className="w-24 h-10" value={entry.count} onChange={(e) => handleEntryChange(category, entry.id, 'count', e.target.value)}/>
+                                               <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemoveEntry(category, entry.id)}>
+                                                   <Trash2 className="w-4 h-4"/>
+                                               </Button>
+                                           </div>
+                                        ))}
+                                         <Button variant="outline" size="sm" className="mt-2" onClick={() => handleAddEntry(category)}>
+                                           <PlusCircle className="mr-2 h-4 w-4"/> Añadir
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
                         ))}
-                         <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={handleAddVehicleEntry}
-                        >
-                           <PlusCircle className="mr-2 h-4 w-4"/>
-                           Agregar tipo de vehículo
-                        </Button>
-                    </div>
+                    </Accordion>
                 </div>
             </div>
         </div>

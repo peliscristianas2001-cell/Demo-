@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, VehicleType } from "@/lib/types"
-import { getVehicleConfig } from "@/lib/vehicle-config"
+import type { Tour, Reservation, LayoutItemType, LayoutCategory } from "@/lib/types"
+import { getLayoutConfig } from "@/lib/vehicle-config"
 import { TripForm } from "@/components/admin/trip-form"
 
 export default function TripsPage() {
@@ -34,7 +34,7 @@ export default function TripsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [isClient, setIsClient] = useState(false)
-  const [vehicleConfig, setVehicleConfig] = useState(() => getVehicleConfig());
+  const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
 
   useEffect(() => {
     setIsClient(true)
@@ -57,7 +57,7 @@ export default function TripsPage() {
     }
 
     const handleStorageChange = () => {
-      setVehicleConfig(getVehicleConfig(true));
+      setLayoutConfig(getLayoutConfig(true));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -79,17 +79,29 @@ export default function TripsPage() {
   }
 
   const getTourCapacity = (tour: Tour) => {
-    if (!tour.vehicles) return 0;
-    return Object.entries(tour.vehicles).reduce((total, [type, count]) => {
-      const vehicle = vehicleConfig[type as VehicleType];
-      if (!vehicle) return total;
-      return total + (vehicle.seats * (count || 0));
-    }, 0);
+    let totalCapacity = 0;
+    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+    for (const category of categories) {
+        if (tour[category]) {
+            totalCapacity += Object.entries(tour[category]!).reduce((total, [type, count]) => {
+                const itemConfig = layoutConfig[category]?.[type as LayoutItemType];
+                if (!itemConfig) return total;
+                return total + (itemConfig.seats * (count || 0));
+            }, 0);
+        }
+    }
+    return totalCapacity;
   }
 
-  const getVehicleCount = (tour: Tour) => {
-    if (!tour.vehicles) return 0;
-    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
+  const getTransportCount = (tour: Tour) => {
+    let totalCount = 0;
+    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+    for (const category of categories) {
+        if (tour[category]) {
+            totalCount += Object.values(tour[category]!).reduce((total, count) => total + (count || 0), 0);
+        }
+    }
+    return totalCount;
   }
 
   const handleCreate = () => {
@@ -104,10 +116,8 @@ export default function TripsPage() {
 
   const handleSave = (tourData: Tour) => {
     if (selectedTour) {
-      // Update existing tour
       setTours(tours.map(t => t.id === tourData.id ? tourData : t))
     } else {
-      // Create new tour
       setTours([...tours, { ...tourData, id: `T${Date.now()}` }])
     }
     setIsFormOpen(false)
@@ -119,7 +129,7 @@ export default function TripsPage() {
   }
 
   if (!isClient) {
-    return null; // Don't render server-side
+    return null;
   }
 
   return (
@@ -151,7 +161,7 @@ export default function TripsPage() {
                 <TableHead>Fecha</TableHead>
                 <TableHead>Precio</TableHead>
                 <TableHead>Asientos</TableHead>
-                <TableHead>Micros</TableHead>
+                <TableHead>Unidades</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -165,7 +175,7 @@ export default function TripsPage() {
               ) : activeTours.map((tour) => {
                 const occupiedCount = getOccupiedSeatCount(tour.id);
                 const totalSeats = getTourCapacity(tour);
-                const vehicleCount = getVehicleCount(tour);
+                const transportCount = getTransportCount(tour);
 
                 return (
                   <TableRow key={tour.id}>
@@ -184,7 +194,7 @@ export default function TripsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{vehicleCount}</Badge>
+                      <Badge variant="outline">{transportCount}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

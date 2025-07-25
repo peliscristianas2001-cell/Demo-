@@ -52,22 +52,31 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, AssignedSeat, VehicleType } from "@/lib/types"
-import { getVehicleConfig } from "@/lib/vehicle-config"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType } from "@/lib/types"
+import { getLayoutConfig } from "@/lib/vehicle-config"
 
 type ActiveBusInfo = {
   busNumber: number;
-  type: VehicleType;
+  category: LayoutCategory;
+  type: LayoutItemType;
 } | null;
+
+type ExpandedTransportUnit = {
+    category: LayoutCategory;
+    type: LayoutItemType;
+    typeName: string;
+    instanceNum: number;
+    globalBusNum: number;
+};
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeBus, setActiveBus] = useState<ActiveBusInfo>(null);
   const [isClient, setIsClient] = useState(false)
-  const [vehicleConfig, setVehicleConfig] = useState(getVehicleConfig(true));
+  const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
 
   useEffect(() => {
     setIsClient(true)
@@ -93,7 +102,7 @@ export default function ReservationsPage() {
     }
 
     const handleStorageChange = () => {
-      setVehicleConfig(getVehicleConfig(true));
+      setLayoutConfig(getLayoutConfig(true));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -108,7 +117,6 @@ export default function ReservationsPage() {
 
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
   
-  // Group reservations by tripId for easier rendering
   const reservationsByTrip = useMemo(() => {
     return activeTours.reduce((acc, tour) => {
         const tripReservations = reservations.filter(res => res.tripId === tour.id);
@@ -122,31 +130,41 @@ export default function ReservationsPage() {
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
   }, [reservations, activeTours]);
 
-  const getExpandedBusList = (tour: Tour): { type: VehicleType, typeName: string, instanceNum: number, globalBusNum: number }[] => {
-    if (!tour.vehicles) return [];
-    
+  const getExpandedTransportList = (tour: Tour): ExpandedTransportUnit[] => {
+    const transportList: ExpandedTransportUnit[] = [];
     let globalBusCounter = 1;
-    const busList = [];
+    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
 
-    for (const [type, count] of Object.entries(tour.vehicles)) {
-        if (count && count > 0) {
-            for (let i = 1; i <= count; i++) {
-                busList.push({
-                    type: type as VehicleType,
-                    typeName: vehicleConfig[type as VehicleType]?.name || 'Vehículo',
-                    instanceNum: i,
-                    globalBusNum: globalBusCounter
-                });
-                globalBusCounter++;
+    for (const category of categories) {
+        if (tour[category]) {
+            for (const [type, count] of Object.entries(tour[category]!)) {
+                if (count && count > 0) {
+                    for (let i = 1; i <= count; i++) {
+                        transportList.push({
+                            category: category,
+                            type: type as LayoutItemType,
+                            typeName: layoutConfig[category]?.[type as LayoutItemType]?.name || 'Unidad',
+                            instanceNum: i,
+                            globalBusNum: globalBusCounter
+                        });
+                        globalBusCounter++;
+                    }
+                }
             }
         }
     }
-    return busList;
+    return transportList;
   }
 
-  const getVehicleCount = (tour: Tour) => {
-    if (!tour.vehicles) return 0;
-    return Object.values(tour.vehicles).reduce((total, count) => total + (count || 0), 0);
+  const getTransportCount = (tour: Tour) => {
+    let totalCount = 0;
+    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+    for (const category of categories) {
+        if (tour[category]) {
+            totalCount += Object.values(tour[category]!).reduce((total, count) => total + (count || 0), 0);
+        }
+    }
+    return totalCount;
   }
 
   const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
@@ -163,17 +181,12 @@ export default function ReservationsPage() {
     setReservations(prevReservations => {
         return prevReservations.map(res => {
             if (res.id === reservationId) {
-                const tour = tours.find(t => t.id === res.tripId);
-                if (!tour) return res;
-
                 let newAssignedSeats = [...res.assignedSeats];
                 const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.bus === busNumber);
 
                 if (seatIndex > -1) {
-                    // Deselect seat
                     newAssignedSeats.splice(seatIndex, 1);
                 } else {
-                    // Select seat if not exceeding count
                     if (newAssignedSeats.length < res.seatsCount) {
                         newAssignedSeats.push({ seatId, bus: busNumber });
                     }
@@ -204,23 +217,30 @@ export default function ReservationsPage() {
         return "default"
     }
   }
+  
+  const getTransportIdentifier = (unit: ExpandedTransportUnit) => {
+    return `${unit.category}_${unit.type}_${unit.globalBusNum}`;
+  }
 
   const handleDialogOpen = (tour: Tour) => {
-    const busList = getExpandedBusList(tour);
+    const busList = getExpandedTransportList(tour);
     if (busList.length > 0) {
-      setActiveBus({ busNumber: busList[0].globalBusNum, type: busList[0].type });
+      const firstUnit = busList[0];
+      setActiveBus({ busNumber: firstUnit.globalBusNum, category: firstUnit.category, type: firstUnit.type });
     } else {
       setActiveBus(null);
     }
   };
   
-  const getBusIdentifier = (bus: {type: VehicleType, busNumber: number}) => {
-    return `${bus.type}_${bus.busNumber}`;
+  const categoryIcons: Record<LayoutCategory, React.ElementType> = {
+    vehicles: Bus,
+    airplanes: Plane,
+    cruises: Ship,
   }
 
 
   if (!isClient) {
-    return null; // Don't render server-side
+    return null; 
   }
 
   return (
@@ -228,7 +248,7 @@ export default function ReservationsPage() {
        <div>
         <h2 className="text-2xl font-bold">Gestión de Reservas</h2>
         <p className="text-muted-foreground">
-          Visualiza las reservas para cada viaje, asigna asientos y gestiona los estados.
+          Visualiza las reservas, asigna asientos y gestiona los estados.
         </p>
       </div>
       <Card>
@@ -240,7 +260,7 @@ export default function ReservationsPage() {
             ) : (
                 <Accordion type="multiple" className="w-full">
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
-                       const expandedBusList = getExpandedBusList(tour);
+                       const expandedBusList = getExpandedTransportList(tour);
                        const totalVehicleCount = expandedBusList.length;
 
                        return (
@@ -292,29 +312,34 @@ export default function ReservationsPage() {
                                                                     <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
                                                                         Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
-                                                                        Selecciona su/s lugar/es en el mapa.
                                                                     </DialogDescription>
                                                                     {totalVehicleCount > 1 && activeBus && (
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
                                                                             <Select
-                                                                                value={activeBus ? getBusIdentifier({ type: activeBus.type, busNumber: activeBus.busNumber }) : ''}
+                                                                                value={activeBus ? getTransportIdentifier(expandedBusList.find(b => b.globalBusNum === activeBus.busNumber)!) : ''}
                                                                                 onValueChange={(val) => {
-                                                                                    const selectedBus = expandedBusList.find(b => getBusIdentifier({ type: b.type, busNumber: b.globalBusNum }) === val);
+                                                                                    const selectedBus = expandedBusList.find(b => getTransportIdentifier(b) === val);
                                                                                     if (selectedBus) {
-                                                                                        setActiveBus({ busNumber: selectedBus.globalBusNum, type: selectedBus.type });
+                                                                                        setActiveBus({ busNumber: selectedBus.globalBusNum, category: selectedBus.category, type: selectedBus.type });
                                                                                     }
                                                                                 }}
                                                                             >
-                                                                                <SelectTrigger className="w-[220px]">
-                                                                                    <SelectValue placeholder="Seleccionar vehículo" />
+                                                                                <SelectTrigger className="w-[280px]">
+                                                                                    <SelectValue placeholder="Seleccionar unidad" />
                                                                                 </SelectTrigger>
                                                                                 <SelectContent>
-                                                                                    {expandedBusList.map(bus => (
-                                                                                        <SelectItem key={bus.globalBusNum} value={getBusIdentifier({ type: bus.type, busNumber: bus.globalBusNum })}>
-                                                                                          {bus.typeName} {getVehicleCount(tour) > 1 ? bus.instanceNum : ''}
-                                                                                        </SelectItem>
-                                                                                    ))}
+                                                                                    {expandedBusList.map(bus => {
+                                                                                        const Icon = categoryIcons[bus.category];
+                                                                                        return (
+                                                                                            <SelectItem key={bus.globalBusNum} value={getTransportIdentifier(bus)}>
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <Icon className="w-4 h-4 text-muted-foreground"/>
+                                                                                                    <span>{bus.typeName} {getTransportCount(tour) > 1 ? bus.instanceNum : ''}</span>
+                                                                                                </div>
+                                                                                            </SelectItem>
+                                                                                        )
+                                                                                    })}
                                                                                 </SelectContent>
                                                                             </Select>
                                                                         </div>
@@ -324,7 +349,8 @@ export default function ReservationsPage() {
                                                                     <div className="px-6 pb-4">
                                                                         {activeBus && (
                                                                           <SeatSelector
-                                                                              vehicleType={activeBus.type}
+                                                                              category={activeBus.category}
+                                                                              layoutType={activeBus.type}
                                                                               occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus.busNumber, res.id)}
                                                                               selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus.busNumber).map(s => s.seatId)}
                                                                               onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus.busNumber)}
@@ -384,7 +410,3 @@ export default function ReservationsPage() {
     </div>
   )
 }
-
-    
-
-    
