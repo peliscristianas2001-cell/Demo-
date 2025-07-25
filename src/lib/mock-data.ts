@@ -77,19 +77,9 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
 
     (res.assignedSeats || []).forEach((seat, index) => {
         const ticketId = `${res.id}-S${index + 1}`;
-        const qrData = JSON.stringify({
-            tId: ticketId,
-            rId: res.id,
-            pax: res.passenger,
-            dni: passengerDni,
-            dest: tour.destination,
-            date: tour.date.toISOString(),
-            asg: {
-              type: 'seat',
-              val: seat.seatId,
-              unit: seat.unit,
-            }
-        });
+        // Use a relative URL for navigation within the app
+        const verificationUrl = `/verify/${ticketId}`;
+        const qrData = new URL(verificationUrl, "https://yotellevo.app").href;
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
         
         ticketsForReservation.push({
@@ -105,19 +95,8 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
 
     (res.assignedCabins || []).forEach((cabin, index) => {
         const ticketId = `${res.id}-C${index + 1}`;
-        const qrData = JSON.stringify({
-            tId: ticketId,
-            rId: res.id,
-            pax: res.passenger,
-            dni: passengerDni,
-            dest: tour.destination,
-            date: tour.date.toISOString(),
-            asg: {
-              type: 'cabin',
-              val: cabin.cabinId,
-              unit: cabin.unit
-            }
-        });
+        const verificationUrl = `/verify/${ticketId}`;
+        const qrData = new URL(verificationUrl, "https://yotellevo.app").href;
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
         ticketsForReservation.push({
