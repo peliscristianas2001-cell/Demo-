@@ -72,10 +72,10 @@ export default function TripsPage() {
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
   
-  const getOccupiedSeatCount = (tourId: string) => {
+  const getOccupiedCount = (tourId: string) => {
     return reservations
         .filter(r => r.tripId === tourId)
-        .reduce((acc, r) => acc + r.assignedSeats.length, 0);
+        .reduce((acc, r) => acc + (r.assignedSeats.length + r.assignedCabins.length > 0 ? r.paxCount : 0) , 0);
   }
 
   const getTourCapacity = (tour: Tour) => {
@@ -86,7 +86,7 @@ export default function TripsPage() {
             totalCapacity += Object.entries(tour[category]!).reduce((total, [type, count]) => {
                 const itemConfig = layoutConfig[category]?.[type as LayoutItemType];
                 if (!itemConfig) return total;
-                return total + (itemConfig.seats * (count || 0));
+                return total + (itemConfig.capacity * (count || 0));
             }, 0);
         }
     }
@@ -160,7 +160,7 @@ export default function TripsPage() {
                 <TableHead>Destino</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Precio</TableHead>
-                <TableHead>Asientos</TableHead>
+                <TableHead>Capacidad</TableHead>
                 <TableHead>Unidades</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -173,8 +173,8 @@ export default function TripsPage() {
                   </TableCell>
                 </TableRow>
               ) : activeTours.map((tour) => {
-                const occupiedCount = getOccupiedSeatCount(tour.id);
-                const totalSeats = getTourCapacity(tour);
+                const occupiedCount = getOccupiedCount(tour.id);
+                const totalCapacity = getTourCapacity(tour);
                 const transportCount = getTransportCount(tour);
 
                 return (
@@ -189,8 +189,8 @@ export default function TripsPage() {
                     </TableCell>
                     <TableCell>${tour.price.toLocaleString("es-AR")}</TableCell>
                     <TableCell>
-                      <Badge variant={totalSeats > 0 && occupiedCount / totalSeats > 0.8 ? "destructive" : "secondary"}>
-                        {occupiedCount} / {totalSeats}
+                      <Badge variant={totalCapacity > 0 && occupiedCount / totalCapacity > 0.8 ? "destructive" : "secondary"}>
+                        {occupiedCount} / {totalCapacity}
                       </Badge>
                     </TableCell>
                     <TableCell>

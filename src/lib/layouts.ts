@@ -4,7 +4,10 @@
 import type { LayoutItemType, CustomLayoutConfig, LayoutCategory } from './types';
 import { getLayoutConfig } from './vehicle-config';
 
-export type Cell = { type: 'seat', number: number } | { type: 'pasillo' | 'escalera' | 'baño' | 'cafetera' | 'chofer' | 'cabina' | 'empty' };
+export type Cell = 
+    | { type: 'seat', number: number } 
+    | { type: 'cabin', number: string, cabinType: 'Interior' | 'Exterior' | 'Balcón' | 'Suite', capacity: number }
+    | { type: 'pasillo' | 'escalera' | 'baño' | 'cafetera' | 'chofer' | 'cabina' | 'empty' | 'anchor' | 'waves' };
 
 export type Floor = {
     name: string;

@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { CustomLayoutConfig, LayoutCategory } from "@/lib/types";
 import type { Layout, Floor, Cell } from "@/lib/layouts";
-import { Trash2, PlusCircle, Armchair, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, ShieldIcon } from "lucide-react";
+import { Trash2, PlusCircle, Armchair, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, ShieldIcon, BedDouble, Anchor } from "lucide-react";
 
 interface LayoutEditorProps {
   isOpen: boolean;
@@ -38,10 +38,13 @@ interface LayoutEditorProps {
 const defaultCell: Cell = { type: 'empty' };
 const defaultFloor: Floor = { name: "Planta Baja", grid: Array(5).fill(Array(4).fill(defaultCell)) };
 
-const CellEditor = ({ cell, onCellChange }: { cell: Cell, onCellChange: (newCell: Cell) => void }) => {
+const CellEditor = ({ cell, onCellChange, category }: { cell: Cell, onCellChange: (newCell: Cell) => void, category: LayoutCategory }) => {
+    
     const handleTypeChange = (type: Cell['type']) => {
         if (type === 'seat') {
             onCellChange({ type: 'seat', number: 0 });
+        } else if (type === 'cabin') {
+            onCellChange({ type: 'cabin', number: '', cabinType: 'Interior', capacity: 2 });
         } else {
             onCellChange({ type });
         }
@@ -51,16 +54,40 @@ const CellEditor = ({ cell, onCellChange }: { cell: Cell, onCellChange: (newCell
         onCellChange({ type: 'seat', number: parseInt(e.target.value, 10) || 0 });
     }
 
-    const cellTypes: { value: Cell['type'], label: string, icon: React.ReactNode }[] = [
+    const handleCabinChange = (field: keyof Cell, value: any) => {
+        if (cell.type !== 'cabin') return;
+        if(field === 'capacity') value = parseInt(value, 10) || 1;
+        onCellChange({ ...cell, [field]: value });
+    }
+
+    const baseCellTypes = [
         { value: 'empty', label: 'Vacío', icon: <div className="w-4 h-4 border border-dashed rounded-sm" /> },
-        { value: 'seat', label: 'Asiento', icon: <Armchair className="w-4 h-4" /> },
         { value: 'pasillo', label: 'Pasillo', icon: <div className="w-4 h-4 bg-gray-300 rounded-sm" /> },
-        { value: 'baño', label: 'Baño', icon: <Waves className="w-4 h-4" /> },
-        { value: 'escalera', label: 'Escalera', icon: <PersonStandingIcon className="w-4 h-4" /> },
-        { value: 'chofer', label: 'Chofer', icon: <BusIcon className="w-4 h-4" /> },
-        { value: 'cabina', label: 'Cabina', icon: <ShieldIcon className="w-4 h-4" /> },
-        { value: 'cafetera', label: 'Cafetera', icon: <ChefHatIcon className="w-4 h-4" /> },
     ];
+
+    const categoryCellTypes: Record<LayoutCategory, typeof baseCellTypes> = {
+        vehicles: [
+            { value: 'seat', label: 'Asiento', icon: <Armchair className="w-4 h-4" /> },
+            { value: 'baño', label: 'Baño', icon: <Waves className="w-4 h-4" /> },
+            { value: 'escalera', label: 'Escalera', icon: <PersonStandingIcon className="w-4 h-4" /> },
+            { value: 'chofer', label: 'Chofer', icon: <BusIcon className="w-4 h-4" /> },
+            { value: 'cafetera', label: 'Cafetera', icon: <ChefHatIcon className="w-4 h-4" /> },
+        ],
+        airplanes: [
+             { value: 'seat', label: 'Asiento', icon: <Armchair className="w-4 h-4" /> },
+             { value: 'baño', label: 'Baño', icon: <Waves className="w-4 h-4" /> },
+             { value: 'cabina', label: 'Cabina Piloto', icon: <ShieldIcon className="w-4 h-4" /> },
+        ],
+        cruises: [
+            { value: 'cabin', label: 'Camarote', icon: <BedDouble className="w-4 h-4" /> },
+            { value: 'baño', label: 'Baño Público', icon: <Waves className="w-4 h-4" /> },
+            { value: 'escalera', label: 'Escalera/Ascensor', icon: <PersonStandingIcon className="w-4 h-4" /> },
+            { value: 'anchor', label: 'Zona Común', icon: <Anchor className="w-4 h-4" /> },
+            { value: 'waves', label: 'Piscina', icon: <Waves className="w-4 h-4" /> }
+        ]
+    }
+    
+    const cellTypes = [...baseCellTypes, ...categoryCellTypes[category]];
 
     return (
         <div className="p-4 space-y-4 border rounded-lg bg-muted/50">
@@ -85,6 +112,30 @@ const CellEditor = ({ cell, onCellChange }: { cell: Cell, onCellChange: (newCell
                 <div className="space-y-2">
                     <Label>Número de Asiento</Label>
                     <Input type="number" value={cell.number} onChange={handleSeatNumberChange} />
+                </div>
+            )}
+            {cell.type === 'cabin' && (
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Número de Camarote</Label>
+                        <Input type="text" value={cell.number} onChange={(e) => handleCabinChange('number', e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Tipo de Camarote</Label>
+                        <Select value={cell.cabinType} onValueChange={(val) => handleCabinChange('cabinType', val)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Interior">Interior</SelectItem>
+                                <SelectItem value="Exterior">Exterior</SelectItem>
+                                <SelectItem value="Balcón">Balcón</SelectItem>
+                                <SelectItem value="Suite">Suite</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Capacidad</Label>
+                        <Input type="number" min="1" value={cell.capacity} onChange={(e) => handleCabinChange('capacity', e.target.value)} />
+                    </div>
                 </div>
             )}
         </div>
@@ -134,29 +185,37 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
   }
 
   const handleSaveClick = () => {
-    if (!name) {
+    if (!name || !category) {
       toast({ title: "Error", description: "El nombre es obligatorio.", variant: "destructive" });
       return;
     }
-    const seatNumbers = new Set<number>();
-    let totalSeats = 0;
+
+    const uniqueIdentifiers = new Set<string>();
+    let totalCapacity = 0;
+
     for (const floor of layout.floors) {
         for (const row of floor.grid) {
             for (const cell of row) {
+                let identifier: string | null = null;
                 if (cell.type === 'seat') {
-                    if (cell.number > 0) {
-                        if(seatNumbers.has(cell.number)) {
-                             toast({ title: "Error", description: `Número de asiento duplicado: ${cell.number}`, variant: "destructive" });
-                             return;
-                        }
-                        seatNumbers.add(cell.number);
+                    if (cell.number > 0) identifier = `seat-${cell.number}`;
+                    totalCapacity++;
+                } else if (cell.type === 'cabin') {
+                    if (cell.number) identifier = `cabin-${cell.number}`;
+                    totalCapacity += cell.capacity;
+                }
+                
+                if (identifier) {
+                    if (uniqueIdentifiers.has(identifier)) {
+                         toast({ title: "Error", description: `Identificador duplicado: ${identifier.replace('-', ' ')}`, variant: "destructive" });
+                         return;
                     }
-                    totalSeats++;
+                    uniqueIdentifiers.add(identifier);
                 }
             }
         }
     }
-    onSave(layoutKey, { name, seats: totalSeats, layout });
+    onSave(layoutKey, { name, capacity: totalCapacity, layout });
   };
   
   const addFloor = () => {
@@ -174,8 +233,10 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
     airplanes: "Avión",
     cruises: "Crucero"
   }
+  
+  if (!category) return null;
 
-  const title = layoutConfig ? `Editar ${categoryTitles[category!]}` : `Nuevo ${categoryTitles[category!]}`;
+  const title = layoutConfig ? `Editar ${categoryTitles[category]}` : `Nuevo ${categoryTitles[category]}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -183,7 +244,7 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Define el nombre y el layout de asientos de este tipo de transporte.
+            Define el nombre y el layout de este tipo de transporte.
           </DialogDescription>
         </DialogHeader>
         
@@ -194,12 +255,13 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                     <Input id="layoutName" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                  <Button onClick={addFloor} variant="outline" size="sm">
-                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir Piso
+                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir Piso/Cubierta
                 </Button>
                 {editingCell && (
                     <CellEditor 
                         cell={layout.floors[editingCell.floor].grid[editingCell.row][editingCell.col]}
                         onCellChange={handleCellChange}
+                        category={category}
                     />
                 )}
             </div>
@@ -235,15 +297,25 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                         </div>
                         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${floor.grid[0]?.length || 1}, minmax(0, 4rem))`}}>
                             {floor.grid.map((row, rowIndex) => (
-                                row.map((cell, colIndex) => (
-                                    <button 
-                                        key={`${rowIndex}-${colIndex}`} 
-                                        onClick={() => setEditingCell({ floor: floorIndex, row: rowIndex, col: colIndex })}
-                                        className={`w-full aspect-square text-xs border flex items-center justify-center ${editingCell?.floor === floorIndex && editingCell?.row === rowIndex && editingCell?.col === colIndex ? 'ring-2 ring-primary' : 'border-dashed'}`}
-                                    >
-                                        {cell.type === 'seat' ? <div className="flex flex-col items-center"><Armchair className="w-4 h-4"/><span className="font-bold">{cell.number || '?'}</span></div>: <span>{cell.type.charAt(0).toUpperCase()}</span>}
-                                    </button>
-                                ))
+                                row.map((cell, colIndex) => {
+                                    const cellKey = `${floorIndex}-${rowIndex}-${colIndex}`;
+                                    let cellContent = <span>{cell.type.charAt(0).toUpperCase()}</span>;
+                                    if(cell.type === 'seat') {
+                                        cellContent = <div className="flex flex-col items-center"><Armchair className="w-4 h-4"/><span className="font-bold">{cell.number || '?'}</span></div>
+                                    } else if (cell.type === 'cabin') {
+                                        cellContent = <div className="flex flex-col items-center"><BedDouble className="w-4 h-4"/><span className="font-bold truncate">{cell.number || '?'}</span></div>
+                                    }
+
+                                    return (
+                                        <button 
+                                            key={cellKey}
+                                            onClick={() => setEditingCell({ floor: floorIndex, row: rowIndex, col: colIndex })}
+                                            className={`w-full aspect-square text-xs border flex items-center justify-center ${editingCell?.floor === floorIndex && editingCell?.row === rowIndex && editingCell?.col === colIndex ? 'ring-2 ring-primary' : 'border-dashed'}`}
+                                        >
+                                            {cellContent}
+                                        </button>
+                                    )
+                                })
                             ))}
                         </div>
                     </div>
@@ -261,5 +333,3 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
     </Dialog>
   );
 }
-
-    

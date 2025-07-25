@@ -1,5 +1,5 @@
 
-import type { Layout } from './layouts';
+import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
 
@@ -7,7 +7,7 @@ export type LayoutItemType = string;
 
 export interface CustomLayoutConfig {
   name: string;
-  seats: number;
+  capacity: number;
   layout: Layout;
 }
 
@@ -26,8 +26,13 @@ export type ReservationStatus = "Confirmado" | "Pendiente";
 
 export type AssignedSeat = { 
   seatId: string; 
-  bus: number;
+  unit: number; // Represents the global instance number of the transport unit
 };
+
+export type AssignedCabin = {
+  cabinId: string;
+  unit: number;
+}
 
 export interface Passenger {
   fullName: string
@@ -41,8 +46,10 @@ export type Reservation = {
     tripId: string;
     tripDestination: string;
     passenger: string;
-    seatsCount: number;
+    // This can represent seats or people in a cabin
+    paxCount: number; 
     assignedSeats: AssignedSeat[];
+    assignedCabins: AssignedCabin[];
     status: ReservationStatus;
 }
 
@@ -54,6 +61,6 @@ export type Ticket = {
   tripDate: Date;
   passengerName: string;
   passengerDni: string;
-  seat: AssignedSeat;
+  assignment: AssignedSeat | AssignedCabin; // Can be a seat or a cabin
   qrCodeUrl: string; // URL to a generated QR code image
 }
