@@ -82,7 +82,7 @@ export default function TripsPage() {
   const getOccupiedCount = (tourId: string) => {
     return reservations
         .filter(r => r.tripId === tourId)
-        .reduce((acc, r) => acc + (r.assignedSeats.length + r.assignedCabins.length) , 0);
+        .reduce((acc, r) => acc + ((r.assignedSeats?.length || 0) + (r.assignedCabins?.length || 0)) , 0);
   }
 
   const getTourCapacity = (tour: Tour) => {
