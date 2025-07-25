@@ -30,12 +30,14 @@ export default function EmployeeRegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    setSellers(storedSellers);
+    setIsClient(true);
     const id = searchParams.get('sellerId');
     setSellerId(id);
+    const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    setSellers(storedSellers);
   }, [searchParams]);
 
   const seller = useMemo(() => sellers.find(s => s.id === sellerId), [sellers, sellerId]);
@@ -67,9 +69,13 @@ export default function EmployeeRegisterPage() {
     });
 
     setTimeout(() => {
-        router.push("/employee/login");
+        router.push("/login");
     }, 2000);
   };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -82,7 +88,7 @@ export default function EmployeeRegisterPage() {
                 Completar Registro de Vendedor
             </CardTitle>
             <CardDescription>
-                {seller ? `¡Hola, ${seller.name}! Crea una contraseña para acceder a tu panel.` : "Cargando información..."}
+                {seller ? `¡Hola, ${seller.name}! Crea una contraseña para acceder a tu panel.` : "Verificando link de registro..."}
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,7 +142,7 @@ export default function EmployeeRegisterPage() {
                     </Button>
                 </form>
             ) : (
-                <p className="text-center text-muted-foreground">Verificando link de registro...</p>
+                <p className="text-center text-muted-foreground">Cargando información...</p>
             )}
         </CardContent>
       </Card>
