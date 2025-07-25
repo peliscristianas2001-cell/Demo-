@@ -80,14 +80,10 @@ export default function SettingsPage() {
     };
 
     const handleDeleteLayout = (category: LayoutCategory, keyToDelete: string) => {
-      setLayoutConfig(prev => {
-          const newConfig = { ...prev };
-          const categoryConf = { ...newConfig[category] };
-          delete categoryConf[keyToDelete];
-          newConfig[category] = categoryConf;
-          saveLayoutConfig(newConfig);
-          return newConfig;
-      });
+      const currentConfig = getLayoutConfig();
+      delete currentConfig[category][keyToDelete];
+      saveLayoutConfig(currentConfig);
+      setLayoutConfig(currentConfig); // Update state to reflect deletion
       toast({ title: "Elemento Eliminado", description: "El tipo fue eliminado." });
     };
 
@@ -97,21 +93,24 @@ export default function SettingsPage() {
 
         const newKey = newConfig.name.toLowerCase().replace(/\s+/g, '_');
         
-        setLayoutConfig(prev => {
-            const updatedConfig = JSON.parse(JSON.stringify(prev));
-            const categoryConfig = { ...updatedConfig[category] };
+        // Read the latest config directly from storage to avoid state closure issues
+        const currentFullConfig = getLayoutConfig();
+        const categoryConfig = currentFullConfig[category];
 
-            if (originalKey && originalKey !== newKey) {
-                delete categoryConfig[originalKey];
-            }
-            
-            categoryConfig[newKey] = newConfig;
-            updatedConfig[category] = categoryConfig;
-            
-            saveLayoutConfig(updatedConfig);
-            return updatedConfig;
-        });
+        // If it's an existing layout and its key is changing, remove the old one
+        if (originalKey && originalKey !== newKey) {
+            delete categoryConfig[originalKey];
+        }
         
+        // Add/update the layout with the new key
+        categoryConfig[newKey] = newConfig;
+        
+        // Save the entire updated configuration object back to storage
+        saveLayoutConfig(currentFullConfig);
+        
+        // Update the component's state to reflect the changes immediately
+        setLayoutConfig(currentFullConfig);
+
         setIsEditorOpen(false);
         setEditingLayout(null);
     };
