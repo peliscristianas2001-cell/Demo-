@@ -17,7 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Search, PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, UserPlus, Pencil } from "lucide-react"
 import { mockPassengers } from "@/lib/mock-data"
 import type { Passenger } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { useToast } from "@/hooks/use-toast"
+import { Label } from "@/components/ui/label"
 
 const calculateAge = (dob: Date | string) => {
     if (!dob) return null;
@@ -53,16 +54,25 @@ export default function PassengersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
+  const [prefilledFamily, setPrefilledFamily] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   const handleEdit = (passenger: Passenger) => {
     setSelectedPassenger(passenger)
+    setPrefilledFamily(undefined);
     setIsFormOpen(true)
   }
 
   const handleCreate = () => {
     setSelectedPassenger(null)
+    setPrefilledFamily(undefined);
     setIsFormOpen(true)
+  }
+
+  const handleCreateInFamily = (familyName: string) => {
+    setSelectedPassenger(null);
+    setPrefilledFamily(familyName);
+    setIsFormOpen(true);
   }
 
   const handleSave = (passengerData: Passenger) => {
@@ -79,6 +89,19 @@ export default function PassengersPage() {
   const handleDelete = (passengerId: string) => {
     setPassengers(passengers.filter(p => p.id !== passengerId));
     toast({ title: "Pasajero eliminado", variant: "destructive" });
+  }
+
+  const handleFamilyNameChange = (oldFamilyName: string, newFamilyName: string) => {
+     if (!newFamilyName || oldFamilyName === newFamilyName) return;
+     setPassengers(prev => 
+        prev.map(p => {
+            if (p.family === oldFamilyName) {
+                return { ...p, family: newFamilyName };
+            }
+            return p;
+        })
+     );
+     toast({ title: "Familia actualizada", description: `El grupo '${oldFamilyName}' ahora se llama '${newFamilyName}'.` });
   }
 
   const passengersByFamily = useMemo(() => {
@@ -105,6 +128,7 @@ export default function PassengersPage() {
         onOpenChange={setIsFormOpen}
         onSave={handleSave}
         passenger={selectedPassenger}
+        prefilledFamily={prefilledFamily}
     />
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -135,49 +159,66 @@ export default function PassengersPage() {
             <Accordion type="multiple" className="w-full" defaultValue={Object.keys(passengersByFamily)}>
                 {Object.entries(passengersByFamily).map(([family, members]) => (
                     <AccordionItem value={family} key={family}>
-                        <AccordionTrigger className="text-lg font-medium">
-                            {family} ({members.length})
+                        <AccordionTrigger className="text-lg font-medium group hover:no-underline">
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    defaultValue={family} 
+                                    onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
+                                />
+                                <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span>({members.length})</span>
+                            </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                             <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nombre Completo</TableHead>
-                                    <TableHead>DNI</TableHead>
-                                    <TableHead>Teléfono</TableHead>
-                                    <TableHead>Edad</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {members.map((p) => (
-                                    <TableRow key={p.id}>
-                                        <TableCell className="font-medium">{p.fullName}</TableCell>
-                                        <TableCell>{p.dni}</TableCell>
-                                        <TableCell>{p.phone || 'N/A'}</TableCell>
-                                        <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Abrir menú</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEdit(p)}>
-                                                        <Edit className="mr-2 h-4 w-4" /> Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
+                             <div className="space-y-4">
+                                <div className="flex justify-end">
+                                    <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
+                                        <UserPlus className="mr-2 h-4 w-4"/>
+                                        Añadir Integrante
+                                    </Button>
+                                </div>
+                                <Table>
+                                    <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nombre Completo</TableHead>
+                                        <TableHead>DNI</TableHead>
+                                        <TableHead>Teléfono</TableHead>
+                                        <TableHead>Edad</TableHead>
+                                        <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
-                                ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                    {members.map((p) => (
+                                        <TableRow key={p.id}>
+                                            <TableCell className="font-medium">{p.fullName}</TableCell>
+                                            <TableCell>{p.dni}</TableCell>
+                                            <TableCell>{p.phone || 'N/A'}</TableCell>
+                                            <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Abrir menú</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEdit(p)}>
+                                                            <Edit className="mr-2 h-4 w-4" /> Editar
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    </TableBody>
+                                </Table>
+                             </div>
                         </AccordionContent>
                     </AccordionItem>
                 ))}
@@ -188,3 +229,5 @@ export default function PassengersPage() {
     </>
   )
 }
+
+    

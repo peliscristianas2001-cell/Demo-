@@ -22,6 +22,7 @@ interface PassengerFormProps {
   onOpenChange: (isOpen: boolean) => void
   onSave: (passenger: Passenger) => void
   passenger: Passenger | null
+  prefilledFamily?: string
 }
 
 const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
@@ -32,7 +33,7 @@ const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
     family: ""
 }
 
-export function PassengerForm({ isOpen, onOpenChange, onSave, passenger }: PassengerFormProps) {
+export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily }: PassengerFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
   const { toast } = useToast();
 
@@ -44,10 +45,13 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger }: Passe
                 dob: passenger.dob ? new Date(passenger.dob) : undefined
             })
         } else {
-            setFormData(defaultPassenger)
+            setFormData({
+                ...defaultPassenger,
+                family: prefilledFamily || ""
+            })
         }
     }
-  }, [passenger, isOpen])
+  }, [passenger, isOpen, prefilledFamily])
 
 
   const handleFormChange = (id: keyof typeof formData, value: any) => {
@@ -97,7 +101,7 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger }: Passe
             </div>
              <div className="space-y-2">
                 <Label htmlFor="family">Familia</Label>
-                <Input id="family" value={formData.family} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez"/>
+                <Input id="family" value={formData.family} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario)"/>
             </div>
         </div>
         
@@ -109,3 +113,5 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger }: Passe
     </Dialog>
   )
 }
+
+    
