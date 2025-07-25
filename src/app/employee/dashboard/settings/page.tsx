@@ -29,9 +29,9 @@ export default function EmployeeSettingsPage() {
         const currentSeller = storedSellers.find((s: Seller) => s.id === storedEmployeeId);
         if (currentSeller) {
             setFormData({
-                name: currentSeller.name,
-                dni: currentSeller.dni,
-                phone: currentSeller.phone
+                name: currentSeller.name || '',
+                dni: currentSeller.dni || '',
+                phone: currentSeller.phone || ''
             });
         }
     }, []);
