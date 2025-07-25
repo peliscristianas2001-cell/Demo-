@@ -277,7 +277,7 @@ export default function ReservationsPage() {
         {editingReservation.reservation && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="seller">Vendedora</Label>
+              <Label htmlFor="seller">Vendedor/a</Label>
                <Select
                   value={editingReservation.reservation.sellerId}
                   onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, sellerId: val}}))}
@@ -350,7 +350,7 @@ export default function ReservationsPage() {
                                     <TableHeader>
                                     <TableRow>
                                         <TableHead>Pasajero</TableHead>
-                                        <TableHead>Vendedora</TableHead>
+                                        <TableHead>Vendedor/a</TableHead>
                                         <TableHead>Asientos</TableHead>
                                         <TableHead>Pago</TableHead>
                                         <TableHead>Estado</TableHead>

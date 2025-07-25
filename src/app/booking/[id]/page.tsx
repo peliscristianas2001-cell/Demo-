@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -29,6 +29,7 @@ const adultTier: PricingTier = { id: 'adult', name: 'Adulto', price: 0 };
 export default function BookingPage() {
   const { id } = use(useParams())
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast()
 
   const [tour, setTour] = useState<Tour | null>(null)
@@ -37,6 +38,7 @@ export default function BookingPage() {
   const [selectedSellerId, setSelectedSellerId] = useState<string>("");
   const [passengers, setPassengers] = useState<Passenger[]>([])
   const [isClient, setIsClient] = useState(false)
+  const [loggedInSellerId, setLoggedInSellerId] = useState<string | null>(null)
   
   useEffect(() => {
     setIsClient(true)
@@ -50,6 +52,14 @@ export default function BookingPage() {
     const storedSellers = localStorage.getItem("ytl_sellers");
     const currentSellers: Seller[] = storedSellers ? JSON.parse(storedSellers) : mockSellers;
     setSellers(currentSellers);
+
+    const employeeIdFromStorage = localStorage.getItem("ytl_employee_id");
+    const employeeIdFromUrl = searchParams.get('sellerId');
+    const finalSellerId = employeeIdFromUrl || employeeIdFromStorage;
+    if (finalSellerId) {
+        setLoggedInSellerId(finalSellerId);
+        setSelectedSellerId(finalSellerId);
+    }
     
     const foundTour = tours.find((t) => t.id === id)
     if (foundTour) {
@@ -69,7 +79,7 @@ export default function BookingPage() {
     } else {
         setTour(null)
     }
-  }, [id])
+  }, [id, searchParams])
 
   const addPassenger = () => {
     setPassengers(prev => [...prev, {
@@ -108,7 +118,7 @@ export default function BookingPage() {
 
     if (!selectedSellerId) {
        toast({
-        title: "Vendedora no seleccionada",
+        title: "Vendedor no seleccionado",
         description: "Por favor, selecciona quién te vendió el viaje.",
         variant: "destructive",
       })
@@ -140,7 +150,11 @@ export default function BookingPage() {
     })
 
     setTimeout(() => {
-        router.push('/');
+        if (loggedInSellerId) {
+            router.push('/employee/dashboard/reservations');
+        } else {
+            router.push('/');
+        }
     }, 3000);
   }
   
@@ -260,18 +274,21 @@ export default function BookingPage() {
               
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-2xl"><PercentSquare className="w-8 h-8 text-primary" /> Vendedora</CardTitle>
+                  <CardTitle className="flex items-center gap-3 text-2xl"><PercentSquare className="w-8 h-8 text-primary" /> Vendedor/a</CardTitle>
                    <CardDescription>¿Quién te vendió este increíble viaje?</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
+                    <Select value={selectedSellerId} onValueChange={setSelectedSellerId} disabled={!!loggedInSellerId}>
                         <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="Selecciona una vendedora..." />
+                            <SelectValue placeholder="Selecciona un vendedor/a..." />
                         </SelectTrigger>
                         <SelectContent>
                             {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
+                     {loggedInSellerId && (
+                        <p className="text-sm text-muted-foreground mt-2">Venta asignada a tu usuario.</p>
+                    )}
                 </CardContent>
               </Card>
 

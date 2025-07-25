@@ -109,4 +109,5 @@ export type Seller = {
     dni: string;
     phone: string;
     commission: number; // Percentage
+    password?: string;
 }

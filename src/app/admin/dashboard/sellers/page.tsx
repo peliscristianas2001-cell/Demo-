@@ -32,20 +32,35 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog"
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Link as LinkIcon, Clipboard } from "lucide-react"
 import { mockSellers } from "@/lib/mock-data"
 import type { Seller } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 
+type FormData = Omit<Seller, 'id'>;
+
 export default function SellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
   const [isClient, setIsClient] = useState(false)
-  const [formData, setFormData] = useState({ name: '', dni: '', phone: '', commission: '' });
+  const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', commission: 0, password: '' });
   const { toast } = useToast();
+
+  const registrationLink = useMemo(() => {
+    if (selectedSeller && isClient) {
+      return `${window.location.origin}/employee/register?sellerId=${selectedSeller.id}`;
+    }
+    return "";
+  }, [selectedSeller, isClient]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(registrationLink).then(() => {
+      toast({ title: "¡Copiado!", description: "El link de registro se ha copiado al portapapeles." });
+    });
+  }
 
   useEffect(() => {
     setIsClient(true)
@@ -72,10 +87,11 @@ export default function SellersPage() {
             name: selectedSeller.name,
             dni: selectedSeller.dni,
             phone: selectedSeller.phone,
-            commission: String(selectedSeller.commission)
+            commission: selectedSeller.commission,
+            password: selectedSeller.password || ''
         });
     } else {
-        setFormData({ name: '', dni: '', phone: '', commission: '' });
+        setFormData({ name: '', dni: '', phone: '', commission: 0, password: '' });
     }
   }, [selectedSeller, isFormOpen]);
 
@@ -90,28 +106,28 @@ export default function SellersPage() {
   }
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
+    const { id, value } = e.target;
+    setFormData(prev => ({
+        ...prev,
+        [id]: id === 'commission' ? parseFloat(value) || 0 : value
+    }));
   }
 
   const handleSave = () => {
     const { name, dni, phone, commission } = formData;
-    if (!name || !dni || !phone || commission === '') {
+    if (!name || !dni || !phone || commission === null) {
         toast({ title: "Datos incompletos", description: "Todos los campos son obligatorios.", variant: "destructive" });
         return;
     }
 
-    const commissionNumber = parseFloat(commission);
-    if (isNaN(commissionNumber) || commissionNumber < 0) {
+    if (commission < 0) {
         toast({ title: "Comisión inválida", description: "La comisión debe ser un número positivo.", variant: "destructive" });
         return;
     }
 
     const sellerData: Seller = {
         id: selectedSeller?.id || `S${Date.now()}`,
-        name,
-        dni,
-        phone,
-        commission: commissionNumber
+        ...formData
     }
 
     if (selectedSeller) {
@@ -122,12 +138,12 @@ export default function SellersPage() {
     
     setIsFormOpen(false)
     setSelectedSeller(null)
-    toast({ title: "¡Éxito!", description: "La vendedora ha sido guardada." });
+    toast({ title: "¡Éxito!", description: "El vendedor/a ha sido guardado/a." });
   }
 
   const handleDelete = (sellerId: string) => {
     setSellers(sellers.filter(s => s.id !== sellerId))
-    toast({ title: "Vendedora eliminada", description: "La vendedora ha sido eliminada del sistema." });
+    toast({ title: "Vendedor/a eliminado/a", description: "El vendedor/a ha sido eliminado/a del sistema." });
   }
 
   if (!isClient) {
@@ -139,9 +155,9 @@ export default function SellersPage() {
        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{selectedSeller ? "Editar Vendedora" : "Nueva Vendedora"}</DialogTitle>
+                <DialogTitle>{selectedSeller ? "Editar Vendedor/a" : "Nuevo Vendedor/a"}</DialogTitle>
                 <DialogDescription>
-                {selectedSeller ? "Modifica los datos de la vendedora." : "Añade una nueva vendedora al sistema."}
+                {selectedSeller ? "Modifica los datos del vendedor/a." : "Añade un nuevo vendedor/a al sistema."}
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -161,6 +177,19 @@ export default function SellersPage() {
                     <Label htmlFor="commission">Comisión (%)</Label>
                     <Input id="commission" type="number" value={formData.commission} onChange={handleFormChange} placeholder="Ej: 10"/>
                 </div>
+
+                {selectedSeller && (
+                    <div className="space-y-2 pt-4">
+                        <Label>Link de Registro Único</Label>
+                         <div className="flex items-center gap-2">
+                            <Input value={registrationLink} readOnly className="text-muted-foreground"/>
+                            <Button size="icon" variant="outline" onClick={copyToClipboard}>
+                                <Clipboard className="w-4 h-4"/>
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor/a pueda registrarse y crear su contraseña.</p>
+                    </div>
+                )}
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
@@ -171,14 +200,14 @@ export default function SellersPage() {
 
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Vendedoras</h2>
+          <h2 className="text-2xl font-bold">Gestión de Vendedores</h2>
           <p className="text-muted-foreground">
-            Añade, edita o elimina a las vendedoras de viajes.
+            Añade, edita o elimina a los vendedores de viajes.
           </p>
         </div>
         <Button onClick={handleCreate}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Nueva Vendedora
+          Nuevo Vendedor/a
         </Button>
       </div>
       <Card>
@@ -197,7 +226,7 @@ export default function SellersPage() {
               {sellers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No hay vendedoras registradas.
+                    No hay vendedores registrados.
                   </TableCell>
                 </TableRow>
               ) : sellers.map((seller) => (
