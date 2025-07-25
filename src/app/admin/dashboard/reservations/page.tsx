@@ -206,6 +206,11 @@ export default function ReservationsPage() {
       setActiveBus(null);
     }
   };
+  
+  const getBusIdentifier = (bus: {type: VehicleType, busNumber: number}) => {
+    return `${bus.type}_${bus.busNumber}`;
+  }
+
 
   if (!isClient) {
     return null; // Don't render server-side
@@ -285,19 +290,21 @@ export default function ReservationsPage() {
                                                                     {totalVehicleCount > 1 && activeBus && (
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
-                                                                            <Select 
-                                                                              value={`${activeBus.type}_${activeBus.busNumber}`}
-                                                                              onValueChange={(val) => {
-                                                                                const [type, num] = val.split('_');
-                                                                                setActiveBus({ busNumber: parseInt(num), type: type as VehicleType });
-                                                                              }} 
+                                                                            <Select
+                                                                                value={activeBus ? getBusIdentifier(activeBus) : ''}
+                                                                                onValueChange={(val) => {
+                                                                                    const selectedBus = expandedBusList.find(b => getBusIdentifier({ type: b.type, busNumber: b.globalBusNum }) === val);
+                                                                                    if (selectedBus) {
+                                                                                        setActiveBus({ busNumber: selectedBus.globalBusNum, type: selectedBus.type });
+                                                                                    }
+                                                                                }}
                                                                             >
                                                                                 <SelectTrigger className="w-[220px]">
                                                                                     <SelectValue placeholder="Seleccionar vehículo" />
                                                                                 </SelectTrigger>
                                                                                 <SelectContent>
                                                                                     {expandedBusList.map(bus => (
-                                                                                        <SelectItem key={bus.globalBusNum} value={`${bus.type}_${bus.globalBusNum}`}>
+                                                                                        <SelectItem key={bus.globalBusNum} value={getBusIdentifier({ type: bus.type, busNumber: bus.globalBusNum })}>
                                                                                           {bus.typeName} {getVehicleCount(tour) > 1 ? bus.instanceNum : ''}
                                                                                         </SelectItem>
                                                                                     ))}
