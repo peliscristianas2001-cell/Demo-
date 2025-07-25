@@ -398,7 +398,7 @@ export default function ReservationsPage() {
                                                                 </Button>
                                                             </DialogTrigger>
                                                             <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
-                                                                <DialogHeader className="p-6 pb-4">
+                                                                <DialogHeader>
                                                                     <DialogTitle>Asignar para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
                                                                         Viaje a {tour.destination}. Reservó {res.paxCount} lugares.
@@ -435,21 +435,19 @@ export default function ReservationsPage() {
                                                                         </div>
                                                                     )}
                                                                 </DialogHeader>
-                                                                <div className="flex-1 overflow-y-auto">
-                                                                    <div className="px-6 pb-4">
-                                                                        {activeUnit && (
-                                                                          <SeatSelector
-                                                                              category={activeUnit.category}
-                                                                              layoutType={activeUnit.type}
-                                                                              occupiedSeats={getOccupiedSeatsForTour(tour.id, activeUnit.unitNumber, res.id)}
-                                                                              selectedSeats={(res.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
-                                                                              onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeUnit.unitNumber)}
-                                                                              maxSeats={res.paxCount}
-                                                                          />
-                                                                        )}
-                                                                    </div>
+                                                                <div className="flex-1 overflow-y-auto pr-6">
+                                                                    {activeUnit && (
+                                                                      <SeatSelector
+                                                                          category={activeUnit.category}
+                                                                          layoutType={activeUnit.type}
+                                                                          occupiedSeats={getOccupiedSeatsForTour(tour.id, activeUnit.unitNumber, res.id)}
+                                                                          selectedSeats={(res.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
+                                                                          onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeUnit.unitNumber)}
+                                                                          maxSeats={res.paxCount}
+                                                                      />
+                                                                    )}
                                                                 </div>
-                                                                <DialogFooter className="p-6 pt-4 mt-auto border-t">
+                                                                <DialogFooter className="mt-auto pt-4 border-t">
                                                                     <DialogClose asChild>
                                                                         <Button type="button">Cerrar</Button>
                                                                     </DialogClose>
@@ -500,3 +498,5 @@ export default function ReservationsPage() {
     </>
   )
 }
+
+    

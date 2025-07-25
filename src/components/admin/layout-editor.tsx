@@ -296,7 +296,7 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                 )}
             </div>
 
-            <div className="md:col-span-2 overflow-y-auto space-y-4">
+            <div className="md:col-span-2 overflow-y-auto space-y-4 pr-2">
                  {layout.floors.map((floor, floorIndex) => (
                     <div key={floorIndex} className="p-4 border rounded-lg space-y-4">
                         <div className="flex items-center justify-between">
@@ -363,3 +363,5 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
     </Dialog>
   );
 }
+
+    

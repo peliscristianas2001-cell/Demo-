@@ -255,8 +255,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto">
-            <div className="py-4 pr-6 space-y-4">
+        <div className="flex-1 overflow-y-auto pr-6">
+            <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="destination">Destino</Label>
                     <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
@@ -453,3 +453,5 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
+
+    
