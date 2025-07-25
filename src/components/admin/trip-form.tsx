@@ -39,9 +39,6 @@ type VehicleEntry = {
     count: number | '';
 }
 
-const vehicleConfig = getVehicleConfig();
-const allVehicleTypes = Object.keys(vehicleConfig) as VehicleType[];
-
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
   const [destination, setDestination] = useState("")
   const [date, setDate] = useState<Date | undefined>()
@@ -49,8 +46,18 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [vehicleEntries, setVehicleEntries] = useState<VehicleEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
+  const [vehicleConfig, setVehicleConfig] = useState(() => getVehicleConfig());
 
   const { toast } = useToast()
+
+  useEffect(() => {
+    // Update local vehicle config if it changes globally
+    const handleStorageChange = () => {
+      setVehicleConfig(getVehicleConfig(true));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -203,7 +210,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 <div className="space-y-4 pt-2">
                     <Label className="text-base font-medium">Configuración de Vehículos</Label>
                     <div className="space-y-3 rounded-md border p-4">
-                        {vehicleEntries.map((entry, index) => (
+                        {vehicleEntries.map((entry) => (
                            <div key={entry.id} className="flex items-center gap-2">
                                <Select
                                   value={entry.type}
@@ -213,9 +220,9 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                       <SelectValue placeholder="Tipo de vehículo" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                      {allVehicleTypes.map(type => (
-                                          <SelectItem key={type} value={type}>
-                                              {vehicleConfig[type].name}
+                                      {Object.entries(vehicleConfig).map(([key, config]) => (
+                                          <SelectItem key={key} value={key}>
+                                              {config.name}
                                           </SelectItem>
                                       ))}
                                   </SelectContent>
@@ -262,5 +269,3 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
-
-    

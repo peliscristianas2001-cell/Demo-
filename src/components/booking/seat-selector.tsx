@@ -2,10 +2,9 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { VehicleType } from "@/lib/types"
-import { getLayoutForVehicle } from "@/lib/layouts"
-import { Armchair, Ban, PersonStanding, Utensils, Waves } from "lucide-react"
+import { getLayoutForVehicle, Cell } from "@/lib/layouts"
+import { Armchair, Ban, PersonStanding, Utensils, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, WindIcon } from "lucide-react"
 
 interface SeatSelectorProps {
   vehicleType: VehicleType
@@ -16,24 +15,26 @@ interface SeatSelectorProps {
   maxSeats: number
 }
 
-const SpecialCell = ({ type }: { type: string }) => {
+const SpecialCell = ({ type }: { type: Cell['type'] }) => {
     let content = null;
-    const className = "text-muted-foreground/80 flex flex-col items-center justify-center text-center text-[10px] leading-tight";
+    const className = "text-muted-foreground/60 flex flex-col items-center justify-center text-center text-[9px] leading-tight font-medium h-full w-full rounded-md bg-muted/30";
     switch(type) {
         case 'pasillo':
             return <div className="w-full h-full" />;
         case 'escalera':
-            content = <> <PersonStanding className="w-5 h-5 mb-1" /> Escalera </>;
+            content = <> <PersonStandingIcon className="w-4 h-4 mb-0.5" /> Esc. </>;
             break;
         case 'baño':
-            content = <> <Waves className="w-5 h-5 mb-1" /> Baño </>;
+            content = <> <Waves className="w-4 h-4 mb-0.5" /> Baño </>;
             break;
         case 'cafetera':
-            content = <> <Utensils className="w-5 h-5 mb-1" /> Cafetera </>;
+            content = <> <ChefHatIcon className="w-4 h-4 mb-0.5" /> Café </>;
             break;
-         case 'chofer':
-            content = <> <Ban className="w-5 h-5 mb-1" /> Chofer </>;
+        case 'chofer':
+            content = <> <BusIcon className="w-4 h-4 mb-0.5" /> Chofer </>;
             break;
+        case 'empty':
+             return <div className="w-full h-full" />;
         default:
             return <div className="w-full h-full" />;
     }
@@ -47,6 +48,8 @@ export function SeatSelector({
   onSeatSelect,
   maxSeats,
 }: SeatSelectorProps) {
+    if (!vehicleType) return null;
+
     const layout = getLayoutForVehicle(vehicleType);
 
     const handleSeatClick = (seatId: string) => {
@@ -58,7 +61,7 @@ export function SeatSelector({
     }
 
   return (
-    <div className="p-2 border rounded-lg bg-card md:p-4">
+    <div className="p-1 border rounded-lg bg-card md:p-2">
         {layout.floors.map((floor, floorIndex) => (
             <div key={floorIndex}>
                 {layout.floors.length > 1 && (
@@ -76,19 +79,17 @@ export function SeatSelector({
                     {floor.grid.map((row, rowIndex) => (
                         row.map((cell, cellIndex) => {
                             const key = `${floorIndex}-${rowIndex}-${cellIndex}`;
-                            if (cell === null || typeof cell !== 'object') {
-                                return <div key={key} className="w-10 h-10 md:w-12 md:h-12" />;
-                            }
-                            
-                            if (cell.type !== 'seat') {
+                            const cellData = cell as Cell; // Cast to be explicit
+
+                            if (cellData.type !== 'seat') {
                                 return (
-                                    <div key={key} className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12">
-                                       <SpecialCell type={cell.type} />
+                                    <div key={key} className="flex items-center justify-center w-10 h-10 p-1 md:w-12 md:h-12">
+                                       <SpecialCell type={cellData.type} />
                                     </div>
                                 )
                             }
                            
-                            const seatId = cell.number.toString();
+                            const seatId = cellData.number.toString();
                             const isOccupied = occupiedSeats.includes(seatId);
                             const isSelected = selectedSeats.includes(seatId);
                             const isDisabled = isOccupied;

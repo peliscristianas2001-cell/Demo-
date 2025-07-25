@@ -1,6 +1,13 @@
 
+import type { Layout } from './layouts';
 
-export type VehicleType = 'doble_piso' | 'micro_largo' | 'micro_bajo' | 'combi';
+export type VehicleType = 'doble_piso' | 'micro_largo' | 'micro_bajo' | 'combi' | string;
+
+export interface CustomVehicleConfig {
+  name: string;
+  seats: number;
+  layout: Layout;
+}
 
 export interface Tour {
   id: string;
@@ -46,5 +53,3 @@ export type Ticket = {
   seat: AssignedSeat;
   qrCodeUrl: string; // URL to a generated QR code image
 }
-
-    
