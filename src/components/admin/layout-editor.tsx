@@ -56,7 +56,7 @@ const CellEditor = ({ cell, onCellChange, category }: { cell: Cell, onCellChange
         onCellChange({ type: 'seat', number: value === '' ? '' : parseInt(value, 10) });
     }
 
-    const handleCabinChange = (field: keyof Cell, value: any) => {
+    const handleCabinChange = (field: keyof (Extract<Cell, {type: 'cabin'}>), value: any) => {
         if (cell.type !== 'cabin') return;
         let processedValue = value;
         if (field === 'capacity') {
@@ -228,7 +228,7 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                     totalCapacity++;
                 } else if (cell.type === 'cabin') {
                     if (cell.number) identifier = `cabin-${cell.number}`;
-                    if (cell.capacity > 0) totalCapacity += cell.capacity;
+                    if (cell.capacity && cell.capacity > 0) totalCapacity += cell.capacity;
                 }
                 
                 if (identifier) {
@@ -266,6 +266,7 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
   if (!category) return null;
 
   const title = layoutConfig ? `Editar ${categoryTitles[category]}` : `Nuevo ${categoryTitles[category]}`;
+  const editingCellData = editingCell ? layout.floors[editingCell.floor]?.grid[editingCell.row]?.[editingCell.col] : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -286,9 +287,9 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                  <Button onClick={addFloor} variant="outline" size="sm">
                     <PlusCircle className="mr-2 h-4 w-4"/> Añadir Piso/Cubierta
                 </Button>
-                {editingCell && (
+                {editingCell && editingCellData && (
                     <CellEditor 
-                        cell={layout.floors[editingCell.floor].grid[editingCell.row][editingCell.col]}
+                        cell={editingCellData}
                         onCellChange={handleCellChange}
                         category={category}
                     />
