@@ -336,7 +336,7 @@ export default function BookingPage() {
 
               <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-headline">
+                  <CardTitle className="flex items-center gap-2 font-headline drop-shadow-md tracking-wide">
                     <HeartIcon className="w-6 h-6" />
                     ¿Querés agilizar tus próximas reservas?
                   </CardTitle>
