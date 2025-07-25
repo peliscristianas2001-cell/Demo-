@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, LayoutItemType } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
 type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
@@ -20,10 +20,15 @@ export default function SettingsPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
+    const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
     useEffect(() => {
+        const storedSettings = localStorage.getItem("ytl_general_settings");
+        if (storedSettings) {
+            setGeneralSettings(JSON.parse(storedSettings));
+        }
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
@@ -68,6 +73,14 @@ export default function SettingsPage() {
                 variant: "destructive"
             })
         }
+    }
+
+    const handleGeneralSettingsSave = () => {
+        localStorage.setItem("ytl_general_settings", JSON.stringify(generalSettings));
+        toast({
+            title: "Configuración guardada",
+            description: "Los ajustes generales han sido actualizados."
+        })
     }
 
     const handleEditLayout = (category: LayoutCategory, key: string) => {
@@ -180,6 +193,26 @@ export default function SettingsPage() {
                     Guardar Logo
                 </Button>
             </div>
+            
+             <div className="space-y-4 p-4 border rounded-lg">
+                <Label className="text-lg font-medium">Ajustes Generales</Label>
+                 <div className="space-y-2">
+                    <Label htmlFor="main-whatsapp">Número de WhatsApp Principal</Label>
+                    <Input 
+                        id="main-whatsapp"
+                        type="tel"
+                        placeholder="Ej: 5491122334455"
+                        value={generalSettings.mainWhatsappNumber}
+                        onChange={(e) => setGeneralSettings(prev => ({...prev, mainWhatsappNumber: e.target.value}))}
+                    />
+                    <p className="text-xs text-muted-foreground">Este número se usará si un vendedor no tiene uno asignado.</p>
+                </div>
+                <Button onClick={handleGeneralSettingsSave}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Ajustes
+                </Button>
+            </div>
+
 
             {(Object.keys(layoutCategoryDetails) as LayoutCategory[]).map(category => {
                 const details = layoutCategoryDetails[category];

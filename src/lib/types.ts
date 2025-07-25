@@ -1,4 +1,3 @@
-
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -41,6 +40,10 @@ export interface TourCosts {
     transport?: number;
     hotel?: number;
     extras?: ExtraCost[];
+}
+
+export interface GeneralSettings {
+    mainWhatsappNumber?: string;
 }
 
 export interface Tour {

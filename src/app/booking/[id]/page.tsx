@@ -144,18 +144,20 @@ export default function BookingPage() {
     localStorage.setItem('ytl_reservations', JSON.stringify(updatedReservations));
 
     toast({
-      title: "¡Reserva Recibida!",
-      description: `Tu solicitud para ${tour?.destination} fue enviada. Un administrador te contactará para confirmar. N°: ${reservationId}`,
-      duration: 9000,
+      title: "¡Solicitud Enviada!",
+      description: `Tu reserva para ${tour?.destination} ha sido recibida.`,
+      duration: 3000,
     })
 
-    setTimeout(() => {
-        if (loggedInSellerId) {
-            router.push('/employee/dashboard/reservations');
-        } else {
-            router.push('/');
-        }
-    }, 3000);
+    const confirmationData = {
+        reservation: newReservation,
+        tour: tour,
+        seller: sellers.find(s => s.id === selectedSellerId)
+    }
+    
+    sessionStorage.setItem('ytl_last_reservation', JSON.stringify(confirmationData));
+    
+    router.push('/booking/confirmation');
   }
   
   const totalPassengers = passengers.length;
