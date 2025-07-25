@@ -25,6 +25,12 @@ export interface Pension {
   description: string;
 }
 
+export interface PricingTier {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface Tour {
   id: string;
   destination: string;
@@ -33,6 +39,7 @@ export interface Tour {
   flyerUrl: string;
   insurance?: Insurance;
   pension?: Pension;
+  pricingTiers?: PricingTier[];
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;
@@ -52,10 +59,12 @@ export type AssignedCabin = {
 }
 
 export interface Passenger {
-  fullName: string
-  dni: string
-  dob?: Date
-  nationality: string
+  id: string;
+  fullName: string;
+  dni: string;
+  dob?: Date;
+  nationality: string;
+  tierId: string; // 'adult' or one of the pricingTier IDs
 }
 
 export type Reservation = {

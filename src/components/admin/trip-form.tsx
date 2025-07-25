@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension } from "@/lib/types"
+import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension, PricingTier } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { PlusCircle, Trash2 } from "lucide-react"
 import {
@@ -57,6 +57,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [layoutEntries, setLayoutEntries] = useState<Record<LayoutCategory, LayoutEntry[]>>({ vehicles: [], airplanes: [], cruises: [] });
   const [insurance, setInsurance] = useState<Insurance>(defaultInsurance);
   const [pension, setPension] = useState<Pension>(defaultPension);
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
@@ -84,6 +85,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setPrice(tour.price || "")
             setInsurance(tour.insurance || defaultInsurance);
             setPension(tour.pension || defaultPension);
+            setPricingTiers(tour.pricingTiers || []);
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
             let currentId = 0;
@@ -107,6 +109,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setLayoutEntries({ vehicles: [], airplanes: [], cruises: [] });
             setInsurance(defaultInsurance);
             setPension(defaultPension);
+            setPricingTiers([]);
             setNextId(1);
         }
         setIsLoading(false); 
@@ -154,6 +157,21 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     setPension(prev => ({ ...prev, [field]: value }));
   }
 
+  const handleAddTier = () => {
+      setPricingTiers(prev => [...prev, { id: `T${Date.now()}`, name: '', price: 0 }]);
+  }
+
+  const handleTierChange = (id: string, field: 'name' | 'price', value: string | number) => {
+    setPricingTiers(prev => prev.map(tier => 
+        tier.id === id ? { ...tier, [field]: value } : tier
+    ));
+  }
+
+  const handleRemoveTier = (id: string) => {
+    setPricingTiers(prev => prev.filter(tier => tier.id !== id));
+  }
+
+
   const handleSubmit = () => {
     if (!destination || !date || price === "" || price <= 0) {
       toast({ title: "Faltan datos", description: "Por favor, completa destino, fecha y un precio válido.", variant: "destructive" });
@@ -168,6 +186,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
         insurance: insurance.active ? insurance : undefined,
         pension: pension.active ? pension : undefined,
+        pricingTiers: pricingTiers.length > 0 ? pricingTiers : undefined,
     };
 
     let totalTransportUnits = 0;
@@ -226,7 +245,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                     <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="price">Precio Base (por pasajero)</Label>
+                    <Label htmlFor="price">Precio Base (Adulto)</Label>
                     <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} placeholder="0"/>
                 </div>
 
@@ -263,6 +282,40 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                 ))}
                             </AccordionContent>
                         </AccordionItem>
+
+                        <AccordionItem value="pricing">
+                            <AccordionTrigger className="text-base font-medium">Tarifas Diferenciales</AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                  <Label className="text-lg font-medium">Tarifas por Pasajero</Label>
+                                  <div className="space-y-3">
+                                    {pricingTiers.map(tier => (
+                                      <div key={tier.id} className="flex items-center gap-2">
+                                        <Input 
+                                          placeholder="Nombre (Ej: Niño)" 
+                                          value={tier.name}
+                                          onChange={e => handleTierChange(tier.id, 'name', e.target.value)}
+                                        />
+                                        <Input 
+                                          type="number" 
+                                          placeholder="Precio" 
+                                          value={tier.price}
+                                          onChange={e => handleTierChange(tier.id, 'price', parseFloat(e.target.value) || 0)}
+                                          className="w-40"
+                                        />
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemoveTier(tier.id)}>
+                                          <Trash2 className="w-4 h-4"/>
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <Button variant="outline" size="sm" className="mt-2" onClick={handleAddTier}>
+                                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir Tarifa
+                                  </Button>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
                         <AccordionItem value="services">
                              <AccordionTrigger className="text-base font-medium">Servicios Adicionales</AccordionTrigger>
                              <AccordionContent className="space-y-6 pt-4">

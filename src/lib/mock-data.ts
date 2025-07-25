@@ -12,7 +12,11 @@ export const mockTours: Tour[] = [
     flyerUrl: 'https://placehold.co/400x500.png',
     vehicles: { 'doble_piso': 2 }, 
     insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
-    pension: { active: true, type: 'Media', description: "Desayuno y cena incluidos."}
+    pension: { active: true, type: 'Media', description: "Desayuno y cena incluidos."},
+    pricingTiers: [
+      { id: 'T1_CHILD', name: 'Niño', price: 120000 },
+      { id: 'T1_RETIREE', name: 'Jubilado', price: 135000 },
+    ]
   },
   {
     id: '2',
@@ -21,6 +25,9 @@ export const mockTours: Tour[] = [
     price: 125000,
     flyerUrl: 'https://placehold.co/400x500.png',
     vehicles: { 'micro_largo': 1 },
+    pricingTiers: [
+      { id: 'T2_CHILD', name: 'Menor', price: 100000 },
+    ]
   },
   {
     id: '3',
@@ -29,7 +36,7 @@ export const mockTours: Tour[] = [
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
     vehicles: { 'micro_bajo': 1 },
-     pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
+    pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
   },
   {
     id: '4',

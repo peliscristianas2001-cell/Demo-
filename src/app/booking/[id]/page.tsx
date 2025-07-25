@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
-import type { Tour, Reservation, Passenger, Seller } from "@/lib/types"
+import type { Tour, Reservation, Passenger, Seller, PricingTier } from "@/lib/types"
 import { DatePicker } from "@/components/ui/date-picker"
-import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck } from "lucide-react"
+import { ArrowLeft, CalendarIcon, ClockIcon, MapPinIcon, MinusIcon, PlusIcon, TicketIcon, UsersIcon, UserIcon, HeartIcon, ArrowRight, PercentSquare, ShieldCheck, Trash2 } from "lucide-react"
+
+const adultTier: PricingTier = { id: 'adult', name: 'Adulto', price: 0 };
 
 export default function BookingPage() {
   const { id } = use(useParams())
@@ -33,8 +35,6 @@ export default function BookingPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [sellers, setSellers] = useState<Seller[]>([])
   const [selectedSellerId, setSelectedSellerId] = useState<string>("");
-  const [adults, setAdults] = useState(1)
-  const [children, setChildren] = useState(0)
   const [passengers, setPassengers] = useState<Passenger[]>([])
   const [isClient, setIsClient] = useState(false)
   
@@ -52,28 +52,48 @@ export default function BookingPage() {
     setSellers(currentSellers);
     
     const foundTour = tours.find((t) => t.id === id)
-    if (foundTour && new Date(foundTour.date) >= new Date()) {
-        setTour(foundTour)
+    if (foundTour) {
+        if (new Date(foundTour.date) >= new Date()) {
+            setTour(foundTour)
+            setPassengers([{
+                id: `P${Date.now()}`,
+                fullName: "",
+                dni: "",
+                dob: undefined,
+                nationality: "Argentina",
+                tierId: 'adult'
+            }])
+        } else {
+            setTour(null)
+        }
     } else {
         setTour(null)
     }
   }, [id])
 
-  useEffect(() => {
-    const totalPassengers = adults + children
-    const newPassengers = Array.from({ length: totalPassengers }, (_, i) => passengers[i] || {
-      fullName: "",
-      dni: "",
-      dob: undefined,
-      nationality: "Argentina",
-    })
-    setPassengers(newPassengers)
-  }, [adults, children])
+  const addPassenger = () => {
+    setPassengers(prev => [...prev, {
+        id: `P${Date.now()}`,
+        fullName: "",
+        dni: "",
+        dob: undefined,
+        nationality: "Argentina",
+        tierId: 'adult'
+    }]);
+  }
 
-  const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
-    const newPassengers = [...passengers]
-    newPassengers[index] = { ...newPassengers[index], [field]: value }
-    setPassengers(newPassengers)
+  const removePassenger = (passengerId: string) => {
+    setPassengers(prev => prev.filter(p => p.id !== passengerId));
+  }
+
+  const handlePassengerChange = (passengerId: string, field: keyof Passenger, value: any) => {
+    const newPassengers = passengers.map(p => {
+        if (p.id === passengerId) {
+            return { ...p, [field]: value };
+        }
+        return p;
+    });
+    setPassengers(newPassengers);
   }
 
   const handleConfirmReservation = () => {
@@ -124,9 +144,15 @@ export default function BookingPage() {
     }, 3000);
   }
   
-  const totalPassengers = adults + children;
-  const insuranceCost = tour?.insurance ? totalPassengers * tour.insurance.cost : 0;
-  const tourBasePrice = tour ? totalPassengers * tour.price : 0;
+  const totalPassengers = passengers.length;
+  const availableTiers = tour ? [adultTier, ...(tour.pricingTiers || [])] : [adultTier];
+
+  const tourBasePrice = passengers.reduce((total, p) => {
+    const tier = availableTiers.find(t => t.id === p.tierId);
+    return total + (tier?.id === 'adult' ? (tour?.price || 0) : (tier?.price || 0));
+  }, 0);
+
+  const insuranceCost = tour?.insurance?.active ? totalPassengers * tour.insurance.cost : 0;
   const totalPrice = tourBasePrice + insuranceCost;
 
   if (!isClient) {
@@ -186,31 +212,49 @@ export default function BookingPage() {
 
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-2xl"><UsersIcon className="w-8 h-8 text-primary"/> ¿Cuántos viajan?</CardTitle>
+                  <CardTitle className="flex items-center gap-3 text-2xl"><UsersIcon className="w-8 h-8 text-primary"/> Datos de los Pasajeros</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/40">
-                    <div>
-                      <Label htmlFor="adults" className="text-lg font-medium">Adultos</Label>
-                      <p className="text-sm text-muted-foreground">Mayores de 12 años</p>
+                    {passengers.map((passenger, index) => (
+                    <div key={passenger.id} className="p-4 border rounded-lg space-y-4 relative bg-background">
+                         {passengers.length > 1 && (
+                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => removePassenger(passenger.id)}>
+                                <Trash2 className="w-4 h-4"/>
+                            </Button>
+                         )}
+                        <p className="font-semibold">Pasajero {index + 1}</p>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor={`fullName-${passenger.id}`}>Nombre completo</Label>
+                                <Input id={`fullName-${passenger.id}`} value={passenger.fullName} onChange={(e) => handlePassengerChange(passenger.id, 'fullName', e.target.value)} placeholder="Ej: Juan Pérez" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`dni-${passenger.id}`}>DNI</Label>
+                                <Input id={`dni-${passenger.id}`} value={passenger.dni} onChange={(e) => handlePassengerChange(passenger.id, 'dni', e.target.value)} placeholder="Sin puntos ni espacios" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`dob-${passenger.id}`}>Fecha de nacimiento</Label>
+                                <DatePicker 
+                                    date={passenger.dob} 
+                                    setDate={(d) => handlePassengerChange(passenger.id, 'dob', d)} 
+                                    placeholder="Seleccionar fecha"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`tierId-${passenger.id}`}>Tipo de Pasajero</Label>
+                                <Select value={passenger.tierId} onValueChange={val => handlePassengerChange(passenger.id, 'tierId', val)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {availableTiers.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" onClick={() => setAdults(Math.max(1, adults - 1))}><MinusIcon className="w-4 h-4" /></Button>
-                      <span className="w-12 text-center text-xl font-bold">{adults}</span>
-                      <Button variant="outline" size="icon" onClick={() => setAdults(adults + 1)}><PlusIcon className="w-4 h-4" /></Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/40">
-                    <div>
-                      <Label htmlFor="children" className="text-lg font-medium">Niños</Label>
-                      <p className="text-sm text-muted-foreground">Menores de 12 años</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" onClick={() => setChildren(Math.max(0, children - 1))}><MinusIcon className="w-4 h-4" /></Button>
-                      <span className="w-12 text-center text-xl font-bold">{children}</span>
-                      <Button variant="outline" size="icon" onClick={() => setChildren(children + 1)}><PlusIcon className="w-4 h-4" /></Button>
-                    </div>
-                  </div>
+                    ))}
+                    <Button variant="outline" onClick={addPassenger}>
+                        <PlusIcon className="mr-2 h-4 w-4"/> Añadir Pasajero
+                    </Button>
                 </CardContent>
               </Card>
               
@@ -230,39 +274,6 @@ export default function BookingPage() {
                     </Select>
                 </CardContent>
               </Card>
-
-              {passengers.map((passenger, index) => (
-                <Card key={index} className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-2xl">
-                      <UserIcon className="w-8 h-8 text-primary" />
-                      Datos del Pasajero {index + 1}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor={`fullName-${index}`}>Nombre completo</Label>
-                      <Input id={`fullName-${index}`} value={passenger.fullName} onChange={(e) => handlePassengerChange(index, 'fullName', e.target.value)} placeholder="Ej: Juan Pérez" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`dni-${index}`}>DNI</Label>
-                      <Input id={`dni-${index}`} value={passenger.dni} onChange={(e) => handlePassengerChange(index, 'dni', e.target.value)} placeholder="Sin puntos ni espacios" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`dob-${index}`}>Fecha de nacimiento</Label>
-                      <DatePicker 
-                        date={passenger.dob} 
-                        setDate={(d) => handlePassengerChange(index, 'dob', d)} 
-                        placeholder="Seleccionar fecha"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`nationality-${index}`}>Nacionalidad</Label>
-                      <Input id={`nationality-${index}`} value={passenger.nationality} onChange={(e) => handlePassengerChange(index, 'nationality', e.target.value)} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
 
               <Card className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-lg">
                 <CardHeader>
@@ -288,12 +299,18 @@ export default function BookingPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="p-4 space-y-3 rounded-lg bg-secondary/40">
-                      <div className="flex justify-between font-medium">
-                        <span>Pasajeros</span>
-                        <span>{totalPassengers} x ${tour.price.toLocaleString('es-AR')}</span>
-                      </div>
-                      {tour.insurance && tour.insurance.cost > 0 && (
-                         <div className="flex justify-between font-medium">
+                      {passengers.map(p => {
+                          const tier = availableTiers.find(t => t.id === p.tierId);
+                          const price = tier?.id === 'adult' ? tour.price : tier?.price ?? 0;
+                          return (
+                            <div key={p.id} className="flex justify-between font-medium">
+                                <span>{tier?.name}</span>
+                                <span>${price.toLocaleString('es-AR')}</span>
+                            </div>
+                          )
+                      })}
+                      {tour.insurance?.active && tour.insurance.cost > 0 && (
+                         <div className="flex justify-between font-medium text-sm border-t pt-2 mt-2 border-primary/20">
                             <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-green-600"/>Seguro</span>
                             <span>{totalPassengers} x ${tour.insurance.cost.toLocaleString('es-AR')}</span>
                         </div>
@@ -307,7 +324,7 @@ export default function BookingPage() {
                   <p className="text-xs text-muted-foreground text-center">
                     El pago se coordina por WhatsApp luego de enviar la solicitud.
                   </p>
-                  <Button className="w-full text-lg h-14 rounded-xl group" size="lg" onClick={handleConfirmReservation}>
+                  <Button className="w-full text-lg h-14 rounded-xl group" size="lg" onClick={handleConfirmReservation} disabled={totalPassengers === 0}>
                     Solicitar Reserva
                     <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>
