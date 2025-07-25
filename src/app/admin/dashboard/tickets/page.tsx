@@ -7,9 +7,6 @@ import { toPng } from "html-to-image"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -56,10 +53,11 @@ export default function TicketsAdminPage() {
 
   const filteredTickets = useMemo(() => {
     if (selectedTripId === "all") {
-      return tickets;
+      const activeTourIds = new Set(activeTours.map(t => t.id));
+      return tickets.filter(ticket => activeTourIds.has(ticket.tripId));
     }
     return tickets.filter(ticket => ticket.tripId === selectedTripId);
-  }, [tickets, selectedTripId]);
+  }, [tickets, selectedTripId, activeTours]);
 
   const ticketRefs = useMemo(() => 
     filteredTickets.reduce((acc, ticket) => {
@@ -120,7 +118,7 @@ export default function TicketsAdminPage() {
                     <SelectValue placeholder="Seleccionar viaje" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos los viajes</SelectItem>
+                    <SelectItem value="all">Todos los viajes activos</SelectItem>
                     {activeTours.map(tour => (
                         <SelectItem key={tour.id} value={tour.id}>{tour.destination}</SelectItem>
                     ))}
@@ -140,7 +138,11 @@ export default function TicketsAdminPage() {
         </Card>
       ) : (
         <Accordion type="multiple" className="w-full space-y-4">
-          {filteredTickets.map((ticket) => (
+          {filteredTickets.map((ticket) => {
+            const tour = tours.find(t => t.id === ticket.tripId);
+            if (!tour) return null;
+            
+            return (
             <AccordionItem value={ticket.id} key={ticket.id} className="border-b-0">
               <Card className="overflow-hidden">
                 <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50">
@@ -151,14 +153,14 @@ export default function TicketsAdminPage() {
                     <div>
                         <p className="font-semibold">{ticket.passengerName}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Plane className="w-4 h-4"/>{ticket.tripDestination}
+                          <Plane className="w-4 h-4"/>{tour.destination}
                         </p>
                     </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="bg-secondary/20 p-4 space-y-4">
-                    <TravelTicket ticket={ticket} ref={ticketRefs[ticket.id]}/>
+                    <TravelTicket ticket={ticket} tour={tour} ref={ticketRefs[ticket.id]}/>
                     <div className="flex justify-end">
                       <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
                         <Download className="mr-2 h-4 w-4" />
@@ -169,9 +171,11 @@ export default function TicketsAdminPage() {
                 </AccordionContent>
               </Card>
             </AccordionItem>
-          ))}
+          )})}
         </Accordion>
       )}
     </div>
   )
 }
+
+    

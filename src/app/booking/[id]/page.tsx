@@ -58,7 +58,7 @@ export default function BookingPage() {
       nationality: "Argentina",
     })
     setPassengers(newPassengers)
-  }, [adults, children, passengers.length])
+  }, [adults, children])
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
     const newPassengers = [...passengers]
@@ -78,18 +78,16 @@ export default function BookingPage() {
 
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
-    // Create new reservation
     const newReservation: Reservation = {
         id: reservationId,
         tripId: tour!.id,
-        tripDestination: tour!.destination,
         passenger: passengers[0].fullName,
-        seatsCount: passengers.length,
-        assignedSeats: [], // Seats are assigned in admin panel
+        paxCount: passengers.length,
+        assignedSeats: [],
+        assignedCabins: [],
         status: "Pendiente"
     };
 
-    // Update reservations in localStorage
     const updatedReservations = [...reservations, newReservation];
     localStorage.setItem('ytl_reservations', JSON.stringify(updatedReservations));
 
@@ -99,7 +97,6 @@ export default function BookingPage() {
       duration: 9000,
     })
 
-    // Optionally redirect user after reservation
     setTimeout(() => {
         router.push('/');
     }, 3000);
@@ -281,3 +278,5 @@ export default function BookingPage() {
     </div>
   )
 }
+
+    

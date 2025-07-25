@@ -26,7 +26,7 @@ export type ReservationStatus = "Confirmado" | "Pendiente";
 
 export type AssignedSeat = { 
   seatId: string; 
-  unit: number; // Represents the global instance number of the transport unit
+  unit: number; 
 };
 
 export type AssignedCabin = {
@@ -44,7 +44,6 @@ export interface Passenger {
 export type Reservation = {
     id: string;
     tripId: string;
-    tripDestination: string;
     passenger: string;
     // This can represent seats or people in a cabin
     paxCount: number; 
@@ -57,10 +56,10 @@ export type Ticket = {
   id: string;
   reservationId: string;
   tripId: string;
-  tripDestination: string;
-  tripDate: Date;
   passengerName: string;
   passengerDni: string;
-  assignment: AssignedSeat | AssignedCabin; // Can be a seat or a cabin
-  qrCodeUrl: string; // URL to a generated QR code image
+  assignment: AssignedSeat | AssignedCabin;
+  qrCodeUrl: string;
 }
+
+    

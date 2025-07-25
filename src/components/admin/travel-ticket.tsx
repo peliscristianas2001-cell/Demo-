@@ -5,15 +5,37 @@ import React from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import type { Ticket as TicketType } from "@/lib/types"
+import type { Ticket as TicketType, Tour } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 
 interface TravelTicketProps {
   ticket: TicketType;
+  tour: Tour;
 }
 
-export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket }, ref) => {
+export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour }, ref) => {
+
+  const getAssignmentDetails = () => {
+    if ('seatId' in ticket.assignment) {
+        return {
+            label: 'Asiento',
+            value: ticket.assignment.seatId,
+            unitLabel: 'Unidad',
+            unitValue: String(ticket.assignment.unit)
+        };
+    } else { // AssignedCabin
+        return {
+            label: 'Camarote',
+            value: ticket.assignment.cabinId,
+            unitLabel: 'Cubierta',
+            unitValue: String(ticket.assignment.unit)
+        };
+    }
+  }
+
+  const assignment = getAssignmentDetails();
+
   return (
     <div ref={ref} className={cn(
       "bg-card rounded-xl shadow-md overflow-hidden border flex",
@@ -46,10 +68,10 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
               <div className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-4">
                   <InfoItem label="Pasajero/a" value={ticket.passengerName} />
                   <InfoItem label="Documento (DNI)" value={ticket.passengerDni} />
-                  <InfoItem label="Destino" value={ticket.tripDestination} />
-                  <InfoItem label="Fecha y Hora de Salida" value={format(new Date(ticket.tripDate), "dd MMM yyyy, HH:mm 'hs'", { locale: es })} />
-                  <InfoItem label="Asiento" value={ticket.seat.seatId} largeValue/>
-                  <InfoItem label="Micro" value={String(ticket.seat.bus)} largeValue/>
+                  <InfoItem label="Destino" value={tour.destination} />
+                  <InfoItem label="Fecha y Hora de Salida" value={format(new Date(tour.date), "dd MMM yyyy, HH:mm 'hs'", { locale: es })} />
+                  <InfoItem label={assignment.label} value={assignment.value} largeValue/>
+                  <InfoItem label={assignment.unitLabel} value={assignment.unitValue} largeValue/>
               </div>
               <div className="col-span-1 flex flex-col items-center justify-center">
                    <Image 
@@ -94,3 +116,5 @@ const InfoItem = ({ label, value, largeValue = false }: InfoItemProps) => (
         )}>{value}</p>
     </div>
 );
+
+    

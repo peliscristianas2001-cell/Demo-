@@ -57,8 +57,8 @@ import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/vehicle-config"
 
-type ActiveBusInfo = {
-  busNumber: number;
+type ActiveTransportUnitInfo = {
+  unitNumber: number;
   category: LayoutCategory;
   type: LayoutItemType;
 } | null;
@@ -68,13 +68,13 @@ type ExpandedTransportUnit = {
     type: LayoutItemType;
     typeName: string;
     instanceNum: number;
-    globalBusNum: number;
+    globalUnitNum: number;
 };
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
-  const [activeBus, setActiveBus] = useState<ActiveBusInfo>(null);
+  const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
 
@@ -132,7 +132,7 @@ export default function ReservationsPage() {
 
   const getExpandedTransportList = (tour: Tour): ExpandedTransportUnit[] => {
     const transportList: ExpandedTransportUnit[] = [];
-    let globalBusCounter = 1;
+    let globalUnitCounter = 1;
     const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
 
     for (const category of categories) {
@@ -145,9 +145,9 @@ export default function ReservationsPage() {
                             type: type as LayoutItemType,
                             typeName: layoutConfig[category]?.[type as LayoutItemType]?.name || 'Unidad',
                             instanceNum: i,
-                            globalBusNum: globalBusCounter
+                            globalUnitNum: globalUnitCounter
                         });
-                        globalBusCounter++;
+                        globalUnitCounter++;
                     }
                 }
             }
@@ -177,18 +177,18 @@ export default function ReservationsPage() {
     setReservations(reservations.filter(res => res.id !== reservationId));
   }
 
-  const handleSeatSelect = (reservationId: string, seatId: string, busNumber: number) => {
+  const handleSeatSelect = (reservationId: string, seatId: string, unitNumber: number) => {
     setReservations(prevReservations => {
         return prevReservations.map(res => {
             if (res.id === reservationId) {
                 let newAssignedSeats = [...res.assignedSeats];
-                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.bus === busNumber);
+                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.unit === unitNumber);
 
                 if (seatIndex > -1) {
                     newAssignedSeats.splice(seatIndex, 1);
                 } else {
-                    if (newAssignedSeats.length < res.seatsCount) {
-                        newAssignedSeats.push({ seatId, bus: busNumber });
+                    if (newAssignedSeats.length < res.paxCount) {
+                        newAssignedSeats.push({ seatId, unit: unitNumber });
                     }
                 }
                 return { ...res, assignedSeats: newAssignedSeats };
@@ -198,11 +198,11 @@ export default function ReservationsPage() {
     });
 };
 
-  const getOccupiedSeatsForTour = (tourId: string, busNumber: number, currentReservationId: string) => {
+  const getOccupiedSeatsForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
     return reservations
       .filter(res => res.tripId === tourId && res.id !== currentReservationId)
       .flatMap(res => res.assignedSeats)
-      .filter(seat => seat.bus === busNumber)
+      .filter(seat => seat.unit === unitNumber)
       .map(seat => seat.seatId);
   };
 
@@ -219,16 +219,16 @@ export default function ReservationsPage() {
   }
   
   const getTransportIdentifier = (unit: ExpandedTransportUnit) => {
-    return `${unit.category}_${unit.type}_${unit.globalBusNum}`;
+    return `${unit.category}_${unit.type}_${unit.globalUnitNum}`;
   }
 
   const handleDialogOpen = (tour: Tour) => {
-    const busList = getExpandedTransportList(tour);
-    if (busList.length > 0) {
-      const firstUnit = busList[0];
-      setActiveBus({ busNumber: firstUnit.globalBusNum, category: firstUnit.category, type: firstUnit.type });
+    const unitList = getExpandedTransportList(tour);
+    if (unitList.length > 0) {
+      const firstUnit = unitList[0];
+      setActiveUnit({ unitNumber: firstUnit.globalUnitNum, category: firstUnit.category, type: firstUnit.type });
     } else {
-      setActiveBus(null);
+      setActiveUnit(null);
     }
   };
   
@@ -260,8 +260,8 @@ export default function ReservationsPage() {
             ) : (
                 <Accordion type="multiple" className="w-full">
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
-                       const expandedBusList = getExpandedTransportList(tour);
-                       const totalVehicleCount = expandedBusList.length;
+                       const expandedUnitList = getExpandedTransportList(tour);
+                       const totalVehicleCount = expandedUnitList.length;
 
                        return (
                        <AccordionItem value={tour.id} key={tour.id}>
@@ -280,11 +280,12 @@ export default function ReservationsPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {tripReservations.map((res) => {
+                                            const assignedCount = res.assignedSeats.length + res.assignedCabins.length;
                                             return (
                                                 <TableRow key={res.id}>
                                                     <TableCell>{res.passenger}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">{res.assignedSeats.length} / {res.seatsCount}</Badge>
+                                                        <Badge variant="outline">{assignedCount} / {res.paxCount}</Badge>
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant={getStatusVariant(res.status)}>
@@ -298,30 +299,30 @@ export default function ReservationsPage() {
                                                             if (open) {
                                                               handleDialogOpen(tour);
                                                             } else {
-                                                              setActiveBus(null);
+                                                              setActiveUnit(null);
                                                             }
                                                           }}
                                                         >
                                                             <DialogTrigger asChild>
                                                                 <Button variant="outline" size="sm">
-                                                                    <Armchair className="mr-2 h-4 w-4" /> Asignar Asientos
+                                                                    <Armchair className="mr-2 h-4 w-4" /> Asignar
                                                                 </Button>
                                                             </DialogTrigger>
                                                             <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
                                                                 <DialogHeader className="p-6 pb-4">
-                                                                    <DialogTitle>Asignar asientos para {res.passenger}</DialogTitle>
+                                                                    <DialogTitle>Asignar para {res.passenger}</DialogTitle>
                                                                     <DialogDescription>
-                                                                        Viaje a {res.tripDestination}. Reservó {res.seatsCount} asiento(s).
+                                                                        Viaje a {tour.destination}. Reservó {res.paxCount} lugares.
                                                                     </DialogDescription>
-                                                                    {totalVehicleCount > 1 && activeBus && (
+                                                                    {totalVehicleCount > 1 && activeUnit && (
                                                                         <div className="flex items-center gap-2 pt-2">
                                                                             <Bus className="w-5 h-5 text-muted-foreground"/>
                                                                             <Select
-                                                                                value={activeBus ? getTransportIdentifier(expandedBusList.find(b => b.globalBusNum === activeBus.busNumber)!) : ''}
+                                                                                value={activeUnit ? getTransportIdentifier(expandedUnitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
                                                                                 onValueChange={(val) => {
-                                                                                    const selectedBus = expandedBusList.find(b => getTransportIdentifier(b) === val);
-                                                                                    if (selectedBus) {
-                                                                                        setActiveBus({ busNumber: selectedBus.globalBusNum, category: selectedBus.category, type: selectedBus.type });
+                                                                                    const selectedUnit = expandedUnitList.find(b => getTransportIdentifier(b) === val);
+                                                                                    if (selectedUnit) {
+                                                                                        setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
                                                                                     }
                                                                                 }}
                                                                             >
@@ -329,13 +330,13 @@ export default function ReservationsPage() {
                                                                                     <SelectValue placeholder="Seleccionar unidad" />
                                                                                 </SelectTrigger>
                                                                                 <SelectContent>
-                                                                                    {expandedBusList.map(bus => {
-                                                                                        const Icon = categoryIcons[bus.category];
+                                                                                    {expandedUnitList.map(unit => {
+                                                                                        const Icon = categoryIcons[unit.category];
                                                                                         return (
-                                                                                            <SelectItem key={bus.globalBusNum} value={getTransportIdentifier(bus)}>
+                                                                                            <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
                                                                                                 <div className="flex items-center gap-2">
                                                                                                     <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                                                                    <span>{bus.typeName} {getTransportCount(tour) > 1 ? bus.instanceNum : ''}</span>
+                                                                                                    <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
                                                                                                 </div>
                                                                                             </SelectItem>
                                                                                         )
@@ -347,15 +348,14 @@ export default function ReservationsPage() {
                                                                 </DialogHeader>
                                                                 <div className="flex-1 overflow-y-auto">
                                                                     <div className="px-6 pb-4">
-                                                                        {activeBus && (
+                                                                        {activeUnit && (
                                                                           <SeatSelector
-                                                                              category={activeBus.category}
-                                                                              layoutType={activeBus.type}
-                                                                              occupiedSeats={getOccupiedSeatsForTour(tour.id, activeBus.busNumber, res.id)}
-                                                                              selectedSeats={res.assignedSeats.filter(s => s.bus === activeBus.busNumber).map(s => s.seatId)}
-                                                                              onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeBus.busNumber)}
-                                                                              passengerSeats={[]} 
-                                                                              maxSeats={res.seatsCount}
+                                                                              category={activeUnit.category}
+                                                                              layoutType={activeUnit.type}
+                                                                              occupiedSeats={getOccupiedSeatsForTour(tour.id, activeUnit.unitNumber, res.id)}
+                                                                              selectedSeats={res.assignedSeats.filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
+                                                                              onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeUnit.unitNumber)}
+                                                                              maxSeats={res.paxCount}
                                                                           />
                                                                         )}
                                                                     </div>
@@ -410,3 +410,5 @@ export default function ReservationsPage() {
     </div>
   )
 }
+
+    

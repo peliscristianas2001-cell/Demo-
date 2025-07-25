@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket } from './types';
+import type { Tour, Reservation, Ticket, AssignedSeat } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -56,34 +56,46 @@ export const mockTours: Tour[] = [
 
 
 export const mockReservations: Reservation[] = [
-    { id: "R001", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Juan Pérez", seatsCount: 2, assignedSeats: [{seatId: "1A", bus: 1}, {seatId: "1B", bus: 1}], status: "Confirmado" },
-    { id: "R001B", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Pedro Gonzalez", seatsCount: 1, assignedSeats: [{seatId: "5C", bus: 2}], status: "Confirmado" },
-    { id: "R002", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "María García", seatsCount: 1, assignedSeats: [{seatId: "7A", bus: 1}], status: "Pendiente" },
-    { id: "R003", tripId: "1", tripDestination: "Bariloche, Patagonia", passenger: "Carlos López", seatsCount: 4, assignedSeats: [{seatId: "2A", bus: 1}, {seatId: "2B", bus: 1}], status: "Confirmado" },
-    { id: "R004", tripId: "3", tripDestination: "Mendoza, Ruta del Vino", passenger: "Ana Martínez", seatsCount: 2, assignedSeats: [], status: "Pendiente" },
-    { id: "R005", tripId: "2", tripDestination: "Cataratas del Iguazú, Misiones", passenger: "Lucía Hernández", seatsCount: 3, assignedSeats: [{seatId: "3B", bus: 1}, {seatId: "3C", bus: 1}, {seatId: "3D", bus: 1}], status: "Confirmado" },
+    { id: "R001", tripId: "1", passenger: "Juan Pérez", paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado" },
+    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado" },
+    { id: "R002", tripId: "2", passenger: "María García", paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente" },
+    { id: "R003", tripId: "1", passenger: "Carlos López", paxCount: 4, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado" },
+    { id: "R004", tripId: "3", passenger: "Ana Martínez", paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente" },
+    { id: "R005", tripId: "2", passenger: "Lucía Hernández", paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado" },
+    { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado" },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');
-const associatedTours = mockTours.reduce((acc, tour) => {
-    acc[tour.id] = tour;
-    return acc;
-}, {} as Record<string, Tour>);
 
 export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
-    const tour = associatedTours[res.tripId];
     // Create a ticket for each assigned seat in the reservation
-    return res.assignedSeats.map((seat, index) => ({
-        id: `${res.id}-T${index + 1}`,
-        reservationId: res.id,
-        tripId: res.tripId,
-        tripDestination: res.tripDestination,
-        tripDate: tour.date,
-        // For simplicity, we assume the main passenger name for all tickets in a reservation
-        // A more complex implementation would have individual passenger data per seat
-        passengerName: res.passenger,
-        passengerDni: 'XX.XXX.XXX', // Placeholder DNI
-        seat: seat,
-        qrCodeUrl: 'https://placehold.co/150x150.png', // Placeholder QR Code
-    }));
+    const ticketsForReservation: Ticket[] = [];
+
+    res.assignedSeats.forEach((seat, index) => {
+        ticketsForReservation.push({
+            id: `${res.id}-S${index + 1}`,
+            reservationId: res.id,
+            tripId: res.tripId,
+            passengerName: res.passenger,
+            passengerDni: 'XX.XXX.XXX', // Placeholder DNI
+            assignment: seat,
+            qrCodeUrl: 'https://placehold.co/150x150.png', // Placeholder QR Code
+        });
+    });
+
+    res.assignedCabins.forEach((cabin, index) => {
+        ticketsForReservation.push({
+            id: `${res.id}-C${index + 1}`,
+            reservationId: res.id,
+            tripId: res.tripId,
+            passengerName: res.passenger,
+            passengerDni: 'XX.XXX.XXX',
+            assignment: cabin,
+            qrCodeUrl: 'https://placehold.co/150x150.png',
+        });
+    });
+
+    return ticketsForReservation;
 });
+
+    

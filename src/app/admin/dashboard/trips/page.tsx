@@ -58,6 +58,13 @@ export default function TripsPage() {
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
+      const newStoredTours = localStorage.getItem("ytl_tours")
+       if (newStoredTours) {
+          setTours(JSON.parse(newStoredTours, (key, value) => {
+            if (key === 'date') return new Date(value);
+            return value;
+          }));
+        }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -75,7 +82,7 @@ export default function TripsPage() {
   const getOccupiedCount = (tourId: string) => {
     return reservations
         .filter(r => r.tripId === tourId)
-        .reduce((acc, r) => acc + (r.assignedSeats.length + r.assignedCabins.length > 0 ? r.paxCount : 0) , 0);
+        .reduce((acc, r) => acc + (r.assignedSeats.length + r.assignedCabins.length) , 0);
   }
 
   const getTourCapacity = (tour: Tour) => {
@@ -226,3 +233,5 @@ export default function TripsPage() {
     </div>
   )
 }
+
+    

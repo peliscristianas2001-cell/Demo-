@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils"
 import { LayoutItemType, LayoutCategory } from "@/lib/types"
 import { getLayoutForType, Cell } from "@/lib/layouts"
-import { Armchair, ShieldIcon, PersonStanding, Utensils, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, WindIcon } from "lucide-react"
+import { Armchair, ShieldIcon, PersonStanding, Waves, PersonStandingIcon, BusIcon, ChefHatIcon, BedDouble, Anchor } from "lucide-react"
 
 interface SeatSelectorProps {
   category: LayoutCategory;
@@ -12,7 +12,6 @@ interface SeatSelectorProps {
   occupiedSeats: string[]
   selectedSeats: string[]
   onSeatSelect: (seatId: string) => void
-  passengerSeats: (string | null)[]
   maxSeats: number
 }
 
@@ -36,6 +35,12 @@ const SpecialCell = ({ type }: { type: Cell['type'] }) => {
             break;
         case 'cabina':
             content = <> <ShieldIcon className="w-4 h-4 mb-0.5" /> Cabina </>;
+            break;
+        case 'anchor':
+            content = <> <Anchor className="w-4 h-4 mb-0.5" /> Común </>;
+            break;
+        case 'waves':
+            content = <> <Waves className="w-4 h-4 mb-0.5" /> Piscina </>;
             break;
         case 'empty':
              return <div className="w-full h-full" />;
@@ -84,25 +89,27 @@ export function SeatSelector({
                     {floor.grid.map((row, rowIndex) => (
                         row.map((cell, cellIndex) => {
                             const key = `${floorIndex}-${rowIndex}-${cellIndex}`;
-                            const cellData = cell as Cell;
-
-                            if (cellData.type !== 'seat') {
+                            
+                            if (cell.type !== 'seat' && cell.type !== 'cabin') {
                                 return (
                                     <div key={key} className="flex items-center justify-center w-10 h-10 p-1 md:w-12 md:h-12">
-                                       <SpecialCell type={cellData.type} />
+                                       <SpecialCell type={cell.type} />
                                     </div>
                                 )
                             }
                            
-                            const seatId = cellData.number.toString();
-                            const isOccupied = occupiedSeats.includes(seatId);
-                            const isSelected = selectedSeats.includes(seatId);
+                            const isSeat = cell.type === 'seat';
+                            const id = isSeat ? String(cell.number) : String(cell.number);
+                            const isOccupied = occupiedSeats.includes(id);
+                            const isSelected = selectedSeats.includes(id);
                             const isDisabled = isOccupied;
+                            const Icon = isSeat ? Armchair : BedDouble;
+                            const text = isSeat ? String(cell.number) : cell.number;
 
                             return (
                                 <div key={key} className="flex items-center justify-center w-10 h-10 p-1 md:w-12 md:h-12">
                                     <button
-                                        onClick={() => handleSeatClick(seatId)}
+                                        onClick={() => handleSeatClick(id)}
                                         disabled={isDisabled}
                                         className={cn(
                                         "relative flex items-center justify-center w-full h-full rounded-md transition-colors font-mono",
@@ -112,8 +119,8 @@ export function SeatSelector({
                                         "text-xs"
                                         )}
                                     >
-                                        <Armchair className="w-4 h-4 md:w-5 md:h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
-                                        <span className="relative font-bold">{seatId}</span>
+                                        <Icon className="w-4 h-4 md:w-5 md:h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+                                        <span className="relative font-bold">{text}</span>
                                     </button>
                                 </div>
                             )
@@ -140,3 +147,5 @@ export function SeatSelector({
     </div>
   )
 }
+
+    
