@@ -87,6 +87,9 @@ function LoginForm() {
 
     // For this example, we'll simulate a client match with the admin's credentials
     const isClient = credential === "Angela Rojas" && password === "AngelaRojasYTL";
+    
+    // Clear any previous employee session
+    localStorage.removeItem("ytl_employee_id");
 
     if (isAdmin && seller) {
         setMatchedSeller(seller);
@@ -99,6 +102,7 @@ function LoginForm() {
       handleRoleSelection('admin');
     } else if (seller) {
       setMatchedSeller(seller);
+      // If user is only a seller, log them in directly
       handleRoleSelection('seller', seller);
     } else if (isClient) {
        handleRoleSelection('client');
@@ -269,3 +273,6 @@ export default function AuthPage() {
     </div>
   );
 }
+
+
+    
