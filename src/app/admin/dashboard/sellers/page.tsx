@@ -51,19 +51,6 @@ export default function SellersPage() {
   const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', commission: 0, password: '' });
   const { toast } = useToast();
 
-  const registrationLink = useMemo(() => {
-    if (selectedSeller && isClient) {
-      return `${window.location.origin}/employee/register?sellerId=${selectedSeller.id}`;
-    }
-    return "";
-  }, [selectedSeller, isClient]);
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(registrationLink).then(() => {
-      toast({ title: "¡Copiado!", description: "El link de registro se ha copiado al portapapeles." });
-    });
-  }
-
   useEffect(() => {
     setIsClient(true)
     const storedSellers = localStorage.getItem("ytl_sellers")
@@ -101,6 +88,22 @@ export default function SellersPage() {
         setFormData({ name: '', dni: '', phone: '', commission: 0, password: '' });
     }
   }, [selectedSeller, isFormOpen]);
+
+  const getRegistrationLink = (sellerId: string) => {
+    if (isClient) {
+      return `${window.location.origin}/employee/register?sellerId=${sellerId}`;
+    }
+    return "";
+  }
+
+  const handleCopyLink = (sellerId: string) => {
+    const link = getRegistrationLink(sellerId);
+    if (link) {
+      navigator.clipboard.writeText(link).then(() => {
+        toast({ title: "¡Copiado!", description: "El link de registro se ha copiado al portapapeles." });
+      });
+    }
+  }
 
   const handleCreate = () => {
     setSelectedSeller(null)
@@ -201,8 +204,8 @@ export default function SellersPage() {
                     <div className="space-y-2 pt-4">
                         <Label>Link de Registro Único</Label>
                          <div className="flex items-center gap-2">
-                            <Input value={registrationLink} readOnly className="text-muted-foreground"/>
-                            <Button size="icon" variant="outline" onClick={copyToClipboard}>
+                            <Input value={getRegistrationLink(selectedSeller.id)} readOnly className="text-muted-foreground"/>
+                            <Button size="icon" variant="outline" onClick={() => handleCopyLink(selectedSeller.id)}>
                                 <Clipboard className="w-4 h-4"/>
                             </Button>
                         </div>
@@ -246,6 +249,7 @@ export default function SellersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Link Reg.</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>DNI</TableHead>
                 <TableHead>Teléfono</TableHead>
@@ -256,12 +260,18 @@ export default function SellersPage() {
             <TableBody>
               {sellers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No hay vendedores registrados.
                   </TableCell>
                 </TableRow>
               ) : sellers.map((seller) => (
                   <TableRow key={seller.id}>
+                     <TableCell>
+                      <Button variant="outline" size="icon" onClick={() => handleCopyLink(seller.id)}>
+                        <Clipboard className="w-4 h-4" />
+                        <span className="sr-only">Copiar link de registro</span>
+                      </Button>
+                    </TableCell>
                     <TableCell className="font-medium">{seller.name}</TableCell>
                     <TableCell>{seller.dni}</TableCell>
                     <TableCell>{seller.phone}</TableCell>
