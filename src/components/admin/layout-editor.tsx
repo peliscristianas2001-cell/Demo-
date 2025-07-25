@@ -42,7 +42,7 @@ const CellEditor = ({ cell, onCellChange, category }: { cell: Cell, onCellChange
     
     const handleTypeChange = (type: Cell['type']) => {
         if (type === 'seat') {
-            onCellChange({ type: 'seat', number: 0 });
+            onCellChange({ type: 'seat', number: '' });
         } else if (type === 'cabin') {
             onCellChange({ type: 'cabin', number: '', cabinType: 'Interior', capacity: 2 });
         } else {
@@ -51,13 +51,18 @@ const CellEditor = ({ cell, onCellChange, category }: { cell: Cell, onCellChange
     }
 
     const handleSeatNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onCellChange({ type: 'seat', number: parseInt(e.target.value, 10) || 0 });
+        if (cell.type !== 'seat') return;
+        const value = e.target.value;
+        onCellChange({ type: 'seat', number: value === '' ? '' : parseInt(value, 10) });
     }
 
     const handleCabinChange = (field: keyof Cell, value: any) => {
         if (cell.type !== 'cabin') return;
-        if(field === 'capacity') value = parseInt(value, 10) || 1;
-        onCellChange({ ...cell, [field]: value });
+        let processedValue = value;
+        if (field === 'capacity') {
+            processedValue = value === '' ? '' : parseInt(value, 10);
+        }
+        onCellChange({ ...cell, [field]: processedValue });
     }
 
     const baseCellTypes = [
@@ -148,19 +153,40 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
   const [name, setName] = useState("");
   const [layout, setLayout] = useState<Layout>(() => ({ floors: [defaultFloor] }));
   const [editingCell, setEditingCell] = useState<{ floor: number; row: number; col: number } | null>(null);
+  const [gridDimensions, setGridDimensions] = useState<Array<{rows: number | '', cols: number | ''}>>([]);
+
 
   useEffect(() => {
     if (isOpen) {
       if (layoutConfig) {
         setName(layoutConfig.name);
-        setLayout(JSON.parse(JSON.stringify(layoutConfig.layout)));
+        const newLayout = JSON.parse(JSON.stringify(layoutConfig.layout));
+        setLayout(newLayout);
+        setGridDimensions(newLayout.floors.map(f => ({ rows: f.grid.length, cols: f.grid[0]?.length || 0 })));
       } else {
         setName("");
-        setLayout({ floors: [JSON.parse(JSON.stringify(defaultFloor))] });
+        const newLayout = { floors: [JSON.parse(JSON.stringify(defaultFloor))] };
+        setLayout(newLayout);
+        setGridDimensions(newLayout.floors.map(f => ({ rows: f.grid.length, cols: f.grid[0]?.length || 0 })));
       }
       setEditingCell(null);
     }
   }, [isOpen, layoutConfig]);
+
+  const updateGridDimensions = (floorIndex: number, dimension: 'rows' | 'cols', value: string) => {
+    const newDims = [...gridDimensions];
+    const numericValue = parseInt(value, 10);
+    newDims[floorIndex] = { ...newDims[floorIndex], [dimension]: value === '' ? '' : numericValue };
+    setGridDimensions(newDims);
+
+    if (!isNaN(numericValue) && numericValue > 0) {
+        const { rows, cols } = newDims[floorIndex];
+        const newRows = dimension === 'rows' ? numericValue : (rows || layout.floors[floorIndex].grid.length);
+        const newCols = dimension === 'cols' ? numericValue : (cols || layout.floors[floorIndex].grid[0].length);
+        updateGrid(floorIndex, newRows, newCols);
+    }
+  };
+
 
   const updateGrid = (floorIndex: number, newRows: number, newCols: number) => {
     setLayout(prev => {
@@ -198,11 +224,11 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
             for (const cell of row) {
                 let identifier: string | null = null;
                 if (cell.type === 'seat') {
-                    if (cell.number > 0) identifier = `seat-${cell.number}`;
+                    if (cell.number && cell.number > 0) identifier = `seat-${cell.number}`;
                     totalCapacity++;
                 } else if (cell.type === 'cabin') {
                     if (cell.number) identifier = `cabin-${cell.number}`;
-                    totalCapacity += cell.capacity;
+                    if (cell.capacity > 0) totalCapacity += cell.capacity;
                 }
                 
                 if (identifier) {
@@ -219,12 +245,15 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
   };
   
   const addFloor = () => {
-      setLayout(prev => ({...prev, floors: [...prev.floors, { name: `Piso ${prev.floors.length + 1}`, grid: defaultFloor.grid }]}));
+      const newFloor = { name: `Piso ${layout.floors.length + 1}`, grid: defaultFloor.grid };
+      setLayout(prev => ({...prev, floors: [...prev.floors, newFloor]}));
+      setGridDimensions(prev => [...prev, { rows: newFloor.grid.length, cols: newFloor.grid[0]?.length || 0 }]);
   }
   
   const removeFloor = (index: number) => {
        if (layout.floors.length <= 1) return;
        setLayout(prev => ({...prev, floors: prev.floors.filter((_, i) => i !== index)}));
+       setGridDimensions(prev => prev.filter((_, i) => i !== index));
        if(editingCell?.floor === index) setEditingCell(null);
   }
 
@@ -288,11 +317,11 @@ export function LayoutEditor({ isOpen, onOpenChange, onSave, category, layoutKey
                         <div className="flex items-center gap-4">
                             <div className="space-y-1">
                                 <Label>Filas</Label>
-                                <Input type="number" value={floor.grid.length} onChange={e => updateGrid(floorIndex, parseInt(e.target.value) || 1, floor.grid[0]?.length || 1)} min="1"/>
+                                <Input type="number" value={gridDimensions[floorIndex]?.rows} onChange={e => updateGridDimensions(floorIndex, 'rows', e.target.value)} min="1"/>
                             </div>
                             <div className="space-y-1">
                                 <Label>Columnas</Label>
-                                <Input type="number" value={floor.grid[0]?.length || 1} onChange={e => updateGrid(floorIndex, floor.grid.length, parseInt(e.target.value) || 1)} min="1"/>
+                                <Input type="number" value={gridDimensions[floorIndex]?.cols} onChange={e => updateGridDimensions(floorIndex, 'cols', e.target.value)} min="1"/>
                             </div>
                         </div>
                         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${floor.grid[0]?.length || 1}, minmax(0, 4rem))`}}>
