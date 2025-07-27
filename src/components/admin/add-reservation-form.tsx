@@ -47,6 +47,7 @@ const defaultReservation = {
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
+  const [openCombobox, setOpenCombobox] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         selectedPassengerIds: [passengerId],
         paxCount: 1,
     }));
+    setOpenCombobox(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -182,26 +184,47 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         <Button variant="link" onClick={() => setFormData(prev => ({...prev, mainPassengerId: '', selectedPassengerIds: []}))}>Cambiar</Button>
                      </div>
                  ) : (
-                    <Command className="border rounded-lg">
-                        <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
-                        <CommandList>
-                            <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
-                            <CommandGroup>
-                                {availablePassengers.map((passenger) => (
-                                <CommandItem
-                                    key={passenger.id}
-                                    value={`${passenger.fullName} ${passenger.dni}`}
-                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
-                                >
-                                    <div>
-                                        <p>{passenger.fullName}</p>
-                                        <p className="text-xs text-muted-foreground">{passenger.dni}</p>
-                                    </div>
-                                </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        </CommandList>
-                    </Command>
+                    <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openCombobox}
+                            className="w-full justify-between"
+                            >
+                            Buscar pasajero por nombre o DNI...
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Buscar pasajero..." />
+                                <CommandList>
+                                    <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
+                                    <CommandGroup>
+                                    {availablePassengers.map((passenger) => (
+                                        <CommandItem
+                                            key={passenger.id}
+                                            value={`${passenger.fullName} ${passenger.dni}`}
+                                            onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                "mr-2 h-4 w-4",
+                                                formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            <div>
+                                                <p>{passenger.fullName}</p>
+                                                <p className="text-xs text-muted-foreground">{passenger.dni}</p>
+                                            </div>
+                                        </CommandItem>
+                                    ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                  )}
             </div>
             
