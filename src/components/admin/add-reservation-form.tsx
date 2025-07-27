@@ -223,12 +223,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         <div className="flex justify-between items-center">
                             <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
                              <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
-                                <Button asChild variant="outline" size="sm">
-                                    <DialogTrigger>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
                                         <PlusCircle className="mr-2 h-4 w-4" />
                                         Añadir Nuevo
-                                    </DialogTrigger>
-                                </Button>
+                                    </Button>
+                                </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
