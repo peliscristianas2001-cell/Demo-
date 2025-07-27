@@ -130,6 +130,12 @@ export default function ReservationsPage() {
     }
   }, [reservations, isClient])
 
+  // Effect to update local passenger list when a new one is added from the sub-form
+  useEffect(() => {
+    if (isClient) {
+        localStorage.setItem("ytl_passengers", JSON.stringify(passengers));
+    }
+  }, [passengers, isClient]);
 
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
   
@@ -294,6 +300,7 @@ export default function ReservationsPage() {
             onSave={handleAddReservation}
             tour={addingReservation.tour}
             passengers={passengers}
+            onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
             sellers={sellers}
         />
     )}
@@ -543,3 +550,5 @@ export default function ReservationsPage() {
     </>
   )
 }
+
+    

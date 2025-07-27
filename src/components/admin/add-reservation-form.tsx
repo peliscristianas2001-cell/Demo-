@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,10 @@ import type { Passenger, Seller, Reservation, PaymentStatus, Tour } from "@/lib/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle, UserPlus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "../ui/checkbox"
+import { AddPassengerSubForm } from "./add-passenger-subform"
 
 interface AddReservationFormProps {
   isOpen: boolean
@@ -26,20 +28,23 @@ interface AddReservationFormProps {
   onSave: (reservation: Reservation) => void
   tour: Tour
   passengers: Passenger[]
+  onPassengerCreated: (passenger: Passenger) => void
   sellers: Seller[]
 }
 
 const defaultReservation = {
-    passengerId: "",
+    mainPassengerId: "",
     paxCount: 1,
     sellerId: "unassigned",
     finalPrice: 0,
-    paymentStatus: "Pendiente" as PaymentStatus
+    paymentStatus: "Pendiente" as PaymentStatus,
+    selectedPassengerIds: [] as string[]
 }
 
-export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, sellers }: AddReservationFormProps) {
+export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, onPassengerCreated, sellers }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
-  const [openCombobox, setOpenCombobox] = useState(false)
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,22 +56,73 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     }
   }, [isOpen, tour])
 
+  const selectedMainPassenger = useMemo(() => {
+    return passengers.find(p => p.id === formData.mainPassengerId);
+  }, [formData.mainPassengerId, passengers]);
+  
+  const familyMembers = useMemo(() => {
+    if (!selectedMainPassenger?.family) return [];
+    return passengers.filter(p => p.family === selectedMainPassenger.family);
+  }, [selectedMainPassenger, passengers]);
 
   const handleFormChange = (id: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   }
 
+  const handleMainPassengerSelect = (passengerId: string) => {
+    setFormData(prev => ({
+        ...prev,
+        mainPassengerId: passengerId,
+        selectedPassengerIds: [passengerId], // Auto-select the main passenger
+        paxCount: 1
+    }));
+    setOpenCombobox(false);
+  }
+
+  const handleMemberSelect = (passengerId: string, checked: boolean) => {
+     setFormData(prev => {
+        const currentSelection = prev.selectedPassengerIds;
+        let newSelection;
+        if (checked) {
+            newSelection = [...currentSelection, passengerId];
+        } else {
+            newSelection = currentSelection.filter(id => id !== passengerId);
+        }
+        return { ...prev, selectedPassengerIds: newSelection };
+     });
+  }
+  
+  const handleAddNewPassenger = (newPassengerData: Omit<Passenger, 'id'>) => {
+    const newPassenger: Passenger = {
+      ...newPassengerData,
+      id: `P${Date.now()}`,
+      family: selectedMainPassenger?.family || `Familia ${newPassengerData.fullName.split(' ').pop()}`,
+    };
+    onPassengerCreated(newPassenger);
+    // Add the new passenger to the current selection
+    setFormData(prev => ({
+        ...prev,
+        selectedPassengerIds: [...prev.selectedPassengerIds, newPassenger.id]
+    }));
+    setIsAddingNewPassenger(false);
+  };
+
+
   const handleSubmit = () => {
-    const selectedPassenger = passengers.find(p => p.id === formData.passengerId);
-    if (!selectedPassenger || formData.paxCount <= 0 || formData.finalPrice <= 0) {
-      toast({ title: "Faltan datos", description: "Por favor, selecciona un pasajero y completa los campos.", variant: "destructive" });
-      return;
+    if (!selectedMainPassenger) {
+        toast({ title: "Faltan datos", description: "Por favor, selecciona un pasajero principal.", variant: "destructive" });
+        return;
+    }
+    if(formData.selectedPassengerIds.length !== formData.paxCount) {
+        toast({ title: "Verificar pasajeros", description: "La cantidad de pasajeros seleccionados no coincide con la cantidad de pasajeros de la reserva.", variant: "destructive" });
+        return;
     }
     
     const reservationToSave: Reservation = {
         id: `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
         tripId: tour.id,
-        passenger: selectedPassenger.fullName,
+        passenger: selectedMainPassenger.fullName,
+        passengerIds: formData.selectedPassengerIds,
         paxCount: formData.paxCount,
         assignedSeats: [],
         assignedCabins: [],
@@ -79,27 +135,29 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     onSave(reservationToSave);
   }
 
+  const canSubmit = formData.paxCount === formData.selectedPassengerIds.length && formData.mainPassengerId;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Agregar Reserva a {tour.destination}</DialogTitle>
           <DialogDescription>
-            Selecciona un pasajero y completa los detalles de la reserva.
+            Selecciona un pasajero principal y completa los detalles de la reserva.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto pr-6 space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="passenger">Pasajero Principal</Label>
                 <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
-                        {formData.passengerId ? passengers.find((p) => p.id === formData.passengerId)?.fullName : "Seleccionar pasajero..."}
+                        {formData.mainPassengerId ? passengers.find((p) => p.id === formData.mainPassengerId)?.fullName : "Seleccionar pasajero..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                             <CommandInput placeholder="Buscar pasajero..." />
                             <CommandEmpty>No se encontró el pasajero.</CommandEmpty>
@@ -108,12 +166,9 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                 <CommandItem
                                     key={passenger.id}
                                     value={passenger.fullName}
-                                    onSelect={() => {
-                                        handleFormChange('passengerId', passenger.id)
-                                        setOpenCombobox(false)
-                                    }}
+                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
                                 >
-                                    <Check className={cn("mr-2 h-4 w-4", formData.passengerId === passenger.id ? "opacity-100" : "opacity-0")}/>
+                                    <Check className={cn("mr-2 h-4 w-4", formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0")}/>
                                     {passenger.fullName}
                                 </CommandItem>
                                 ))}
@@ -122,48 +177,93 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     </PopoverContent>
                 </Popover>
             </div>
-             <div className="space-y-2">
-                <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
-                <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="finalPrice">Precio Final (Total)</Label>
-                <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="seller">Vendedor/a</Label>
-               <Select
-                  value={formData.sellerId}
-                  onValueChange={(val) => handleFormChange('sellerId', val)}
-                >
-                  <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Sin asignar</SelectItem>
-                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="paymentStatus">Estado de Pago</Label>
-               <Select
-                  value={formData.paymentStatus}
-                  onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}
-                >
-                  <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                    <SelectItem value="Parcial">Parcial</SelectItem>
-                    <SelectItem value="Pagado">Pagado</SelectItem>
-                  </SelectContent>
-                </Select>
-            </div>
+            
+            {selectedMainPassenger && (
+                 <>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
+                            <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="finalPrice">Precio Final (Total)</Label>
+                            <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
+                        </div>
+                    </div>
+                    
+                    <div className="p-4 border rounded-md space-y-3">
+                        <div className="flex justify-between items-center">
+                            <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
+                             <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
+                                <Button asChild variant="outline" size="sm">
+                                    <DialogTrigger>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Añadir Nuevo
+                                    </DialogTrigger>
+                                </Button>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
+                                        <DialogDescription>
+                                            El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <AddPassengerSubForm onSave={handleAddNewPassenger} />
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                            {familyMembers.map(member => (
+                                <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                    <Checkbox
+                                        id={`member-${member.id}`}
+                                        checked={formData.selectedPassengerIds.includes(member.id)}
+                                        onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
+                                        disabled={member.id === selectedMainPassenger.id}
+                                    />
+                                    <Label htmlFor={`member-${member.id}`} className="font-normal flex-1 cursor-pointer">
+                                        {member.fullName} <span className="text-muted-foreground"> (DNI: {member.dni})</span>
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="seller">Vendedor/a</Label>
+                            <Select value={formData.sellerId} onValueChange={(val) => handleFormChange('sellerId', val)}>
+                                <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="paymentStatus">Estado de Pago</Label>
+                            <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
+                                <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                    <SelectItem value="Parcial">Parcial</SelectItem>
+                                    <SelectItem value="Pagado">Pagado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit}>Guardar Reserva</Button>
+          <Button onClick={handleSubmit} disabled={!canSubmit}>Guardar Reserva</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
+    

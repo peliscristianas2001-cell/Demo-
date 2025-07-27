@@ -88,8 +88,9 @@ export interface Passenger {
 export type Reservation = {
     id: string;
     tripId: string;
-    passenger: string;
-    paxCount: number; 
+    passenger: string; // Main passenger's name for display
+    passengerIds: string[]; // IDs of all passengers in the reservation
+    paxCount: number; // Total number of passengers
     assignedSeats: AssignedSeat[];
     assignedCabins: AssignedCabin[];
     status: ReservationStatus;
@@ -116,3 +117,5 @@ export type Seller = {
     commission: number; // Percentage
     password?: string;
 }
+
+    
