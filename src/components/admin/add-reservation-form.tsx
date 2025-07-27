@@ -47,7 +47,6 @@ const defaultReservation = {
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
-  const [openCombobox, setOpenCombobox] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,14 +59,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   }, [isOpen, tour])
 
   const availablePassengers = useMemo(() => {
-    // Get all passenger IDs that are already booked for THIS specific tour
     const bookedPassengerIdsForThisTour = new Set(
       allReservations
         .filter(r => r.tripId === tour.id)
         .flatMap(r => r.passengerIds || [])
     );
 
-    // Return passengers who are NOT in the booked list for this tour
     return passengers.filter(p => !bookedPassengerIdsForThisTour.has(p.id));
   }, [passengers, allReservations, tour.id]);
 
@@ -78,7 +75,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   
   const familyMembers = useMemo(() => {
     if (!selectedMainPassenger?.family) return [];
-    // Only show family members who are not already booked on this trip
     const bookedPassengerIdsForThisTour = new Set(
       allReservations
         .filter(r => r.tripId === tour.id)
@@ -102,7 +98,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         selectedPassengerIds: [passengerId],
         paxCount: 1,
     }));
-    setOpenCombobox(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -127,7 +122,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
       tierId: 'adult'
     };
     onPassengerCreated(newPassenger);
-    // Add the new passenger to the current selection
     setFormData(prev => ({
         ...prev,
         selectedPassengerIds: [...prev.selectedPassengerIds, newPassenger.id]
@@ -171,7 +165,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         <DialogHeader>
           <DialogTitle>Agregar Reserva a {tour.destination}</DialogTitle>
           <DialogDescription>
-            Selecciona un pasajero principal y completa los detalles de la reserva.
+            Busca un pasajero principal y completa los detalles de la reserva.
           </DialogDescription>
         </DialogHeader>
         
@@ -184,47 +178,26 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         <Button variant="link" onClick={() => setFormData(prev => ({...prev, mainPassengerId: '', selectedPassengerIds: []}))}>Cambiar</Button>
                      </div>
                  ) : (
-                    <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openCombobox}
-                            className="w-full justify-between"
-                            >
-                            Buscar pasajero por nombre o DNI...
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Buscar pasajero..." />
-                                <CommandList>
-                                    <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
-                                    <CommandGroup>
-                                    {availablePassengers.map((passenger) => (
-                                        <CommandItem
-                                            key={passenger.id}
-                                            value={`${passenger.fullName} ${passenger.dni}`}
-                                            onSelect={() => handleMainPassengerSelect(passenger.id)}
-                                        >
-                                            <Check
-                                                className={cn(
-                                                "mr-2 h-4 w-4",
-                                                formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0"
-                                                )}
-                                            />
-                                            <div>
-                                                <p>{passenger.fullName}</p>
-                                                <p className="text-xs text-muted-foreground">{passenger.dni}</p>
-                                            </div>
-                                        </CommandItem>
-                                    ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <Command>
+                        <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
+                        <CommandList>
+                            <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
+                            <CommandGroup>
+                            {availablePassengers.map((passenger) => (
+                                <CommandItem
+                                    key={passenger.id}
+                                    value={`${passenger.fullName} ${passenger.dni}`}
+                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                >
+                                    <div>
+                                        <p>{passenger.fullName}</p>
+                                        <p className="text-xs text-muted-foreground">{passenger.dni}</p>
+                                    </div>
+                                </CommandItem>
+                            ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
                  )}
             </div>
             
