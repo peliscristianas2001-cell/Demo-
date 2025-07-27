@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -15,9 +16,9 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import type { Passenger, Seller, Reservation, PaymentStatus, Tour } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Check, ChevronsUpDown, PlusCircle, UserPlus, X } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "../ui/checkbox"
 import { AddPassengerSubForm } from "./add-passenger-subform"
@@ -28,6 +29,7 @@ interface AddReservationFormProps {
   onSave: (reservation: Reservation) => void
   tour: Tour
   passengers: Passenger[]
+  allReservations: Reservation[]
   onPassengerCreated: (passenger: Passenger) => void
   sellers: Seller[]
 }
@@ -41,7 +43,7 @@ const defaultReservation = {
     selectedPassengerIds: [] as string[]
 }
 
-export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, onPassengerCreated, sellers }: AddReservationFormProps) {
+export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
@@ -55,6 +57,15 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         });
     }
   }, [isOpen, tour])
+
+  const availablePassengers = useMemo(() => {
+    const bookedPassengerIds = new Set(
+        allReservations
+            .filter(r => r.tripId === tour.id)
+            .flatMap(r => r.passengerIds || [r.passenger]) // Fallback for old structure
+    );
+    return passengers.filter(p => !bookedPassengerIds.has(p.id));
+  }, [passengers, allReservations, tour.id]);
 
   const selectedMainPassenger = useMemo(() => {
     return passengers.find(p => p.id === formData.mainPassengerId);
@@ -70,11 +81,15 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   }
 
   const handleMainPassengerSelect = (passengerId: string) => {
+    const passenger = passengers.find(p => p.id === passengerId);
+    if (!passenger) return;
+
     setFormData(prev => ({
         ...prev,
         mainPassengerId: passengerId,
-        selectedPassengerIds: [passengerId], // Auto-select the main passenger
-        paxCount: 1
+        selectedPassengerIds: [passengerId],
+        paxCount: 1,
+        family: passenger.family || `Familia ${passenger.fullName.split(' ').pop()}`,
     }));
     setOpenCombobox(false);
   }
@@ -97,6 +112,8 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
       ...newPassengerData,
       id: `P${Date.now()}`,
       family: selectedMainPassenger?.family || `Familia ${newPassengerData.fullName.split(' ').pop()}`,
+      nationality: 'Argentina',
+      tierId: 'adult'
     };
     onPassengerCreated(newPassenger);
     // Add the new passenger to the current selection
@@ -123,7 +140,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         tripId: tour.id,
         passenger: selectedMainPassenger.fullName,
         passengerIds: formData.selectedPassengerIds,
-        paxCount: formData.paxCount,
+        paxCount: formData.selectedPassengerIds.length,
         assignedSeats: [],
         assignedCabins: [],
         status: 'Pendiente',
@@ -153,26 +170,31 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                 <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
-                        {formData.mainPassengerId ? passengers.find((p) => p.id === formData.mainPassengerId)?.fullName : "Seleccionar pasajero..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            {selectedMainPassenger ? `${selectedMainPassenger.fullName} (DNI: ${selectedMainPassenger.dni})` : "Buscar pasajero por nombre o DNI..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <Command>
                             <CommandInput placeholder="Buscar pasajero..." />
-                            <CommandEmpty>No se encontró el pasajero.</CommandEmpty>
-                            <CommandGroup className="max-h-60 overflow-y-auto">
-                                {passengers.map((passenger) => (
-                                <CommandItem
-                                    key={passenger.id}
-                                    value={passenger.fullName}
-                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
-                                >
-                                    <Check className={cn("mr-2 h-4 w-4", formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0")}/>
-                                    {passenger.fullName}
-                                </CommandItem>
-                                ))}
-                            </CommandGroup>
+                            <CommandList>
+                                <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
+                                <CommandGroup>
+                                    {availablePassengers.map((passenger) => (
+                                    <CommandItem
+                                        key={passenger.id}
+                                        value={`${passenger.fullName} ${passenger.dni}`}
+                                        onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                    >
+                                        <Check className={cn("mr-2 h-4 w-4", formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0")}/>
+                                        <div>
+                                            <p>{passenger.fullName}</p>
+                                            <p className="text-xs text-muted-foreground">{passenger.dni}</p>
+                                        </div>
+                                    </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
                         </Command>
                     </PopoverContent>
                 </Popover>
@@ -265,5 +287,3 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
-
-    

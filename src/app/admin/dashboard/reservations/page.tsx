@@ -300,6 +300,7 @@ export default function ReservationsPage() {
             onSave={handleAddReservation}
             tour={addingReservation.tour}
             passengers={passengers}
+            allReservations={reservations}
             onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
             sellers={sellers}
         />
@@ -550,5 +551,3 @@ export default function ReservationsPage() {
     </>
   )
 }
-
-    

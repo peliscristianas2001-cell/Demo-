@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -7,6 +8,7 @@ import { Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { ScrollArea } from "./scroll-area"
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
