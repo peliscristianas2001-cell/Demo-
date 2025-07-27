@@ -100,7 +100,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         mainPassengerId: passengerId,
         selectedPassengerIds: [passengerId],
         paxCount: 1,
-        family: passenger.family || `Familia ${passenger.fullName.split(' ').pop()}`,
     }));
   }
 
