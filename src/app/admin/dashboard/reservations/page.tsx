@@ -52,12 +52,13 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit } from "lucide-react"
-import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus } from "@/lib/types"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus } from "lucide-react"
+import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { AddReservationForm } from "@/components/admin/add-reservation-form"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -78,14 +79,22 @@ type EditReservationState = {
   reservation: Reservation | null;
 }
 
+type AddReservationState = {
+    isOpen: boolean;
+    tour: Tour | null;
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
   const [editingReservation, setEditingReservation] = useState<EditReservationState>({ isOpen: false, reservation: null });
+  const [addingReservation, setAddingReservation] = useState<AddReservationState>({ isOpen: false, tour: null });
+
 
   useEffect(() => {
     setIsClient(true)
@@ -93,19 +102,23 @@ export default function ReservationsPage() {
     const storedReservations = localStorage.getItem("ytl_reservations")
     const storedTours = localStorage.getItem("ytl_tours")
     const storedSellers = localStorage.getItem("ytl_sellers")
+    const storedPassengers = localStorage.getItem("ytl_passengers")
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
+    setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
        const newStoredReservations = localStorage.getItem("ytl_reservations")
        const newStoredTours = localStorage.getItem("ytl_tours")
        const newStoredSellers = localStorage.getItem("ytl_sellers")
+       const newStoredPassengers = localStorage.getItem("ytl_passengers")
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
+       setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -128,6 +141,9 @@ export default function ReservationsPage() {
                 tour,
                 reservations: tripReservations
             };
+        } else {
+             // Still include the tour even if it has no reservations
+            acc[tour.id] = { tour, reservations: [] };
         }
         return acc;
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
@@ -174,6 +190,11 @@ export default function ReservationsPage() {
     setReservations(reservations.map(res => 
       res.id === reservationId ? { ...res, status: newStatus } : res
     ))
+  }
+  
+  const handleAddReservation = (newReservation: Reservation) => {
+    setReservations(prev => [...prev, newReservation]);
+    setAddingReservation({ isOpen: false, tour: null });
   }
 
   const handleUpdateReservation = () => {
@@ -266,6 +287,17 @@ export default function ReservationsPage() {
 
   return (
     <>
+    {addingReservation.tour && (
+         <AddReservationForm 
+            isOpen={addingReservation.isOpen}
+            onOpenChange={(open) => setAddingReservation({ isOpen: open, tour: open ? addingReservation.tour : null })}
+            onSave={handleAddReservation}
+            tour={addingReservation.tour}
+            passengers={passengers}
+            sellers={sellers}
+        />
+    )}
+
     <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
       <DialogContent>
         <DialogHeader>
@@ -333,10 +365,10 @@ export default function ReservationsPage() {
         <CardContent className="pt-6">
            {Object.keys(reservationsByTrip).length === 0 ? (
                 <div className="h-24 text-center flex items-center justify-center">
-                    No hay reservas activas.
+                    No hay viajes activos con reservas.
                 </div>
             ) : (
-                <Accordion type="multiple" className="w-full">
+                <Accordion type="multiple" className="w-full" defaultValue={Object.keys(reservationsByTrip)}>
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
                        const expandedUnitList = getExpandedTransportList(tour);
                        const totalVehicleCount = expandedUnitList.length;
@@ -347,7 +379,14 @@ export default function ReservationsPage() {
                                {tour.destination} ({tripReservations.length} reservas)
                             </AccordionTrigger>
                            <AccordionContent>
-                               <Table>
+                                <div className="flex justify-end mb-4">
+                                    <Button onClick={() => setAddingReservation({isOpen: true, tour: tour})}>
+                                        <UserPlus className="mr-2 h-4 w-4"/>
+                                        Agregar Reserva
+                                    </Button>
+                                </div>
+                               {tripReservations.length > 0 ? (
+                                <Table>
                                     <TableHeader>
                                     <TableRow>
                                         <TableHead>Pasajero</TableHead>
@@ -487,6 +526,11 @@ export default function ReservationsPage() {
                                         })}
                                     </TableBody>
                                 </Table>
+                               ) : (
+                                <div className="text-center text-muted-foreground py-8">
+                                    No hay reservas para este viaje aún.
+                                </div>
+                               )}
                            </AccordionContent>
                        </AccordionItem>
                        )
