@@ -45,7 +45,6 @@ const defaultReservation = {
 
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
-  const [openCombobox, setOpenCombobox] = useState(false);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const { toast } = useToast();
 
@@ -102,7 +101,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         paxCount: 1,
         family: passenger.family || `Familia ${passenger.fullName.split(' ').pop()}`,
     }));
-    setOpenCombobox(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -178,37 +176,33 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         <div className="flex-1 overflow-y-auto pr-6 space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="passenger">Pasajero Principal</Label>
-                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
-                            {selectedMainPassenger ? `${selectedMainPassenger.fullName} (DNI: ${selectedMainPassenger.dni})` : "Buscar pasajero por nombre o DNI..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                            <CommandInput placeholder="Buscar pasajero..." />
-                            <CommandList>
-                                <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
-                                <CommandGroup>
-                                    {availablePassengers.map((passenger) => (
-                                    <CommandItem
-                                        key={passenger.id}
-                                        value={`${passenger.fullName} ${passenger.dni}`}
-                                        onSelect={() => handleMainPassengerSelect(passenger.id)}
-                                    >
-                                        <Check className={cn("mr-2 h-4 w-4", formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0")}/>
-                                        <div>
-                                            <p>{passenger.fullName}</p>
-                                            <p className="text-xs text-muted-foreground">{passenger.dni}</p>
-                                        </div>
-                                    </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                 {selectedMainPassenger ? (
+                     <div className="flex items-center justify-between p-2 border rounded-md bg-muted">
+                        <span>{selectedMainPassenger.fullName} (DNI: {selectedMainPassenger.dni})</span>
+                        <Button variant="link" onClick={() => setFormData(prev => ({...prev, mainPassengerId: '', selectedPassengerIds: []}))}>Cambiar</Button>
+                     </div>
+                 ) : (
+                    <Command className="border rounded-lg">
+                        <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
+                        <CommandList>
+                            <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
+                            <CommandGroup>
+                                {availablePassengers.map((passenger) => (
+                                <CommandItem
+                                    key={passenger.id}
+                                    value={`${passenger.fullName} ${passenger.dni}`}
+                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                >
+                                    <div>
+                                        <p>{passenger.fullName}</p>
+                                        <p className="text-xs text-muted-foreground">{passenger.dni}</p>
+                                    </div>
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                 )}
             </div>
             
             {selectedMainPassenger && (
@@ -298,5 +292,3 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
-
-    
