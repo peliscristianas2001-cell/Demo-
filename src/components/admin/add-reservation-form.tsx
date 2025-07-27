@@ -59,13 +59,17 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   }, [isOpen, tour])
 
   const availablePassengers = useMemo(() => {
-    const bookedPassengerIds = new Set(
-        allReservations
-            .filter(r => r.tripId === tour.id)
-            .flatMap(r => r.passengerIds || [r.passenger]) // Fallback for old structure
+    // Get all passenger IDs that are already booked for THIS specific tour
+    const bookedPassengerIdsForThisTour = new Set(
+      allReservations
+        .filter(r => r.tripId === tour.id)
+        .flatMap(r => r.passengerIds || [])
     );
-    return passengers.filter(p => !bookedPassengerIds.has(p.id));
+
+    // Return passengers who are NOT in the booked list for this tour
+    return passengers.filter(p => !bookedPassengerIdsForThisTour.has(p.id));
   }, [passengers, allReservations, tour.id]);
+
 
   const selectedMainPassenger = useMemo(() => {
     return passengers.find(p => p.id === formData.mainPassengerId);
@@ -73,8 +77,15 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   
   const familyMembers = useMemo(() => {
     if (!selectedMainPassenger?.family) return [];
-    return passengers.filter(p => p.family === selectedMainPassenger.family);
-  }, [selectedMainPassenger, passengers]);
+    // Only show family members who are not already booked on this trip
+    const bookedPassengerIdsForThisTour = new Set(
+      allReservations
+        .filter(r => r.tripId === tour.id)
+        .flatMap(r => r.passengerIds || [])
+    );
+    return passengers.filter(p => p.family === selectedMainPassenger.family && !bookedPassengerIdsForThisTour.has(p.id));
+  }, [selectedMainPassenger, passengers, allReservations, tour.id]);
+
 
   const handleFormChange = (id: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [id]: value }));
@@ -287,3 +298,5 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
+
+    
