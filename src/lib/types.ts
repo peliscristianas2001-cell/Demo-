@@ -1,3 +1,4 @@
+
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -83,6 +84,7 @@ export interface Passenger {
   family?: string;
   nationality: string;
   tierId: string; // 'adult' or one of the pricingTier IDs
+  password?: string;
 }
 
 export type Reservation = {

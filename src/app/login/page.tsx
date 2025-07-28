@@ -25,8 +25,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { mockSellers } from "@/lib/mock-data";
-import type { Seller } from "@/lib/types";
+import { mockSellers, mockPassengers } from "@/lib/mock-data";
+import type { Seller, Passenger } from "@/lib/types";
+import { DatePicker } from "@/components/ui/date-picker";
 
 function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'seller' | 'client') => void }) {
     return (
@@ -74,51 +75,47 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const [matchedSeller, setMatchedSeller] = useState<Seller | null>(null);
+  const [matchedUser, setMatchedUser] = useState< (Seller | Passenger) & { isSeller?: boolean; isPassenger?: boolean; isAdmin?: boolean } | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    let sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    
-    // Safety check: ensure mock users exist to prevent issues with localStorage
-    const testUserDNI = "43580345";
-    if (!sellers.some(s => s.dni === testUserDNI)) {
-      sellers = mockSellers;
-      localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
-    }
-
+    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    const passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
 
     const foundSeller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
-    const isAdmin = credential === "Angela Rojas" && password === "AngelaRojasYTL";
+    const foundPassenger = passengers.find(p => p.dni === credential && p.password === password);
+    const isAdmin = (credential === "Angela Rojas" && password === "AngelaRojasYTL") || (credential === "99999999" && password === "AngelaRojasYTL");
 
     localStorage.removeItem("ytl_employee_id");
+    localStorage.removeItem("ytl_user_id");
+    
+    let userRoles: any = {};
+    if (foundSeller) userRoles.isSeller = true;
+    if (foundPassenger) userRoles.isPassenger = true;
+    if (isAdmin) userRoles.isAdmin = true;
 
-    if (foundSeller && isAdmin) {
-        setMatchedSeller(foundSeller);
+    const roleCount = Object.keys(userRoles).length;
+    const userObject = foundSeller || foundPassenger;
+
+    if (roleCount > 1) {
+        setMatchedUser({ ...userObject!, ...userRoles });
         setShowRoleSelector(true);
-        setIsLoading(false);
-        return;
-    }
-
-    if (foundSeller) {
-        handleRoleSelection('seller', foundSeller);
-    } else if (isAdmin) {
-        handleRoleSelection('admin');
+    } else if (roleCount === 1) {
+        if(userRoles.isAdmin) handleRoleSelection('admin', userObject);
+        else if (userRoles.isSeller) handleRoleSelection('seller', userObject);
+        else if (userRoles.isPassenger) handleRoleSelection('client', userObject);
     } else {
-        toast({
-            title: "Error de autenticación",
-            description: "Las credenciales son incorrectas.",
-            variant: "destructive",
-        });
-        setIsLoading(false);
+        toast({ title: "Error de autenticación", description: "Las credenciales son incorrectas.", variant: "destructive" });
     }
+    
+    setIsLoading(false);
   };
 
-  const handleRoleSelection = (role: 'admin' | 'seller' | 'client', sellerInfo?: Seller) => {
+  const handleRoleSelection = (role: 'admin' | 'seller' | 'client', userInfo?: any) => {
       setShowRoleSelector(false);
-      const sellerToLogin = sellerInfo || matchedSeller;
+      const userToLogin = userInfo || matchedUser;
 
       switch(role) {
           case 'admin':
@@ -126,109 +123,97 @@ function LoginForm() {
               router.push("/admin/dashboard");
               break;
           case 'seller':
-              if (sellerToLogin) {
-                toast({ title: `¡Bienvenido/a, ${sellerToLogin.name}!`, description: "Has iniciado sesión en tu panel." });
-                localStorage.setItem("ytl_employee_id", sellerToLogin.id);
+              if (userToLogin) {
+                toast({ title: `¡Bienvenido/a, ${userToLogin.name || userToLogin.fullName}!`, description: "Has iniciado sesión en tu panel." });
+                localStorage.setItem("ytl_employee_id", userToLogin.id);
                 router.push("/employee/dashboard");
               }
               break;
           case 'client':
-             // When choosing to navigate as a client, we DON'T set the employee ID
-              localStorage.removeItem("ytl_employee_id");
-              if (sellerToLogin) {
-                toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${sellerToLogin.name}.` });
+              if (userToLogin) {
+                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${userToLogin.fullName || userToLogin.name}.` });
+                 localStorage.setItem("ytl_user_id", userToLogin.id);
+                 router.push("/");
               }
-              router.push("/");
               break;
       }
   }
   
   if (showRoleSelector) {
-      return <RoleSelector onSelectRole={handleRoleSelection} />
+      return <RoleSelector onSelectRole={(role) => handleRoleSelection(role, matchedUser)} />
   }
 
   return (
     <form onSubmit={handleLogin} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="login-credential">Nombre de Usuario o DNI</Label>
-        <Input
-          id="login-credential"
-          type="text"
-          value={credential}
-          onChange={(e) => setCredential(e.target.value)}
-          placeholder="Tu nombre o DNI"
-          required
-          className="h-11"
-        />
+        <Input id="login-credential" type="text" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="Tu nombre o DNI" required className="h-11"/>
       </div>
       <div className="space-y-2">
         <Label htmlFor="login-password">Contraseña</Label>
         <div className="relative">
-          <Input
-            id="login-password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="********"
-            required
-            className="pr-10 h-11"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-          >
+          <Input id="login-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" required className="pr-10 h-11"/>
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
       </div>
-      <Button type="submit" className="w-full h-11" disabled={isLoading}>
-        {isLoading ? "Ingresando..." : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}
-      </Button>
+      <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? "Ingresando..." : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
     </form>
   );
 }
 
 function RegisterForm() {
-    const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [formData, setFormData] = useState({ fullName: '', dni: '', dob: undefined, phone: '', password: ''});
+
+    const handleFormChange = (id: keyof typeof formData, value: any) => {
+        setFormData(prev => ({...prev, [id]: value}));
+    }
 
     const handleRegister = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Mock registration logic
-        toast({
-            title: "¡Registro exitoso!",
-            description: "Tu cuenta ha sido creada. Ahora podés iniciar sesión.",
-        });
-        
-        // In a real app, you would save user data here
-        setTimeout(() => {
+        const { fullName, dni, password } = formData;
+        if (!fullName || !dni || !password || password.length < 6) {
+            toast({ title: "Datos inválidos", description: "Nombre, DNI y una contraseña de 6+ caracteres son obligatorios.", variant: "destructive"});
             setIsLoading(false);
-            // Could redirect to login or show a message
-        }, 1500)
+            return;
+        }
+
+        const passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+        if (passengers.some(p => p.dni === dni)) {
+            toast({ title: "DNI ya registrado", description: "Ya existe una cuenta con ese DNI. Intenta iniciar sesión.", variant: "destructive"});
+            setIsLoading(false);
+            return;
+        }
+
+        const newPassenger: Passenger = {
+            id: `P${Date.now()}`,
+            family: fullName.split(' ').pop() || 'Familia',
+            nationality: 'Argentina',
+            tierId: 'adult',
+            ...formData,
+        }
+
+        const updatedPassengers = [...passengers, newPassenger];
+        localStorage.setItem("ytl_passengers", JSON.stringify(updatedPassengers));
+        
+        toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión." });
+        
+        setTimeout(() => { setIsLoading(false); }, 1500)
     }
 
     return (
         <form onSubmit={handleRegister} className="space-y-6">
-             <div className="space-y-2">
-              <Label htmlFor="register-name">Nombre Completo</Label>
-              <Input id="register-name" placeholder="Ej: Juan Pérez" required className="h-11" />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="register-email">Email</Label>
-              <Input id="register-email" type="email" placeholder="juan.perez@email.com" required className="h-11" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="register-password">Contraseña</Label>
-              <Input id="register-password" type="password" placeholder="Crea una contraseña segura" required className="h-11" />
-            </div>
-            <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                {isLoading ? "Creando cuenta..." : <> <UserPlus className="mr-2 h-4 w-4" /> Registrarse </>}
-            </Button>
+             <div className="space-y-2"><Label htmlFor="register-name">Nombre Completo</Label><Input id="register-name" placeholder="Ej: Juan Pérez" required className="h-11" value={formData.fullName} onChange={e => handleFormChange('fullName', e.target.value)}/></div>
+             <div className="space-y-2"><Label htmlFor="register-dni">DNI</Label><Input id="register-dni" placeholder="Tu DNI sin puntos" required className="h-11" value={formData.dni} onChange={e => handleFormChange('dni', e.target.value)}/></div>
+             <div className="space-y-2"><Label htmlFor="register-dob">Fecha de Nacimiento</Label><DatePicker id="register-dob" date={formData.dob} setDate={d => handleFormChange('dob', d)} className="h-11 w-full" placeholder="Tu fecha de nacimiento"/></div>
+             <div className="space-y-2"><Label htmlFor="register-phone">Teléfono</Label><Input id="register-phone" type="tel" placeholder="Opcional" className="h-11" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)}/></div>
+             <div className="space-y-2"><Label htmlFor="register-password">Contraseña</Label><Input id="register-password" type="password" placeholder="Crea una contraseña segura (mín. 6)" required className="h-11" value={formData.password} onChange={e => handleFormChange('password', e.target.value)}/></div>
+             <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? "Creando cuenta..." : <> <UserPlus className="mr-2 h-4 w-4" /> Registrarse </>}</Button>
         </form>
     )
 }
@@ -249,27 +234,17 @@ export default function AuthPage() {
             <Tabs defaultValue={mode} className="w-full">
                 <Card className="shadow-2xl">
                 <CardHeader className="text-center">
-                    <div className="flex justify-center mb-4">
-                    <Logo />
-                    </div>
-                    <CardTitle className="text-2xl font-headline">
-                        Acceso a YO TE LLEVO
-                    </CardTitle>
-                    <CardDescription>
-                        Ingresá a tu cuenta o registrate para una nueva aventura.
-                    </CardDescription>
+                    <div className="flex justify-center mb-4"><Logo /></div>
+                    <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
+                    <CardDescription>Ingresá a tu cuenta o registrate para una nueva aventura.</CardDescription>
                     <TabsList className="grid w-full grid-cols-2 mt-4">
                         <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
                         <TabsTrigger value="register">Registro</TabsTrigger>
                     </TabsList>
                 </CardHeader>
                 <CardContent>
-                    <TabsContent value="login">
-                        <LoginForm />
-                    </TabsContent>
-                    <TabsContent value="register">
-                        <RegisterForm />
-                    </TabsContent>
+                    <TabsContent value="login"><LoginForm /></TabsContent>
+                    <TabsContent value="register"><RegisterForm /></TabsContent>
                 </CardContent>
                 </Card>
             </Tabs>
