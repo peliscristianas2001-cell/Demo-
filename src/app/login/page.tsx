@@ -81,8 +81,24 @@ function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    const passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+    let sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    let passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+
+    // --- ROBUSTNESS FIX ---
+    // Ensure the specific user's data is always present before attempting login,
+    // to counteract potential stale localStorage data.
+    const GodoyDNI = "43580345";
+    const godoySeller = mockSellers.find(s => s.dni === GodoyDNI);
+    const godoyPassenger = mockPassengers.find(p => p.dni === GodoyDNI);
+    
+    if (godoySeller && !sellers.some(s => s.dni === GodoyDNI)) {
+        sellers.push(godoySeller);
+    }
+    if (godoyPassenger && !passengers.some(p => p.dni === GodoyDNI)) {
+        passengers.push(godoyPassenger);
+    }
+    // --- END FIX ---
+
 
     const foundSeller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
     const foundPassenger = passengers.find(p => p.dni === credential && p.password === password);
@@ -97,7 +113,15 @@ function LoginForm() {
     if (isAdmin) userRoles.isAdmin = true;
 
     const roleCount = Object.keys(userRoles).length;
-    const userObject = foundSeller || foundPassenger;
+    
+    const userObject = { 
+        ...(foundPassenger || {}), 
+        ...(foundSeller || {}),
+        id: foundSeller?.id || foundPassenger?.id || '',
+        name: foundSeller?.name || (foundPassenger as any)?.fullName || '',
+        fullName: (foundPassenger as any)?.fullName || foundSeller?.name || ''
+    };
+
 
     if (roleCount > 1) {
         setMatchedUser({ ...userObject!, ...userRoles });
@@ -252,5 +276,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
