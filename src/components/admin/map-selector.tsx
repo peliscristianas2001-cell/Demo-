@@ -117,7 +117,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         <div className="space-y-4">
             <div ref={mapContainerRef} className={cn("h-96 w-full rounded-lg overflow-hidden border z-0", isMarking && "cursor-crosshair")} />
             <div className="flex items-center gap-4">
-                 <Button onClick={() => setIsMarking(!isMarking)} variant="outline">
+                 <Button onClick={() => setIsMarking(!isMarking)} variant={isMarking ? "destructive" : "outline"}>
                     <MapPin className="mr-2 h-4 w-4" />
                     {isMarking ? "Cancelar Marcado" : "Marcar Centro en el Mapa"}
                 </Button>
