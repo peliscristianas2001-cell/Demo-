@@ -214,39 +214,39 @@ export default function ReservationsPage() {
   }
 
   const handleAssignment = (reservationId: string, assignmentId: string, unitNumber: number, type: 'seat' | 'cabin') => {
-      setReservations(prev => prev.map(res => {
-          if (res.id !== reservationId) {
-              return res;
-          }
+      const updatedReservations = reservations.map(res => {
+          if (res.id !== reservationId) return res;
 
-          const updatedRes = { ...res };
+          let updatedRes = { ...res };
 
           if (type === 'seat') {
               const currentAssignments = updatedRes.assignedSeats || [];
               const existingIndex = currentAssignments.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
-
               if (existingIndex > -1) {
-                  // If seat exists, remove it
                   updatedRes.assignedSeats = currentAssignments.filter((_, index) => index !== existingIndex);
               } else if (currentAssignments.length < updatedRes.paxCount) {
-                  // If seat doesn't exist and there's space, add it
                   updatedRes.assignedSeats = [...currentAssignments, { seatId: assignmentId, unit: unitNumber }];
               }
           } else if (type === 'cabin') {
               const currentAssignments = updatedRes.assignedCabins || [];
               const existingIndex = currentAssignments.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
-
               if (existingIndex > -1) {
-                  // If cabin exists, remove it
                   updatedRes.assignedCabins = currentAssignments.filter((_, index) => index !== existingIndex);
               } else if (currentAssignments.length < updatedRes.paxCount) {
-                  // If cabin doesn't exist and there's space, add it
                   updatedRes.assignedCabins = [...currentAssignments, { cabinId: assignmentId, unit: unitNumber }];
               }
           }
-
           return updatedRes;
-      }));
+      });
+      
+      setReservations(updatedReservations);
+
+      // Sync the state of the reservation being edited in the dialog
+      setEditingReservation(prev => {
+        if (!prev.reservation) return prev;
+        const updatedReservationInDialog = updatedReservations.find(r => r.id === prev.reservation!.id);
+        return { ...prev, reservation: updatedReservationInDialog || prev.reservation };
+      });
   };
 
   const getOccupiedForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
@@ -293,7 +293,8 @@ export default function ReservationsPage() {
     return `${unit.category}_${unit.type}_${unit.globalUnitNum}`;
   }
 
-  const handleDialogOpen = (tour: Tour) => {
+  const handleDialogOpen = (tour: Tour, reservation: Reservation) => {
+    setEditingReservation({ isOpen: true, reservation });
     const unitList = getExpandedTransportList(tour);
     if (unitList.length > 0) {
       const firstUnit = unitList[0];
@@ -330,41 +331,122 @@ export default function ReservationsPage() {
     )}
 
     <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
-      <DialogContent>
+      <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Editar Reserva</DialogTitle>
+          <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
-            Modificar detalles de la reserva para {editingReservation.reservation?.passenger}.
+            Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {activeTours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
         {editingReservation.reservation && (
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="paymentStatus">Estado de Pago</Label>
-               <Select
-                  value={editingReservation.reservation.paymentStatus}
-                  onValueChange={(val: PaymentStatus) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, paymentStatus: val}}))}
-                >
-                  <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pagado">Pagado</SelectItem>
-                    <SelectItem value="Parcial">Parcial</SelectItem>
-                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
+            {/* Columna Izquierda: Edición de Datos */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader><CardTitle>Datos de Pago</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentStatus">Estado de Pago</Label>
+                    <Select
+                      value={editingReservation.reservation.paymentStatus}
+                      onValueChange={(val: PaymentStatus) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, paymentStatus: val}}))}
+                    >
+                      <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pagado">Pagado</SelectItem>
+                        <SelectItem value="Parcial">Parcial</SelectItem>
+                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalPrice">Precio Final</Label>
+                    <Input
+                      id="totalPrice"
+                      type="number"
+                      value={editingReservation.reservation.finalPrice}
+                      onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+               <Card>
+                  <CardHeader><CardTitle>Acciones Rápidas</CardTitle></CardHeader>
+                  <CardContent className="flex flex-col space-y-2">
+                     <Button variant="outline" onClick={() => handleStatusChange(editingReservation.reservation!.id, 'Confirmado')}>
+                      <CheckCircle className="mr-2 h-4 w-4" /> Confirmar Reserva
+                    </Button>
+                    <Button variant="outline" onClick={() => handleStatusChange(editingReservation.reservation!.id, 'Pendiente')}>
+                      <Clock className="mr-2 h-4 w-4" /> Marcar como Pendiente
+                    </Button>
+                     <Button variant="destructive" onClick={() => {
+                       handleDelete(editingReservation.reservation!.id);
+                       setEditingReservation({isOpen: false, reservation: null});
+                     }}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar Reserva
+                    </Button>
+                  </CardContent>
+              </Card>
             </div>
-             <div className="space-y-2">
-              <Label htmlFor="totalPrice">Precio Final</Label>
-              <Input
-                id="totalPrice"
-                type="number"
-                value={editingReservation.reservation.finalPrice}
-                onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
-              />
+
+            {/* Columna Derecha: Asignación de Asientos */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Asignación de Lugares</CardTitle>
+                  <CardDescription>Reserva para {editingReservation.reservation.paxCount} pasajeros.</CardDescription>
+                   {activeUnit && getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!)?.length > 1 && (
+                     <div className="flex items-center gap-2 pt-2">
+                          <Bus className="w-5 h-5 text-muted-foreground"/>
+                          <Select
+                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                              onValueChange={(val) => {
+                                  const selectedUnit = getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => getTransportIdentifier(b) === val);
+                                  if (selectedUnit) {
+                                      setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
+                                  }
+                              }}
+                          >
+                              <SelectTrigger className="w-[280px]">
+                                  <SelectValue placeholder="Seleccionar unidad" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  {getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).map(unit => {
+                                      const Icon = categoryIcons[unit.category];
+                                      return (
+                                          <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
+                                              <div className="flex items-center gap-2">
+                                                  <Icon className="w-4 h-4 text-muted-foreground"/>
+                                                  <span>{unit.typeName} {getTransportCount(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!) > 1 ? unit.instanceNum : ''}</span>
+                                              </div>
+                                          </SelectItem>
+                                      )
+                                  })}
+                              </SelectContent>
+                          </Select>
+                      </div>
+                   )}
+                </CardHeader>
+                <CardContent>
+                  {activeUnit && editingReservation.reservation && (
+                    <SeatSelector
+                        category={activeUnit.category}
+                        layoutType={activeUnit.type}
+                        occupiedSeats={getOccupiedForTour(editingReservation.reservation.tripId, activeUnit.unitNumber, editingReservation.reservation.id).occupiedSeats}
+                        occupiedCabins={getOccupiedForTour(editingReservation.reservation.tripId, activeUnit.unitNumber, editingReservation.reservation.id).occupiedCabins}
+                        selectedSeats={(editingReservation.reservation.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
+                        selectedCabins={(editingReservation.reservation.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
+                        onAssignment={(id, type) => handleAssignment(editingReservation.reservation!.id, id, activeUnit.unitNumber, type)}
+                        maxAssignments={editingReservation.reservation.paxCount}
+                    />
+                  )}
+                </CardContent>
+              </Card>
             </div>
+
           </div>
         )}
-        <DialogFooter>
+        <DialogFooter className="mt-auto pt-4 border-t">
           <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
           <Button onClick={handleUpdateReservation}>Guardar Cambios</Button>
         </DialogFooter>
@@ -438,107 +520,9 @@ export default function ReservationsPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => setEditingReservation({ isOpen: true, reservation: res })}>
-                                                          <Edit className="mr-2 h-4 w-4" /> Editar
+                                                        <Button variant="outline" size="sm" onClick={() => handleDialogOpen(tour, res)}>
+                                                          <Edit className="mr-2 h-4 w-4" /> Gestionar
                                                         </Button>
-                                                        <Dialog
-                                                          onOpenChange={(open) => {
-                                                            if (open) {
-                                                              handleDialogOpen(tour);
-                                                            } else {
-                                                              setActiveUnit(null);
-                                                            }
-                                                          }}
-                                                        >
-                                                            <DialogTrigger asChild>
-                                                                <Button variant="outline" size="sm">
-                                                                    <Armchair className="mr-2 h-4 w-4" /> Asignar
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
-                                                                <DialogHeader>
-                                                                    <DialogTitle>Asignar para {res.passenger}</DialogTitle>
-                                                                    <DialogDescription>
-                                                                        Viaje a {tour.destination}. Reservó {res.paxCount} lugares.
-                                                                    </DialogDescription>
-                                                                    {totalVehicleCount > 1 && activeUnit && (
-                                                                        <div className="flex items-center gap-2 pt-2">
-                                                                            <Bus className="w-5 h-5 text-muted-foreground"/>
-                                                                            <Select
-                                                                                value={activeUnit ? getTransportIdentifier(expandedUnitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
-                                                                                onValueChange={(val) => {
-                                                                                    const selectedUnit = expandedUnitList.find(b => getTransportIdentifier(b) === val);
-                                                                                    if (selectedUnit) {
-                                                                                        setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <SelectTrigger className="w-[280px]">
-                                                                                    <SelectValue placeholder="Seleccionar unidad" />
-                                                                                </SelectTrigger>
-                                                                                <SelectContent>
-                                                                                    {expandedUnitList.map(unit => {
-                                                                                        const Icon = categoryIcons[unit.category];
-                                                                                        return (
-                                                                                            <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                                                                    <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
-                                                                                                </div>
-                                                                                            </SelectItem>
-                                                                                        )
-                                                                                    })}
-                                                                                </SelectContent>
-                                                                            </Select>
-                                                                        </div>
-                                                                    )}
-                                                                </DialogHeader>
-                                                                <div className="flex-1 overflow-y-auto pr-6">
-                                                                    {activeUnit && (
-                                                                      <SeatSelector
-                                                                          category={activeUnit.category}
-                                                                          layoutType={activeUnit.type}
-                                                                          occupiedSeats={getOccupiedForTour(tour.id, activeUnit.unitNumber, res.id).occupiedSeats}
-                                                                          occupiedCabins={getOccupiedForTour(tour.id, activeUnit.unitNumber, res.id).occupiedCabins}
-                                                                          selectedSeats={(res.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
-                                                                          selectedCabins={(res.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
-                                                                          onAssignment={(id, type) => handleAssignment(res.id, id, activeUnit.unitNumber, type)}
-                                                                          maxAssignments={res.paxCount}
-                                                                      />
-                                                                    )}
-                                                                </div>
-                                                                <DialogFooter className="mt-auto pt-4 border-t">
-                                                                    <DialogClose asChild>
-                                                                        <Button type="button">Cerrar</Button>
-                                                                    </DialogClose>
-                                                                </DialogFooter>
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                        <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Abrir menú</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Confirmado')}>
-                                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                                            Confirmar
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleStatusChange(res.id, 'Pendiente')}>
-                                                            <Clock className="mr-2 h-4 w-4" />
-                                                            Marcar como Pendiente
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => handleDelete(res.id)} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Eliminar
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                        </DropdownMenu>
                                                     </div>
                                                     </TableCell>
                                                 </TableRow>
@@ -563,5 +547,3 @@ export default function ReservationsPage() {
     </>
   )
 }
-
-    
