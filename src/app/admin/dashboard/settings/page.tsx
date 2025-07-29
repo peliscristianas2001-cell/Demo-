@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, GeneralSettings } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
 type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
@@ -21,13 +21,18 @@ export default function SettingsPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
+    const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: 0, longitude: 0, radiusKm: 0 });
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
     useEffect(() => {
-        const storedSettings = localStorage.getItem("ytl_general_settings");
-        if (storedSettings) {
-            setGeneralSettings(JSON.parse(storedSettings));
+        const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
+        if (storedGeneralSettings) {
+            setGeneralSettings(JSON.parse(storedGeneralSettings));
+        }
+        const storedGeoSettings = localStorage.getItem("ytl_geo_settings");
+        if (storedGeoSettings) {
+            setGeoSettings(JSON.parse(storedGeoSettings));
         }
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
@@ -80,6 +85,14 @@ export default function SettingsPage() {
         toast({
             title: "Configuración guardada",
             description: "Los ajustes generales han sido actualizados."
+        })
+    }
+    
+    const handleGeoSettingsSave = () => {
+        localStorage.setItem("ytl_geo_settings", JSON.stringify(geoSettings));
+         toast({
+            title: "Zona guardada",
+            description: "La zona de servicio ha sido actualizada."
         })
     }
 
@@ -210,6 +223,47 @@ export default function SettingsPage() {
                 <Button onClick={handleGeneralSettingsSave}>
                     <Save className="mr-2 h-4 w-4" />
                     Guardar Ajustes
+                </Button>
+            </div>
+            
+            <div className="space-y-4 p-4 border rounded-lg">
+                <Label className="text-lg font-medium flex items-center gap-2"><MapPin className="w-5 h-5"/> Zona Geográfica</Label>
+                <p className="text-sm text-muted-foreground">Define el centro y el radio de tu zona de servicio.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="latitude">Latitud del Centro</Label>
+                        <Input 
+                            id="latitude"
+                            type="number"
+                            placeholder="-34.6037"
+                            value={geoSettings.latitude}
+                            onChange={(e) => setGeoSettings(prev => ({...prev, latitude: parseFloat(e.target.value) || 0}))}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="longitude">Longitud del Centro</Label>
+                        <Input 
+                            id="longitude"
+                            type="number"
+                            placeholder="-58.3816"
+                             value={geoSettings.longitude}
+                            onChange={(e) => setGeoSettings(prev => ({...prev, longitude: parseFloat(e.target.value) || 0}))}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="radius">Radio (km)</Label>
+                        <Input 
+                            id="radius"
+                            type="number"
+                            placeholder="100"
+                             value={geoSettings.radiusKm}
+                            onChange={(e) => setGeoSettings(prev => ({...prev, radiusKm: parseFloat(e.target.value) || 0}))}
+                        />
+                    </div>
+                </div>
+                <Button onClick={handleGeoSettingsSave}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Zona
                 </Button>
             </div>
 

@@ -1,4 +1,5 @@
 
+
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -45,6 +46,12 @@ export interface TourCosts {
 
 export interface GeneralSettings {
     mainWhatsappNumber?: string;
+}
+
+export interface GeoSettings {
+    latitude: number;
+    longitude: number;
+    radiusKm: number;
 }
 
 export interface Tour {
