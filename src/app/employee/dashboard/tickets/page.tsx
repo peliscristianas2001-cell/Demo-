@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useMemo, useEffect, createRef } from "react"
@@ -57,8 +56,10 @@ export default function EmployeeTicketsPage() {
     setPassengers(currentPassengers);
     
     // Generate tickets from confirmed reservations
-    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado' && r.passengerIds && r.passengerIds.length > 0);
+    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
     const generatedTickets = confirmedReservations.flatMap((res: Reservation): Ticket[] => {
+       if (!res.passengerIds || res.passengerIds.length === 0) return [];
+
         const tour = currentTours.find(t => t.id === res.tripId);
         const mainPassenger = currentPassengers.find(p => p.id === res.passengerIds[0]);
 
@@ -83,15 +84,15 @@ export default function EmployeeTicketsPage() {
     setTickets(generatedTickets);
   }, [])
 
-  const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
-
   const filteredTickets = useMemo(() => {
-    if (selectedTripId === "all") {
-      const activeTourIds = new Set(activeTours.map(t => t.id));
-      return tickets.filter(ticket => activeTourIds.has(ticket.tripId));
-    }
+    if (selectedTripId === "all") return tickets;
     return tickets.filter(ticket => ticket.tripId === selectedTripId);
-  }, [tickets, selectedTripId, activeTours]);
+  }, [tickets, selectedTripId]);
+  
+  const toursWithTickets = useMemo(() => {
+      const tripIdsWithTickets = new Set(tickets.map(t => t.tripId));
+      return tours.filter(t => tripIdsWithTickets.has(t.id));
+  }, [tickets, tours]);
 
   const ticketRefs = useMemo(() => 
     filteredTickets.reduce((acc, ticket) => {
@@ -151,8 +152,8 @@ export default function EmployeeTicketsPage() {
                     <SelectValue placeholder="Seleccionar viaje" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos los viajes activos</SelectItem>
-                    {activeTours.map(tour => (
+                    <SelectItem value="all">Todos los viajes</SelectItem>
+                    {toursWithTickets.map(tour => (
                         <SelectItem key={tour.id} value={tour.id}>{tour.destination}</SelectItem>
                     ))}
                 </SelectContent>

@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useMemo, useEffect, createRef } from "react"
@@ -25,7 +24,7 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockTickets, mockSellers, mockReservations, mockPassengers } from "@/lib/mock-data"
+import { mockTours, mockSellers, mockReservations, mockPassengers } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
@@ -57,9 +56,11 @@ export default function TicketsAdminPage() {
     setPassengers(currentPassengers);
     
     // Generate tickets from confirmed reservations
-    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado' && r.passengerIds && r.passengerIds.length > 0);
+    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
     
     const generatedTickets = confirmedReservations.flatMap((res: Reservation): Ticket[] => {
+        if (!res.passengerIds || res.passengerIds.length === 0) return [];
+
         const tour = currentTours.find(t => t.id === res.tripId);
         const mainPassenger = currentPassengers.find(p => p.id === res.passengerIds[0]);
 
@@ -86,15 +87,16 @@ export default function TicketsAdminPage() {
 
   }, [])
 
-  const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
-
   const filteredTickets = useMemo(() => {
-    if (selectedTripId === "all") {
-      const activeTourIds = new Set(activeTours.map(t => t.id));
-      return tickets.filter(ticket => activeTourIds.has(ticket.tripId));
-    }
+    if (selectedTripId === "all") return tickets;
     return tickets.filter(ticket => ticket.tripId === selectedTripId);
-  }, [tickets, selectedTripId, activeTours]);
+  }, [tickets, selectedTripId]);
+  
+  const toursWithTickets = useMemo(() => {
+      const tripIdsWithTickets = new Set(tickets.map(t => t.tripId));
+      return tours.filter(t => tripIdsWithTickets.has(t.id));
+  }, [tickets, tours]);
+
 
   const ticketRefs = useMemo(() => 
     filteredTickets.reduce((acc, ticket) => {
@@ -112,10 +114,8 @@ export default function TicketsAdminPage() {
         quality: 1.0, 
         pixelRatio: 2,
          style: {
-            // This is a hack to make sure the fonts are loaded before rendering
             fontFamily: "'PT Sans', sans-serif",
         },
-        // This is another hack for external images like QR codes
         fetchRequestInit: {
             headers: new Headers(),
             mode: 'no-cors'
@@ -125,7 +125,6 @@ export default function TicketsAdminPage() {
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "px",
-        // A bit of margin
         format: [ticketElement.offsetWidth + 20, ticketElement.offsetHeight + 20]
       });
       pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
@@ -157,8 +156,8 @@ export default function TicketsAdminPage() {
                     <SelectValue placeholder="Seleccionar viaje" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos los viajes activos</SelectItem>
-                    {activeTours.map(tour => (
+                    <SelectItem value="all">Todos los viajes</SelectItem>
+                    {toursWithTickets.map(tour => (
                         <SelectItem key={tour.id} value={tour.id}>{tour.destination}</SelectItem>
                     ))}
                 </SelectContent>

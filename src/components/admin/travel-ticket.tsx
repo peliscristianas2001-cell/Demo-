@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React from "react"
@@ -29,10 +28,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   const assignedButacas = (reservation.assignedSeats && reservation.assignedSeats.length > 0) 
     ? reservation.assignedSeats.map(s => s.seatId).join(', ') 
     : "A confirmar";
-  const mainPassenger = (reservation.passengerIds && reservation.passengerIds.length > 0)
-    ? reservation.passengerIds[0]
-    : "N/A";
-
+  
   return (
     <div ref={ref} className={cn(
       "bg-white text-black rounded-xl shadow-2xl overflow-hidden border-4 border-primary/20",
@@ -57,7 +53,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                 </div>
                  <div className="grid grid-cols-4 gap-4">
                      <InfoBox label="Cant. Pax" value={reservation.paxCount} />
-                     <InfoBox label="Vendedor/a" value={seller?.name} />
+                     <InfoBox label="Vendedor/a" value={seller?.name || 'A confirmar'} />
                      <InfoBox label="Origen" value={tour.origin} />
                      <InfoBox label="Noches" value={tour.nights} />
                  </div>
