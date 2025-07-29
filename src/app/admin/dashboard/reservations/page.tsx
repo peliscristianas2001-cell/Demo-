@@ -335,7 +335,7 @@ export default function ReservationsPage() {
         <DialogHeader>
           <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
-            Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {activeTours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
+            Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
         {editingReservation.reservation && (
@@ -395,13 +395,13 @@ export default function ReservationsPage() {
                 <CardHeader>
                   <CardTitle>Asignación de Lugares</CardTitle>
                   <CardDescription>Reserva para {editingReservation.reservation.paxCount} pasajeros.</CardDescription>
-                   {activeUnit && getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!)?.length > 1 && (
+                   {activeUnit && getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!)?.length > 1 && (
                      <div className="flex items-center gap-2 pt-2">
                           <Bus className="w-5 h-5 text-muted-foreground"/>
                           <Select
-                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
                               onValueChange={(val) => {
-                                  const selectedUnit = getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => getTransportIdentifier(b) === val);
+                                  const selectedUnit = getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => getTransportIdentifier(b) === val);
                                   if (selectedUnit) {
                                       setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
                                   }
@@ -411,13 +411,13 @@ export default function ReservationsPage() {
                                   <SelectValue placeholder="Seleccionar unidad" />
                               </SelectTrigger>
                               <SelectContent>
-                                  {getExpandedTransportList(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!).map(unit => {
+                                  {getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).map(unit => {
                                       const Icon = categoryIcons[unit.category];
                                       return (
                                           <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
                                               <div className="flex items-center gap-2">
                                                   <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                  <span>{unit.typeName} {getTransportCount(activeTours.find(t=>t.id === editingReservation.reservation?.tripId)!) > 1 ? unit.instanceNum : ''}</span>
+                                                  <span>{unit.typeName} {getTransportCount(tours.find(t=>t.id === editingReservation.reservation?.tripId)!) > 1 ? unit.instanceNum : ''}</span>
                                               </div>
                                           </SelectItem>
                                       )
