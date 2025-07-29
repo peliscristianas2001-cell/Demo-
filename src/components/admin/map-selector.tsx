@@ -1,37 +1,83 @@
 
 "use client"
 
-import { useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet';
-import { LatLng } from 'leaflet';
+import { useMemo, useRef, useEffect } from 'react';
+import L, { LatLng } from 'leaflet';
 import type { GeoSettings } from '@/lib/types';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
+
+// react-leaflet's MapContainer does not handle StrictMode's double-render well.
+// This manual approach is more robust against "Map container is already initialized" errors.
 
 interface MapSelectorProps {
     settings: GeoSettings;
     onSettingsChange: (settings: GeoSettings) => void;
 }
 
-function MapEvents({ onMapClick }: { onMapClick: (latlng: LatLng) => void }) {
-    useMapEvents({
-        click(e) {
-            onMapClick(e.latlng);
-        },
-    });
-    return null;
-}
-
 export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapRef = useRef<L.Map | null>(null);
+    const markerRef = useRef<L.Marker | null>(null);
+    const circleRef = useRef<L.Circle | null>(null);
+
     const position = useMemo(() => new LatLng(settings.latitude, settings.longitude), [settings.latitude, settings.longitude]);
 
-    const handleMapClick = (latlng: LatLng) => {
-        onSettingsChange({
-            ...settings,
-            latitude: latlng.lat,
-            longitude: latlng.lng,
-        });
-    };
+    useEffect(() => {
+        // Initialize map only if it hasn't been initialized yet and the container is ready
+        if (mapContainerRef.current && !mapRef.current) {
+            const map = L.map(mapContainerRef.current).setView(position, 6);
+            mapRef.current = map;
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            map.on('click', (e) => {
+                onSettingsChange({
+                    ...settings,
+                    latitude: e.latlng.lat,
+                    longitude: e.latlng.lng,
+                });
+            });
+        }
+        
+        // Cleanup function to remove map on component unmount
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+        };
+    }, []); // Empty dependency array ensures this runs only once on mount and cleanup on unmount
+
+    // Effect to update marker and circle when settings change
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        map.setView(position, map.getZoom());
+
+        // Update Marker
+        if (markerRef.current) {
+            markerRef.current.setLatLng(position);
+        } else {
+            markerRef.current = L.marker(position).addTo(map);
+        }
+
+        // Update Circle
+        if (circleRef.current) {
+            circleRef.current.setLatLng(position);
+            circleRef.current.setRadius(settings.radiusKm * 1000);
+        } else {
+            circleRef.current = L.circle(position, {
+                radius: settings.radiusKm * 1000,
+                color: 'hsl(var(--primary))',
+                fillColor: 'hsl(var(--primary))',
+            }).addTo(map);
+        }
+    }, [position, settings.radiusKm, settings]);
+
 
     const handleRadiusChange = (value: number[]) => {
         onSettingsChange({
@@ -42,17 +88,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
     return (
         <div className="space-y-4">
-            <div className="h-96 w-full rounded-lg overflow-hidden border z-0">
-                <MapContainer center={position} zoom={6} scrollWheelZoom={true} className="h-full w-full">
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <MapEvents onMapClick={handleMapClick} />
-                    <Marker position={position} />
-                    <Circle center={position} radius={settings.radiusKm * 1000} pathOptions={{ color: 'hsl(var(--primary))', fillColor: 'hsl(var(--primary))' }}/>
-                </MapContainer>
-            </div>
+            <div ref={mapContainerRef} className="h-96 w-full rounded-lg overflow-hidden border z-0" />
             <div className="space-y-2">
                 <Label htmlFor="radius-slider">Radio de Cobertura: {settings.radiusKm.toLocaleString()} km</Label>
                 <Slider
@@ -67,5 +103,3 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         </div>
     );
 }
-
-    
