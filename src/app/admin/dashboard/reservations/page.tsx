@@ -302,6 +302,154 @@ export default function ReservationsPage() {
     return null; 
   }
 
+  const renderDialogContent = () => {
+    if (!editingReservation.reservation) return null;
+    
+    const reservation = editingReservation.reservation;
+    const tour = tours.find(t => t.id === reservation.tripId);
+    
+    if (!tour) return null;
+
+    const installments = reservation.installments || { count: 1, details: [{ amount: reservation.finalPrice, isPaid: false }] };
+    const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
+    const balance = reservation.finalPrice - paidAmount;
+    const unitList = getExpandedTransportList(tour);
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
+        {/* Columna Izquierda: Edición de Datos */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5"/> Datos de Pago</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="totalPrice">Precio Final</Label>
+                <Input
+                  id="totalPrice"
+                  type="number"
+                  value={reservation.finalPrice}
+                  onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
+                />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="installments-count">Cantidad de Cuotas</Label>
+                <Input
+                  id="installments-count"
+                  type="number"
+                  min="1"
+                  value={installments.count}
+                  onChange={(e) => {
+                      const newCount = parseInt(e.target.value) || 1;
+                      const newDetails = Array.from({ length: newCount }, (_, i) => installments.details[i] || { amount: 0, isPaid: false });
+                      setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { count: newCount, details: newDetails }}}))
+                  }}
+                />
+              </div>
+              <div className="space-y-3">
+                  <Label>Detalle de Cuotas</Label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                    {installments.details.map((inst, index) => (
+                       <div key={index} className="flex items-center gap-2">
+                          <Label className="w-20">Cuota {index + 1}</Label>
+                          <Input type="number" value={inst.amount} onChange={(e) => {
+                            const newDetails = [...installments.details];
+                            newDetails[index].amount = parseFloat(e.target.value) || 0;
+                            setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                          }}/>
+                          <Checkbox checked={inst.isPaid} onCheckedChange={(checked) => {
+                             const newDetails = [...installments.details];
+                             newDetails[index].isPaid = !!checked;
+                             setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                          }}/>
+                          <Label>Pagada</Label>
+                       </div>
+                    ))}
+                  </div>
+              </div>
+              <div className="flex justify-between font-semibold p-2 bg-muted rounded-md">
+                 <span>Saldo Pendiente:</span>
+                 <span>${balance.toLocaleString('es-AR')}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+              <CardHeader><CardTitle>Detalles Adicionales</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="boardingPointId">Punto de Embarque</Label>
+                    <Select
+                        value={reservation.boardingPointId}
+                        onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, boardingPointId: val}}))}
+                    >
+                        <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                        <SelectContent>
+                            {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+              </CardContent>
+          </Card>
+        </div>
+
+        {/* Columna Derecha: Asignación de Asientos */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Asignación de Lugares</CardTitle>
+              <CardDescription>Reserva para {reservation.paxCount} pasajeros.</CardDescription>
+               {activeUnit && unitList.length > 1 && (
+                 <div className="flex items-center gap-2 pt-2">
+                      <Bus className="w-5 h-5 text-muted-foreground"/>
+                      <Select
+                          value={activeUnit ? getTransportIdentifier(unitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                          onValueChange={(val) => {
+                              const selectedUnit = unitList.find(b => getTransportIdentifier(b) === val);
+                              if (selectedUnit) {
+                                  setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
+                              }
+                          }}
+                      >
+                          <SelectTrigger className="w-[280px]">
+                              <SelectValue placeholder="Seleccionar unidad" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {unitList.map(unit => {
+                                  const Icon = categoryIcons[unit.category];
+                                  return (
+                                      <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
+                                          <div className="flex items-center gap-2">
+                                              <Icon className="w-4 h-4 text-muted-foreground"/>
+                                              <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
+                                          </div>
+                                      </SelectItem>
+                                  )
+                              })}
+                          </SelectContent>
+                      </Select>
+                  </div>
+               )}
+            </CardHeader>
+            <CardContent>
+              {activeUnit && (
+                <SeatSelector
+                    category={activeUnit.category}
+                    layoutType={activeUnit.type}
+                    occupiedSeats={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedSeats}
+                    occupiedCabins={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedCabins}
+                    selectedSeats={(editingReservation.reservation?.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => String(s.seatId))}
+                    selectedCabins={(editingReservation.reservation?.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => String(c.cabinId))}
+                    onAssignment={(id, type) => handleAssignment(reservation!.id, id, activeUnit.unitNumber, type)}
+                    maxAssignments={reservation.paxCount}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <>
     {addingReservation.tour && (
@@ -326,149 +474,7 @@ export default function ReservationsPage() {
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        {editingReservation.reservation && (() => {
-           const reservation = editingReservation.reservation!;
-           const tour = tours.find(t => t.id === reservation.tripId);
-           if (!tour) return null;
-
-           const installments = reservation.installments || { count: 1, details: [{ amount: reservation.finalPrice, isPaid: false }] };
-           const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
-           const balance = reservation.finalPrice - paidAmount;
-           const unitList = getExpandedTransportList(tour);
-
-          return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
-            {/* Columna Izquierda: Edición de Datos */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5"/> Datos de Pago</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="totalPrice">Precio Final</Label>
-                    <Input
-                      id="totalPrice"
-                      type="number"
-                      value={reservation.finalPrice}
-                      onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
-                    />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="installments-count">Cantidad de Cuotas</Label>
-                    <Input
-                      id="installments-count"
-                      type="number"
-                      min="1"
-                      value={installments.count}
-                      onChange={(e) => {
-                          const newCount = parseInt(e.target.value) || 1;
-                          const newDetails = Array.from({ length: newCount }, (_, i) => installments.details[i] || { amount: 0, isPaid: false });
-                          setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { count: newCount, details: newDetails }}}))
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                      <Label>Detalle de Cuotas</Label>
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                        {installments.details.map((inst, index) => (
-                           <div key={index} className="flex items-center gap-2">
-                              <Label className="w-20">Cuota {index + 1}</Label>
-                              <Input type="number" value={inst.amount} onChange={(e) => {
-                                const newDetails = [...installments.details];
-                                newDetails[index].amount = parseFloat(e.target.value) || 0;
-                                setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
-                              }}/>
-                              <Checkbox checked={inst.isPaid} onCheckedChange={(checked) => {
-                                 const newDetails = [...installments.details];
-                                 newDetails[index].isPaid = !!checked;
-                                 setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
-                              }}/>
-                              <Label>Pagada</Label>
-                           </div>
-                        ))}
-                      </div>
-                  </div>
-                  <div className="flex justify-between font-semibold p-2 bg-muted rounded-md">
-                     <span>Saldo Pendiente:</span>
-                     <span>${balance.toLocaleString('es-AR')}</span>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                  <CardHeader><CardTitle>Detalles Adicionales</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="boardingPointId">Punto de Embarque</Label>
-                        <Select
-                            value={reservation.boardingPointId}
-                            onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, boardingPointId: val}}))}
-                        >
-                            <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
-                            <SelectContent>
-                                {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                  </CardContent>
-              </Card>
-            </div>
-
-            {/* Columna Derecha: Asignación de Asientos */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Asignación de Lugares</CardTitle>
-                  <CardDescription>Reserva para {reservation.paxCount} pasajeros.</CardDescription>
-                   {activeUnit && unitList.length > 1 && (
-                     <div className="flex items-center gap-2 pt-2">
-                          <Bus className="w-5 h-5 text-muted-foreground"/>
-                          <Select
-                              value={activeUnit ? getTransportIdentifier(unitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
-                              onValueChange={(val) => {
-                                  const selectedUnit = unitList.find(b => getTransportIdentifier(b) === val);
-                                  if (selectedUnit) {
-                                      setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
-                                  }
-                              }}
-                          >
-                              <SelectTrigger className="w-[280px]">
-                                  <SelectValue placeholder="Seleccionar unidad" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                  {unitList.map(unit => {
-                                      const Icon = categoryIcons[unit.category];
-                                      return (
-                                          <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
-                                              <div className="flex items-center gap-2">
-                                                  <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                  <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
-                                              </div>
-                                          </SelectItem>
-                                      )
-                                  })}
-                              </SelectContent>
-                          </Select>
-                      </div>
-                   )}
-                </CardHeader>
-                <CardContent>
-                  {activeUnit && (
-                    <SeatSelector
-                        category={activeUnit.category}
-                        layoutType={activeUnit.type}
-                        occupiedSeats={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedSeats}
-                        occupiedCabins={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedCabins}
-                        selectedSeats={(editingReservation.reservation?.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => String(s.seatId))}
-                        selectedCabins={(editingReservation.reservation?.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => String(c.cabinId))}
-                        onAssignment={(id, type) => handleAssignment(reservation!.id, id, activeUnit.unitNumber, type)}
-                        maxAssignments={reservation.paxCount}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-          </div>
-        )})}
+        {renderDialogContent()}
         <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="destructive" className="mr-auto" onClick={() => {
               if (editingReservation.reservation) handleDelete(editingReservation.reservation.id);
@@ -586,6 +592,8 @@ const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label
         <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
     </div>
 )
+
+    
 
     
 
