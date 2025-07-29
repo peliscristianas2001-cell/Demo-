@@ -32,13 +32,9 @@ export default function EmployeeReservationsPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [isClient, setIsClient] = useState(false)
-  const [employeeId, setEmployeeId] = useState<string | null>(null)
-
+  
   useEffect(() => {
     setIsClient(true)
-    const storedEmployeeId = localStorage.getItem("ytl_employee_id")
-    setEmployeeId(storedEmployeeId)
-    
     const storedReservations = localStorage.getItem("ytl_reservations")
     const storedTours = localStorage.getItem("ytl_tours")
     const storedSellers = localStorage.getItem("ytl_sellers")
@@ -51,10 +47,8 @@ export default function EmployeeReservationsPage() {
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
   
   const reservationsByTrip = useMemo(() => {
-    if (!employeeId) return {};
-
     return activeTours.reduce((acc, tour) => {
-        const tripReservations = reservations.filter(res => res.tripId === tour.id && res.sellerId === employeeId);
+        const tripReservations = reservations.filter(res => res.tripId === tour.id);
         if (tripReservations.length > 0) {
             acc[tour.id] = {
                 tour,
@@ -63,7 +57,7 @@ export default function EmployeeReservationsPage() {
         }
         return acc;
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
-  }, [reservations, activeTours, employeeId]);
+  }, [reservations, activeTours]);
 
   const getStatusVariant = (status: ReservationStatus) => {
     switch (status) {
@@ -96,14 +90,11 @@ export default function EmployeeReservationsPage() {
    if (Object.keys(reservationsByTrip).length === 0) {
     return (
         <div className="text-center">
-            <h2 className="text-2xl font-bold">Mis Reservas</h2>
-            <p className="text-muted-foreground mb-4">Aquí verás todas las reservas que has generado.</p>
+            <h2 className="text-2xl font-bold">Reservas</h2>
+            <p className="text-muted-foreground mb-4">Aquí verás todas las reservas del sistema.</p>
             <Card>
                 <CardContent className="pt-12 pb-12">
-                    <p className="mb-4">Aún no has cargado ninguna venta.</p>
-                    <Button asChild>
-                        <Link href="/tours">Crear mi primera venta</Link>
-                    </Button>
+                    <p className="mb-4">No hay reservas cargadas en viajes activos.</p>
                 </CardContent>
             </Card>
         </div>
@@ -113,9 +104,9 @@ export default function EmployeeReservationsPage() {
   return (
     <div className="space-y-6">
        <div>
-        <h2 className="text-2xl font-bold">Mis Reservas</h2>
+        <h2 className="text-2xl font-bold">Gestión de Reservas</h2>
         <p className="text-muted-foreground">
-          Aquí verás todas las reservas que has generado para los viajes activos.
+          Aquí verás todas las reservas generadas para los viajes activos.
         </p>
       </div>
       <Card>
@@ -131,6 +122,7 @@ export default function EmployeeReservationsPage() {
                                 <TableHeader>
                                 <TableRow>
                                     <TableHead>Pasajero</TableHead>
+                                    <TableHead>Vendedor/a</TableHead>
                                     <TableHead>Asientos</TableHead>
                                     <TableHead>Pago</TableHead>
                                     <TableHead>Estado</TableHead>
@@ -139,9 +131,11 @@ export default function EmployeeReservationsPage() {
                                 <TableBody>
                                     {tripReservations.map((res) => {
                                         const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
+                                        const seller = sellers.find(s => s.id === res.sellerId);
                                         return (
                                             <TableRow key={res.id}>
                                                 <TableCell>{res.passenger}</TableCell>
+                                                <TableCell>{seller?.name || <Badge variant="outline">Sin Asignar</Badge>}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline">{assignedCount} / {res.paxCount}</Badge>
                                                 </TableCell>

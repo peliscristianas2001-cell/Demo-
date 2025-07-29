@@ -33,15 +33,11 @@ export default function EmployeeTicketsPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
-  const [employeeId, setEmployeeId] = useState<string | null>(null);
   
   useEffect(() => {
     setIsClient(true)
-    const storedEmployeeId = localStorage.getItem("ytl_employee_id");
-    setEmployeeId(storedEmployeeId);
-
     const storedTours = localStorage.getItem("ytl_tours")
-    setTickets(mockTickets); // In a real app, tickets would be filtered by employee
+    setTickets(mockTickets); 
     
     if (storedTours) {
       setTours(JSON.parse(storedTours, (key, value) => {
@@ -56,19 +52,12 @@ export default function EmployeeTicketsPage() {
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
 
   const filteredTickets = useMemo(() => {
-    // In a real app, we'd fetch tickets based on employeeId.
-    // For this mock, we filter based on reservations made by the employee.
-    const reservations = JSON.parse(localStorage.getItem("ytl_reservations") || "[]");
-    const myReservationIds = new Set(reservations.filter((r: any) => r.sellerId === employeeId).map((r: any) => r.id));
-
-    let employeeTickets = tickets.filter(ticket => myReservationIds.has(ticket.reservationId));
-
     if (selectedTripId === "all") {
       const activeTourIds = new Set(activeTours.map(t => t.id));
-      return employeeTickets.filter(ticket => activeTourIds.has(ticket.tripId));
+      return tickets.filter(ticket => activeTourIds.has(ticket.tripId));
     }
-    return employeeTickets.filter(ticket => ticket.tripId === selectedTripId);
-  }, [tickets, selectedTripId, activeTours, employeeId]);
+    return tickets.filter(ticket => ticket.tripId === selectedTripId);
+  }, [tickets, selectedTripId, activeTours]);
 
   const ticketRefs = useMemo(() => 
     filteredTickets.reduce((acc, ticket) => {
@@ -117,7 +106,7 @@ export default function EmployeeTicketsPage() {
       <div>
         <h2 className="text-2xl font-bold">Gestión de Tickets de Viaje</h2>
         <p className="text-muted-foreground">
-          Visualiza y descarga los tickets de tus pasajeros con reservas confirmadas.
+          Visualiza y descarga los tickets de los pasajeros con reservas confirmadas.
         </p>
       </div>
 
@@ -143,7 +132,7 @@ export default function EmployeeTicketsPage() {
             <CardContent className="p-12 text-center flex flex-col items-center gap-4">
                 <TicketCheck className="w-16 h-16 text-muted-foreground/50"/>
                 <p className="text-muted-foreground">
-                    No hay tickets para mostrar de tus ventas confirmadas.
+                    No hay tickets para el viaje seleccionado o no hay reservas confirmadas.
                 </p>
             </CardContent>
         </Card>
