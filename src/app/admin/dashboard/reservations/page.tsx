@@ -213,33 +213,48 @@ export default function ReservationsPage() {
     setReservations(reservations.filter(res => res.id !== reservationId));
   }
 
-  const handleSeatSelect = (reservationId: string, seatId: string, unitNumber: number) => {
+  const handleAssignment = (reservationId: string, assignmentId: string, unitNumber: number, type: 'seat' | 'cabin') => {
     setReservations(prevReservations => {
         return prevReservations.map(res => {
-            if (res.id === reservationId) {
-                let newAssignedSeats = [...(res.assignedSeats || [])];
-                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === seatId && s.unit === unitNumber);
+            if (res.id !== reservationId) return res;
 
+            if (type === 'seat') {
+                const newAssignedSeats = [...(res.assignedSeats || [])];
+                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
                 if (seatIndex > -1) {
                     newAssignedSeats.splice(seatIndex, 1);
-                } else {
-                    if (newAssignedSeats.length < res.paxCount) {
-                        newAssignedSeats.push({ seatId, unit: unitNumber });
-                    }
+                } else if (newAssignedSeats.length < res.paxCount) {
+                    newAssignedSeats.push({ seatId: assignmentId, unit: unitNumber });
                 }
                 return { ...res, assignedSeats: newAssignedSeats };
+            } else { // cabin
+                const newAssignedCabins = [...(res.assignedCabins || [])];
+                const cabinIndex = newAssignedCabins.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
+                 if (cabinIndex > -1) {
+                    newAssignedCabins.splice(cabinIndex, 1);
+                } else if (newAssignedCabins.length < res.paxCount) { // This might need adjustment based on cabin capacity
+                    newAssignedCabins.push({ cabinId: assignmentId, unit: unitNumber });
+                }
+                return { ...res, assignedCabins: newAssignedCabins };
             }
-            return res;
         });
     });
-};
+  };
 
-  const getOccupiedSeatsForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
-    return reservations
+  const getOccupiedForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
+    const occupiedSeats = reservations
       .filter(res => res.tripId === tourId && res.id !== currentReservationId)
       .flatMap(res => res.assignedSeats || [])
       .filter(seat => seat.unit === unitNumber)
       .map(seat => seat.seatId);
+      
+    const occupiedCabins = reservations
+      .filter(res => res.tripId === tourId && res.id !== currentReservationId)
+      .flatMap(res => res.assignedCabins || [])
+      .filter(cabin => cabin.unit === unitNumber)
+      .map(cabin => cabin.cabinId);
+      
+    return { occupiedSeats, occupiedCabins };
   };
 
   const getStatusVariant = (status: ReservationStatus) => {
@@ -475,10 +490,12 @@ export default function ReservationsPage() {
                                                                       <SeatSelector
                                                                           category={activeUnit.category}
                                                                           layoutType={activeUnit.type}
-                                                                          occupiedSeats={getOccupiedSeatsForTour(tour.id, activeUnit.unitNumber, res.id)}
+                                                                          occupiedSeats={getOccupiedForTour(tour.id, activeUnit.unitNumber, res.id).occupiedSeats}
+                                                                          occupiedCabins={getOccupiedForTour(tour.id, activeUnit.unitNumber, res.id).occupiedCabins}
                                                                           selectedSeats={(res.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
-                                                                          onSeatSelect={(seatId) => handleSeatSelect(res.id, seatId, activeUnit.unitNumber)}
-                                                                          maxSeats={res.paxCount}
+                                                                          selectedCabins={(res.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
+                                                                          onAssignment={(id, type) => handleAssignment(res.id, id, activeUnit.unitNumber, type)}
+                                                                          maxAssignments={res.paxCount}
                                                                       />
                                                                     )}
                                                                 </div>
@@ -538,5 +555,3 @@ export default function ReservationsPage() {
     </>
   )
 }
-
-    

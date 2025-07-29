@@ -9,10 +9,12 @@ import { Armchair, ShieldIcon, PersonStanding, Waves, PersonStandingIcon, BusIco
 interface SeatSelectorProps {
   category: LayoutCategory;
   layoutType: LayoutItemType;
-  occupiedSeats: string[]
-  selectedSeats: string[]
-  onSeatSelect: (seatId: string) => void
-  maxSeats: number
+  occupiedSeats: string[];
+  occupiedCabins: string[];
+  selectedSeats: string[];
+  selectedCabins: string[];
+  onAssignment: (id: string, type: 'seat' | 'cabin') => void;
+  maxAssignments: number;
 }
 
 const SpecialCell = ({ type }: { type: Cell['type'] }) => {
@@ -54,19 +56,24 @@ export function SeatSelector({
   category,
   layoutType,
   occupiedSeats,
+  occupiedCabins,
   selectedSeats,
-  onSeatSelect,
-  maxSeats,
+  selectedCabins,
+  onAssignment,
+  maxAssignments,
 }: SeatSelectorProps) {
     if (!layoutType || !category) return null;
 
     const layout = getLayoutForType(category, layoutType);
 
-    const handleSeatClick = (seatId: string) => {
-        if (selectedSeats.includes(seatId)) {
-            onSeatSelect(seatId); 
-        } else if (selectedSeats.length < maxSeats) {
-            onSeatSelect(seatId);
+    const handleAssignmentClick = (id: string, type: 'seat' | 'cabin') => {
+        const totalSelected = selectedSeats.length + selectedCabins.length;
+        const isSelected = type === 'seat' ? selectedSeats.includes(id) : selectedCabins.includes(id);
+
+        if (isSelected) {
+            onAssignment(id, type); 
+        } else if (totalSelected < maxAssignments) {
+            onAssignment(id, type);
         }
     }
 
@@ -100,8 +107,8 @@ export function SeatSelector({
                            
                             const isSeat = cell.type === 'seat';
                             const id = isSeat ? String(cell.number) : String(cell.number);
-                            const isOccupied = occupiedSeats.includes(id);
-                            const isSelected = selectedSeats.includes(id);
+                            const isOccupied = isSeat ? occupiedSeats.includes(id) : occupiedCabins.includes(id);
+                            const isSelected = isSeat ? selectedSeats.includes(id) : selectedCabins.includes(id);
                             const isDisabled = isOccupied;
                             const Icon = isSeat ? Armchair : BedDouble;
                             const text = isSeat ? String(cell.number) : cell.number;
@@ -109,7 +116,7 @@ export function SeatSelector({
                             return (
                                 <div key={key} className="flex items-center justify-center w-10 h-10 p-1 md:w-12 md:h-12">
                                     <button
-                                        onClick={() => handleSeatClick(id)}
+                                        onClick={() => handleAssignmentClick(id, cell.type)}
                                         disabled={isDisabled}
                                         className={cn(
                                         "relative flex items-center justify-center w-full h-full rounded-md transition-colors font-mono",
@@ -147,5 +154,3 @@ export function SeatSelector({
     </div>
   )
 }
-
-    

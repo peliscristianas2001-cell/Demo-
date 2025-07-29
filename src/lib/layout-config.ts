@@ -1,4 +1,5 @@
 
+
 import type { LayoutCategory, LayoutItemType, CustomLayoutConfig } from './types';
 
 export const defaultLayoutConfig: Record<LayoutCategory, Record<LayoutItemType, CustomLayoutConfig>> = {
@@ -100,7 +101,24 @@ export const defaultLayoutConfig: Record<LayoutCategory, Record<LayoutItemType, 
       },
   },
   airplanes: {},
-  cruises: {},
+  cruises: {
+     gran_crucero: {
+        name: 'Gran Crucero',
+        capacity: 200,
+        layout: {
+          floors: [
+            {
+              name: "Cubierta 1",
+              grid: [
+                 [{type: 'cabin', number: "C101", cabinType: 'Interior', capacity: 2}, {type: 'cabin', number: "C102", cabinType: 'Interior', capacity: 2}, {type: 'pasillo'}, {type: 'cabin', number: "C103", cabinType: 'Exterior', capacity: 2}, {type: 'cabin', number: "C104", cabinType: 'Exterior', capacity: 2}],
+                 [{type: 'cabin', number: "C105", cabinType: 'Interior', capacity: 4}, {type: 'cabin', number: "C106", cabinType: 'Interior', capacity: 4}, {type: 'pasillo'}, {type: 'cabin', number: "C107", cabinType: 'Exterior', capacity: 3}, {type: 'cabin', number: "C108", cabinType: 'Exterior', capacity: 3}],
+                 [{type: 'escalera'}, {type: 'baño'}, {type: 'pasillo'}, {type: 'anchor'}, {type: 'waves'}],
+              ]
+            }
+          ]
+        }
+     }
+  },
 };
 
 export function getLayoutConfig(forceNew = false): Record<LayoutCategory, Record<LayoutItemType, CustomLayoutConfig>> {

@@ -107,6 +107,28 @@ export const mockTours: Tour[] = [
     nights: 3,
     vehicles: { 'combi': 3 },
   },
+  {
+    id: '7',
+    destination: 'Crucero a la Antártida',
+    date: new Date('2026-03-10T18:00:00'),
+    price: 1250000,
+    flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Ushuaia",
+    nights: 10,
+    roomType: "Camarote con balcón",
+    departurePoint: "Puerto de Ushuaia",
+    platform: "Muelle A",
+    presentationTime: "16:00",
+    departureTime: "18:00",
+    bus: "N/A",
+    observations: "Requiere pasaporte. Ropa de muy alto abrigo es indispensable.",
+    cancellationPolicy: "Cancelaciones con menos de 90 días de antelación pierden el 100% del valor.",
+    coordinator: "Laura Fernández",
+    coordinatorPhone: "11-2233-4455",
+    cruises: { 'gran_crucero': 1 },
+    insurance: { active: true, cost: 80000, coverage: "Cobertura de alta complejidad y evacuación", minAge: 18, maxAge: 70 },
+    pension: { active: true, type: 'Completa', description: "Todas las comidas incluidas."},
+  }
 ];
 
 export const mockSellers: Seller[] = [
@@ -138,6 +160,7 @@ export const mockReservations: Reservation[] = [
     { id: "R004", tripId: "3", passenger: "Ana Martínez", passengerIds: ["P004"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 270000 },
     { id: "R005", tripId: "2", passenger: "Lucía Hernández", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000 },
     { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
+    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 1250000 },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');
