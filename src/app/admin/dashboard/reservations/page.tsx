@@ -319,9 +319,13 @@ export default function ReservationsPage() {
         </DialogHeader>
         {editingReservation.reservation && (() => {
            const reservation = editingReservation.reservation!;
+           const tour = tours.find(t => t.id === reservation.tripId);
+           if (!tour) return null;
+
            const installments = reservation.installments || { count: 1, details: [{ amount: reservation.finalPrice, isPaid: false }] };
            const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
            const balance = reservation.finalPrice - paidAmount;
+           const unitList = getExpandedTransportList(tour);
 
           return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
@@ -405,13 +409,13 @@ export default function ReservationsPage() {
                 <CardHeader>
                   <CardTitle>Asignación de Lugares</CardTitle>
                   <CardDescription>Reserva para {reservation.paxCount} pasajeros.</CardDescription>
-                   {activeUnit && getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!)?.length > 1 && (
+                   {activeUnit && unitList.length > 1 && (
                      <div className="flex items-center gap-2 pt-2">
                           <Bus className="w-5 h-5 text-muted-foreground"/>
                           <Select
-                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                              value={activeUnit ? getTransportIdentifier(unitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
                               onValueChange={(val) => {
-                                  const selectedUnit = getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).find(b => getTransportIdentifier(b) === val);
+                                  const selectedUnit = unitList.find(b => getTransportIdentifier(b) === val);
                                   if (selectedUnit) {
                                       setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
                                   }
@@ -421,13 +425,13 @@ export default function ReservationsPage() {
                                   <SelectValue placeholder="Seleccionar unidad" />
                               </SelectTrigger>
                               <SelectContent>
-                                  {getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).map(unit => {
+                                  {unitList.map(unit => {
                                       const Icon = categoryIcons[unit.category];
                                       return (
                                           <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
                                               <div className="flex items-center gap-2">
                                                   <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                  <span>{unit.typeName} {getTransportCount(tours.find(t=>t.id === reservation.tripId)!) > 1 ? unit.instanceNum : ''}</span>
+                                                  <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
                                               </div>
                                           </SelectItem>
                                       )
@@ -438,7 +442,7 @@ export default function ReservationsPage() {
                    )}
                 </CardHeader>
                 <CardContent>
-                  {activeUnit && reservation && (
+                  {activeUnit && (
                     <SeatSelector
                         category={activeUnit.category}
                         layoutType={activeUnit.type}
@@ -501,7 +505,7 @@ export default function ReservationsPage() {
                                {tripReservations.length > 0 ? (
                                 <div className="space-y-2 mt-4">
                                 {tripReservations.map((res) => {
-                                    const resPassengers = passengers.filter(p => res.passengerIds.includes(p.id));
+                                    const resPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
                                     const mainPassenger = resPassengers[0];
                                     const seller = sellers.find(s => s.id === res.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
