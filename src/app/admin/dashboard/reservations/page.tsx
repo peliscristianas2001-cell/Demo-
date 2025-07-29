@@ -214,31 +214,39 @@ export default function ReservationsPage() {
   }
 
   const handleAssignment = (reservationId: string, assignmentId: string, unitNumber: number, type: 'seat' | 'cabin') => {
-    setReservations(prevReservations => {
-        return prevReservations.map(res => {
-            if (res.id !== reservationId) return res;
+      setReservations(prev => prev.map(res => {
+          if (res.id !== reservationId) {
+              return res;
+          }
 
-            if (type === 'seat') {
-                const newAssignedSeats = [...(res.assignedSeats || [])];
-                const seatIndex = newAssignedSeats.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
-                if (seatIndex > -1) {
-                    newAssignedSeats.splice(seatIndex, 1);
-                } else if (newAssignedSeats.length < res.paxCount) {
-                    newAssignedSeats.push({ seatId: assignmentId, unit: unitNumber });
-                }
-                return { ...res, assignedSeats: newAssignedSeats };
-            } else { // cabin
-                const newAssignedCabins = [...(res.assignedCabins || [])];
-                const cabinIndex = newAssignedCabins.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
-                 if (cabinIndex > -1) {
-                    newAssignedCabins.splice(cabinIndex, 1);
-                } else if (newAssignedCabins.length < res.paxCount) { // This might need adjustment based on cabin capacity
-                    newAssignedCabins.push({ cabinId: assignmentId, unit: unitNumber });
-                }
-                return { ...res, assignedCabins: newAssignedCabins };
-            }
-        });
-    });
+          const updatedRes = { ...res };
+
+          if (type === 'seat') {
+              const currentAssignments = updatedRes.assignedSeats || [];
+              const existingIndex = currentAssignments.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
+
+              if (existingIndex > -1) {
+                  // If seat exists, remove it
+                  updatedRes.assignedSeats = currentAssignments.filter((_, index) => index !== existingIndex);
+              } else if (currentAssignments.length < updatedRes.paxCount) {
+                  // If seat doesn't exist and there's space, add it
+                  updatedRes.assignedSeats = [...currentAssignments, { seatId: assignmentId, unit: unitNumber }];
+              }
+          } else if (type === 'cabin') {
+              const currentAssignments = updatedRes.assignedCabins || [];
+              const existingIndex = currentAssignments.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
+
+              if (existingIndex > -1) {
+                  // If cabin exists, remove it
+                  updatedRes.assignedCabins = currentAssignments.filter((_, index) => index !== existingIndex);
+              } else if (currentAssignments.length < updatedRes.paxCount) {
+                  // If cabin doesn't exist and there's space, add it
+                  updatedRes.assignedCabins = [...currentAssignments, { cabinId: assignmentId, unit: unitNumber }];
+              }
+          }
+
+          return updatedRes;
+      }));
   };
 
   const getOccupiedForTour = (tourId: string, unitNumber: number, currentReservationId: string) => {
@@ -555,3 +563,5 @@ export default function ReservationsPage() {
     </>
   )
 }
+
+    
