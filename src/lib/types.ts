@@ -60,10 +60,26 @@ export interface Tour {
   date: Date;
   price: number;
   flyerUrl: string;
+  
+  origin?: string;
+  nights?: number;
+  roomType?: string;
+  departurePoint?: string;
+  platform?: string;
+  presentationTime?: string;
+  departureTime?: string;
+  bus?: string;
+
   insurance?: Insurance;
   pension?: Pension;
   pricingTiers?: PricingTier[];
   costs?: TourCosts;
+  
+  observations?: string;
+  cancellationPolicy?: string;
+  coordinator?: string;
+  coordinatorPhone?: string;
+
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;
@@ -116,6 +132,7 @@ export type Ticket = {
   passengerDni: string;
   assignment: AssignedSeat | AssignedCabin;
   qrCodeUrl: string;
+  reservation: Reservation; // Include full reservation for ticket details
 }
 
 export type Seller = {

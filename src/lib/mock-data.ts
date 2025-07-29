@@ -10,6 +10,18 @@ export const mockTours: Tour[] = [
     date: new Date('2025-08-15T09:00:00'),
     price: 150000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Rosario",
+    nights: 5,
+    roomType: "Doble / Triple",
+    departurePoint: "Terminal de Ómnibus",
+    platform: "12",
+    presentationTime: "08:30",
+    departureTime: "09:00",
+    bus: "Cama Ejecutivo",
+    observations: "Llevar ropa de abrigo.",
+    cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
+    coordinator: "Angela",
+    coordinatorPhone: "341-504-0710",
     vehicles: { 'doble_piso': 2 }, 
     insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
     pension: { active: true, type: 'Media', description: "Desayuno y cena incluidos."},
@@ -32,6 +44,18 @@ export const mockTours: Tour[] = [
     date: new Date('2025-09-20T21:00:00'),
     price: 125000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Buenos Aires",
+    nights: 3,
+    roomType: "Doble",
+    departurePoint: "Terminal Dellepiane",
+    platform: "5",
+    presentationTime: "20:30",
+    departureTime: "21:00",
+    bus: "Semicama",
+    observations: "No olvidar repelente de insectos.",
+    cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
+    coordinator: "Marcos",
+    coordinatorPhone: "11-2233-4455",
     vehicles: { 'micro_largo': 1 },
     pricingTiers: [
       { id: 'T2_CHILD', name: 'Menor', price: 100000 },
@@ -47,6 +71,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-10-05T10:00:00'),
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Córdoba",
     vehicles: { 'micro_bajo': 1 },
     pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
   },
@@ -56,6 +81,7 @@ export const mockTours: Tour[] = [
     date: new Date('2025-11-12T08:00:00'),
     price: 180000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Salta",
     vehicles: { 'micro_bajo': 1, 'combi': 1 },
   },
   {
@@ -64,6 +90,7 @@ export const mockTours: Tour[] = [
     date: new Date('2026-02-20T22:00:00'),
     price: 250000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "Buenos Aires",
     vehicles: { 'doble_piso': 1 },
   },
   {
@@ -72,6 +99,7 @@ export const mockTours: Tour[] = [
     date: new Date('2026-01-15T07:00:00'),
     price: 85000,
     flyerUrl: 'https://placehold.co/400x500.png',
+    origin: "La Plata",
     vehicles: { 'combi': 3 },
   },
 ];
@@ -114,48 +142,45 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
     const tour = mockTours.find(t => t.id === res.tripId);
     if (!tour) return [];
 
-    const passengerDni = 'XX.XXX.XXX'; // Placeholder DNI
+    const mainPassenger = mockPassengers.find(p => p.id === res.passengerIds[0]);
 
-    const generateTicketsForAssignments = (assignments: (AssignedSeat | { cabinId: string, unit: number })[], type: 'seat' | 'cabin') => {
-        assignments.forEach((assignment, index) => {
-            const isSeat = type === 'seat';
-            const assignmentId = isSeat ? (assignment as AssignedSeat).seatId : (assignment as { cabinId: string }).cabinId;
-            const ticketId = `${res.id}-${isSeat ? 'S' : 'C'}${index + 1}`;
-            
-            const qrData = {
-                tId: ticketId,
-                rId: res.id,
-                pax: res.passenger,
-                dni: passengerDni,
-                dest: tour.destination,
-                date: tour.date.toISOString(),
-                asg: {
-                    type: type,
-                    val: assignmentId,
-                    unit: assignment.unit,
-                },
-            };
+    if (!mainPassenger) return [];
 
-            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`;
+    // Create one ticket per reservation for now, representing the group
+    const ticketId = `${res.id}-TKT`;
+    const assignedSeat = res.assignedSeats.length > 0 ? res.assignedSeats[0] : undefined;
+    
+    // We'll just use the first assigned seat/cabin for the main ticket for simplicity
+    const assignment = res.assignedSeats.length > 0 
+      ? res.assignedSeats[0] 
+      : res.assignedCabins.length > 0 
+        ? res.assignedCabins[0] 
+        : { seatId: "S/A", unit: 0 };
 
-            ticketsForReservation.push({
-                id: ticketId,
-                reservationId: res.id,
-                tripId: res.tripId,
-                passengerName: res.passenger,
-                passengerDni: passengerDni,
-                assignment: assignment as any, // Cast because the structures are compatible
-                qrCodeUrl: qrCodeUrl,
-            });
-        });
+
+    const qrData = {
+        tId: ticketId,
+        rId: res.id,
+        pax: res.passenger,
+        paxCount: res.paxCount,
+        dni: mainPassenger.dni,
+        dest: tour.destination,
+        date: tour.date.toISOString(),
+        asg: assignment
     };
 
-    if (res.assignedSeats) {
-        generateTicketsForAssignments(res.assignedSeats, 'seat');
-    }
-    if (res.assignedCabins) {
-        generateTicketsForAssignments(res.assignedCabins, 'cabin');
-    }
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`;
+
+    ticketsForReservation.push({
+        id: ticketId,
+        reservationId: res.id,
+        tripId: res.tripId,
+        passengerName: res.passenger,
+        passengerDni: mainPassenger.dni, // Use main passenger's DNI
+        assignment: assignment as AssignedSeat | AssignedCabin, // Cast for simplicity
+        qrCodeUrl: qrCodeUrl,
+        reservation: res
+    });
 
     return ticketsForReservation;
 });

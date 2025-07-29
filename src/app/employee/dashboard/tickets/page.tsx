@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useMemo, useEffect, createRef } from "react"
@@ -24,13 +25,14 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockTickets } from "@/lib/mock-data"
-import type { Tour, Ticket } from "@/lib/types"
+import { mockTours, mockTickets, mockSellers } from "@/lib/mock-data"
+import type { Tour, Ticket, Seller } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function EmployeeTicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
   
@@ -38,6 +40,7 @@ export default function EmployeeTicketsPage() {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
     setTickets(mockTickets); 
+    setSellers(mockSellers);
     
     if (storedTours) {
       setTours(JSON.parse(storedTours, (key, value) => {
@@ -77,6 +80,7 @@ export default function EmployeeTicketsPage() {
         style: {
           transform: 'scale(1)',
           transformOrigin: 'top left',
+          fontFamily: 'sans-serif',
         },
         fetchRequestInit: {
             headers: new Headers(),
@@ -85,7 +89,7 @@ export default function EmployeeTicketsPage() {
       });
 
       const pdf = new jsPDF({
-        orientation: "landscape",
+        orientation: "portrait",
         unit: "px",
         format: [ticketElement.offsetWidth, ticketElement.offsetHeight]
       });
@@ -140,6 +144,7 @@ export default function EmployeeTicketsPage() {
         <Accordion type="multiple" className="w-full space-y-4">
           {filteredTickets.map((ticket) => {
             const tour = tours.find(t => t.id === ticket.tripId);
+            const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
             if (!tour) return null;
             
             return (
@@ -159,9 +164,9 @@ export default function EmployeeTicketsPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="bg-secondary/20 p-4 space-y-4">
-                    <TravelTicket ticket={ticket} tour={tour} ref={ticketRefs[ticket.id]}/>
-                    <div className="flex justify-end">
+                  <div className="bg-secondary/20 p-4 space-y-4 flex flex-col items-center">
+                    <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
+                    <div className="flex justify-end w-full">
                       <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
                         <Download className="mr-2 h-4 w-4" />
                         Descargar PDF

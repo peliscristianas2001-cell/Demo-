@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -51,15 +52,34 @@ const defaultInsurance: Insurance = { active: false, coverage: '', cost: 0, minA
 const defaultPension: Pension = { active: false, type: 'Media', description: '' };
 const defaultCosts: TourCosts = { transport: 0, hotel: 0, extras: [] };
 
+const defaultTourData: Omit<Tour, 'id' | 'destination' | 'date' | 'price' | 'flyerUrl'> = {
+    origin: "",
+    nights: 0,
+    roomType: "",
+    departurePoint: "",
+    platform: "",
+    presentationTime: "",
+    departureTime: "",
+    bus: "",
+    observations: "",
+    cancellationPolicy: "",
+    coordinator: "",
+    coordinatorPhone: "",
+    insurance: defaultInsurance,
+    pension: defaultPension,
+    pricingTiers: [],
+    costs: defaultCosts,
+    vehicles: {},
+    airplanes: {},
+    cruises: {}
+}
+
+
 export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) {
-  const [destination, setDestination] = useState("")
-  const [date, setDate] = useState<Date | undefined>()
-  const [price, setPrice] = useState<number | "">("")
+  const [formData, setFormData] = useState<Omit<Tour, 'id' | 'flyerUrl'>>({
+      destination: "", date: new Date(), price: 0, ...defaultTourData
+  });
   const [layoutEntries, setLayoutEntries] = useState<Record<LayoutCategory, LayoutEntry[]>>({ vehicles: [], airplanes: [], cruises: [] });
-  const [insurance, setInsurance] = useState<Insurance>(defaultInsurance);
-  const [pension, setPension] = useState<Pension>(defaultPension);
-  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
-  const [costs, setCosts] = useState<TourCosts>(defaultCosts);
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
@@ -82,13 +102,27 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   useEffect(() => {
     if (isOpen) {
         if (tour) {
-            setDestination(tour.destination)
-            setDate(tour.date ? new Date(tour.date) : undefined)
-            setPrice(tour.price || "")
-            setInsurance(tour.insurance || defaultInsurance);
-            setPension(tour.pension || defaultPension);
-            setPricingTiers(tour.pricingTiers || []);
-            setCosts(tour.costs || defaultCosts);
+            setFormData({
+              destination: tour.destination,
+              date: tour.date ? new Date(tour.date) : new Date(),
+              price: tour.price || 0,
+              origin: tour.origin || "",
+              nights: tour.nights || 0,
+              roomType: tour.roomType || "",
+              departurePoint: tour.departurePoint || "",
+              platform: tour.platform || "",
+              presentationTime: tour.presentationTime || "",
+              departureTime: tour.departureTime || "",
+              bus: tour.bus || "",
+              observations: tour.observations || "",
+              cancellationPolicy: tour.cancellationPolicy || "",
+              coordinator: tour.coordinator || "",
+              coordinatorPhone: tour.coordinatorPhone || "",
+              insurance: tour.insurance || defaultInsurance,
+              pension: tour.pension || defaultPension,
+              pricingTiers: tour.pricingTiers || [],
+              costs: tour.costs || defaultCosts,
+            });
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
             let currentId = 0;
@@ -106,19 +140,17 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             setNextId(currentId);
         } else {
             // Reset form for new trip
-            setDestination("");
-            setDate(undefined);
-            setPrice("");
+            setFormData({destination: "", date: new Date(), price: 0, ...defaultTourData});
             setLayoutEntries({ vehicles: [], airplanes: [], cruises: [] });
-            setInsurance(defaultInsurance);
-            setPension(defaultPension);
-            setPricingTiers([]);
-            setCosts(defaultCosts);
             setNextId(1);
         }
         setIsLoading(false); 
     }
   }, [tour, isOpen])
+  
+  const handleFormChange = (field: keyof typeof formData, value: any) => {
+    setFormData(prev => ({...prev, [field]: value}));
+  }
 
   const handleAddEntry = (category: LayoutCategory) => {
     setLayoutEntries(prev => ({
@@ -154,60 +186,58 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   }
 
   const handleInsuranceChange = (field: keyof Insurance, value: any) => {
-    setInsurance(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, insurance: { ...prev.insurance!, [field]: value }}));
   }
   
   const handlePensionChange = (field: keyof Pension, value: any) => {
-    setPension(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, pension: { ...prev.pension!, [field]: value }}));
   }
 
   const handleAddTier = () => {
-      setPricingTiers(prev => [...prev, { id: `T-${Math.random().toString(36).substring(2, 9)}`, name: '', price: 0 }]);
+      setFormData(prev => ({...prev, pricingTiers: [...(prev.pricingTiers || []), { id: `T-${Math.random().toString(36).substring(2, 9)}`, name: '', price: 0 }]}))
   }
 
   const handleTierChange = (id: string, field: 'name' | 'price', value: string | number) => {
-    setPricingTiers(prev => prev.map(tier => 
+    setFormData(prev => ({...prev, pricingTiers: prev.pricingTiers?.map(tier => 
         tier.id === id ? { ...tier, [field]: value } : tier
-    ));
+    )}));
   }
 
   const handleRemoveTier = (id: string) => {
-    setPricingTiers(prev => prev.filter(tier => tier.id !== id));
+    setFormData(prev => ({...prev, pricingTiers: prev.pricingTiers?.filter(tier => tier.id !== id)}));
   }
   
   const handleCostChange = (field: 'transport' | 'hotel', value: string) => {
-    setCosts(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
+    setFormData(prev => ({ ...prev, costs: { ...prev.costs!, [field]: parseFloat(value) || 0 }}));
   }
 
   const handleAddExtraCost = () => {
-    setCosts(prev => ({...prev, extras: [...(prev.extras || []), {id: `E-${Math.random().toString(36).substring(2, 9)}`, description: '', amount: 0}]}));
+    setFormData(prev => ({...prev, costs: {...prev.costs, extras: [...(prev.costs?.extras || []), {id: `E-${Math.random().toString(36).substring(2, 9)}`, description: '', amount: 0}]}}));
   }
 
   const handleExtraCostChange = (id: string, field: 'description' | 'amount', value: string | number) => {
-    setCosts(prev => ({ ...prev, extras: prev.extras?.map(c => c.id === id ? {...c, [field]: value} : c)}));
+    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: prev.costs?.extras?.map(c => c.id === id ? {...c, [field]: value} : c)}}));
   }
 
   const handleRemoveExtraCost = (id: string) => {
-    setCosts(prev => ({ ...prev, extras: prev.extras?.filter(c => c.id !== id)}));
+    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: prev.costs?.extras?.filter(c => c.id !== id)}}));
   }
 
 
   const handleSubmit = () => {
-    if (!destination || !date || price === "" || price <= 0) {
+    const { destination, date, price } = formData;
+    if (!destination || !date || price === null || price <= 0) {
       toast({ title: "Faltan datos", description: "Por favor, completa destino, fecha y un precio válido.", variant: "destructive" });
       return;
     }
 
     const tourDataToSave: Tour = {
         id: tour?.id || "",
-        destination,
-        date,
-        price,
         flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
-        insurance: insurance.active ? insurance : undefined,
-        pension: pension.active ? pension : undefined,
-        pricingTiers: pricingTiers.length > 0 ? pricingTiers : undefined,
-        costs: costs,
+        ...formData,
+        insurance: formData.insurance?.active ? formData.insurance : undefined,
+        pension: formData.pension?.active ? formData.pension : undefined,
+        pricingTiers: (formData.pricingTiers?.length || 0) > 0 ? formData.pricingTiers : undefined,
     };
 
     let totalTransportUnits = 0;
@@ -247,7 +277,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{tour ? "Editar Viaje" : "Crear Nuevo Viaje"}</DialogTitle>
           <DialogDescription>
@@ -259,19 +289,45 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="destination">Destino</Label>
-                    <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
+                    <Input id="destination" value={formData.destination} onChange={(e) => handleFormChange('destination', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="date">Fecha</Label>
-                    <DatePicker id="date" date={date} setDate={setDate} className="h-10 w-full" />
+                    <DatePicker id="date" date={formData.date} setDate={(d) => handleFormChange('date', d)} className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="price">Precio Base (Adulto)</Label>
-                    <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : parseFloat(e.target.value))} placeholder="0"/>
+                    <Input id="price" type="number" value={formData.price} onChange={(e) => handleFormChange('price', parseFloat(e.target.value) || 0)} placeholder="0"/>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <Accordion type="multiple" className="w-full" defaultValue={['transport', 'services']}>
+                    <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport', 'services', 'costs', 'pricing']}>
+                         <AccordionItem value="general">
+                            <AccordionTrigger className="text-base font-medium">Información para Tickets</AccordionTrigger>
+                            <AccordionContent className="pt-4 space-y-4">
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2"><Label>Origen</Label><Input value={formData.origin} onChange={(e) => handleFormChange('origin', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Noches</Label><Input type="number" value={formData.nights} onChange={(e) => handleFormChange('nights', parseInt(e.target.value) || 0)} /></div>
+                                  <div className="space-y-2"><Label>Tipo Habitación</Label><Input value={formData.roomType} onChange={(e) => handleFormChange('roomType', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Bus</Label><Input value={formData.bus} onChange={(e) => handleFormChange('bus', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Punto de Embarque</Label><Input value={formData.departurePoint} onChange={(e) => handleFormChange('departurePoint', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Plataforma</Label><Input value={formData.platform} onChange={(e) => handleFormChange('platform', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Hora Presentación</Label><Input value={formData.presentationTime} onChange={(e) => handleFormChange('presentationTime', e.target.value)} placeholder="HH:MM"/></div>
+                                  <div className="space-y-2"><Label>Hora Salida</Label><Input value={formData.departureTime} onChange={(e) => handleFormChange('departureTime', e.target.value)} placeholder="HH:MM"/></div>
+                                  <div className="space-y-2"><Label>Coordinador</Label><Input value={formData.coordinator} onChange={(e) => handleFormChange('coordinator', e.target.value)} /></div>
+                                  <div className="space-y-2"><Label>Tel. Coordinador</Label><Input value={formData.coordinatorPhone} onChange={(e) => handleFormChange('coordinatorPhone', e.target.value)} /></div>
+                               </div>
+                                <div className="space-y-2">
+                                  <Label>Observaciones</Label>
+                                  <Textarea value={formData.observations} onChange={(e) => handleFormChange('observations', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Política de Cancelación</Label>
+                                  <Textarea value={formData.cancellationPolicy} onChange={(e) => handleFormChange('cancellationPolicy', e.target.value)} />
+                                </div>
+                            </AccordionContent>
+                         </AccordionItem>
+                        
                          <AccordionItem value="transport">
                             <AccordionTrigger className="text-base font-medium">Configuración de Transporte</AccordionTrigger>
                             <AccordionContent>
@@ -309,16 +365,16 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                             <AccordionContent className="pt-4 space-y-4">
                                <div className="space-y-2">
                                    <Label htmlFor="cost-transport">Costo Transporte (Micro)</Label>
-                                   <Input id="cost-transport" type="number" value={costs.transport || ''} onChange={(e) => handleCostChange('transport', e.target.value)} placeholder="0"/>
+                                   <Input id="cost-transport" type="number" value={formData.costs?.transport || ''} onChange={(e) => handleCostChange('transport', e.target.value)} placeholder="0"/>
                                </div>
                                <div className="space-y-2">
                                    <Label htmlFor="cost-hotel">Costo Hotel</Label>
-                                   <Input id="cost-hotel" type="number" value={costs.hotel || ''} onChange={(e) => handleCostChange('hotel', e.target.value)} placeholder="0"/>
+                                   <Input id="cost-hotel" type="number" value={formData.costs?.hotel || ''} onChange={(e) => handleCostChange('hotel', e.target.value)} placeholder="0"/>
                                </div>
                                <div className="space-y-4 p-4 border rounded-lg">
                                   <Label className="text-lg font-medium">Gastos Extras</Label>
                                   <div className="space-y-3">
-                                    {(costs.extras || []).map(cost => (
+                                    {(formData.costs?.extras || []).map(cost => (
                                        <div key={cost.id} className="flex items-center gap-2">
                                         <Input 
                                           placeholder="Descripción del gasto" 
@@ -351,7 +407,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                 <div className="space-y-4 p-4 border rounded-lg">
                                   <Label className="text-lg font-medium">Tarifas por Pasajero</Label>
                                   <div className="space-y-3">
-                                    {pricingTiers.map(tier => (
+                                    {formData.pricingTiers?.map(tier => (
                                       <div key={tier.id} className="flex items-center gap-2">
                                         <Input 
                                           placeholder="Nombre (Ej: Niño)" 
@@ -385,26 +441,26 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                 <div className="space-y-4 p-4 border rounded-lg">
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="insurance-active" className="text-lg font-medium">Seguro</Label>
-                                        <Switch id="insurance-active" checked={insurance.active} onCheckedChange={(c) => handleInsuranceChange('active', c)} />
+                                        <Switch id="insurance-active" checked={formData.insurance?.active} onCheckedChange={(c) => handleInsuranceChange('active', c)} />
                                     </div>
-                                    {insurance.active && (
+                                    {formData.insurance?.active && (
                                         <div className="space-y-4">
                                              <div className="space-y-2">
                                                 <Label htmlFor="insurance-coverage">Cobertura</Label>
-                                                <Textarea id="insurance-coverage" placeholder="Detalles de la cobertura del seguro..." value={insurance.coverage} onChange={(e) => handleInsuranceChange('coverage', e.target.value)}/>
+                                                <Textarea id="insurance-coverage" placeholder="Detalles de la cobertura del seguro..." value={formData.insurance.coverage} onChange={(e) => handleInsuranceChange('coverage', e.target.value)}/>
                                             </div>
                                             <div className="grid grid-cols-3 gap-2">
                                                  <div className="space-y-2">
                                                     <Label htmlFor="insurance-cost">Costo</Label>
-                                                    <Input id="insurance-cost" type="number" value={insurance.cost} onChange={e => handleInsuranceChange('cost', parseFloat(e.target.value) || 0)}/>
+                                                    <Input id="insurance-cost" type="number" value={formData.insurance.cost} onChange={e => handleInsuranceChange('cost', parseFloat(e.target.value) || 0)}/>
                                                 </div>
                                                  <div className="space-y-2">
                                                     <Label htmlFor="insurance-minAge">Edad Mín.</Label>
-                                                    <Input id="insurance-minAge" type="number" value={insurance.minAge} onChange={e => handleInsuranceChange('minAge', parseInt(e.target.value) || 0)}/>
+                                                    <Input id="insurance-minAge" type="number" value={formData.insurance.minAge} onChange={e => handleInsuranceChange('minAge', parseInt(e.target.value) || 0)}/>
                                                 </div>
                                                  <div className="space-y-2">
                                                     <Label htmlFor="insurance-maxAge">Edad Máx.</Label>
-                                                    <Input id="insurance-maxAge" type="number" value={insurance.maxAge} onChange={e => handleInsuranceChange('maxAge', parseInt(e.target.value) || 0)}/>
+                                                    <Input id="insurance-maxAge" type="number" value={formData.insurance.maxAge} onChange={e => handleInsuranceChange('maxAge', parseInt(e.target.value) || 0)}/>
                                                 </div>
                                             </div>
                                         </div>
@@ -414,13 +470,13 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                 <div className="space-y-4 p-4 border rounded-lg">
                                      <div className="flex items-center justify-between">
                                         <Label htmlFor="pension-active" className="text-lg font-medium">Pensión</Label>
-                                        <Switch id="pension-active" checked={pension.active} onCheckedChange={(c) => handlePensionChange('active', c)} />
+                                        <Switch id="pension-active" checked={formData.pension?.active} onCheckedChange={(c) => handlePensionChange('active', c)} />
                                     </div>
-                                    {pension.active && (
+                                    {formData.pension?.active && (
                                         <div className="space-y-4">
                                              <div className="space-y-2">
                                                 <Label htmlFor="pension-type">Tipo de Pensión</Label>
-                                                <Select value={pension.type} onValueChange={(v) => handlePensionChange('type', v)}>
+                                                <Select value={formData.pension.type} onValueChange={(v) => handlePensionChange('type', v)}>
                                                     <SelectTrigger id="pension-type"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="Media">Media Pensión</SelectItem>
@@ -431,7 +487,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="pension-description">Descripción</Label>
-                                                <Textarea id="pension-description" placeholder="Ej: Incluye desayuno y cena, sin bebidas." value={pension.description} onChange={(e) => handlePensionChange('description', e.target.value)}/>
+                                                <Textarea id="pension-description" placeholder="Ej: Incluye desayuno y cena, sin bebidas." value={formData.pension.description} onChange={(e) => handlePensionChange('description', e.target.value)}/>
                                             </div>
                                         </div>
                                     )}
