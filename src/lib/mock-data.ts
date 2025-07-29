@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger } from './types';
+import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger, AssignedCabin } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -18,9 +18,9 @@ export const mockTours: Tour[] = [
     presentationTime: "08:30",
     departureTime: "09:00",
     bus: "Cama Ejecutivo",
-    observations: "Llevar ropa de abrigo.",
+    observations: "Llevar ropa de abrigo. No incluye entrada a parques nacionales.",
     cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
-    coordinator: "Angela",
+    coordinator: "Angela Rojas",
     coordinatorPhone: "341-504-0710",
     vehicles: { 'doble_piso': 2 }, 
     insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
@@ -52,9 +52,9 @@ export const mockTours: Tour[] = [
     presentationTime: "20:30",
     departureTime: "21:00",
     bus: "Semicama",
-    observations: "No olvidar repelente de insectos.",
+    observations: "No olvidar repelente de insectos y protector solar.",
     cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
-    coordinator: "Marcos",
+    coordinator: "Marcos Gil",
     coordinatorPhone: "11-2233-4455",
     vehicles: { 'micro_largo': 1 },
     pricingTiers: [
@@ -72,6 +72,8 @@ export const mockTours: Tour[] = [
     price: 135000,
     flyerUrl: 'https://placehold.co/400x500.png',
     origin: "Córdoba",
+    nights: 4,
+    bus: 'Cama',
     vehicles: { 'micro_bajo': 1 },
     pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
   },
@@ -82,6 +84,7 @@ export const mockTours: Tour[] = [
     price: 180000,
     flyerUrl: 'https://placehold.co/400x500.png',
     origin: "Salta",
+    nights: 6,
     vehicles: { 'micro_bajo': 1, 'combi': 1 },
   },
   {
@@ -91,6 +94,7 @@ export const mockTours: Tour[] = [
     price: 250000,
     flyerUrl: 'https://placehold.co/400x500.png',
     origin: "Buenos Aires",
+    nights: 7,
     vehicles: { 'doble_piso': 1 },
   },
   {
@@ -100,6 +104,7 @@ export const mockTours: Tour[] = [
     price: 85000,
     flyerUrl: 'https://placehold.co/400x500.png',
     origin: "La Plata",
+    nights: 3,
     vehicles: { 'combi': 3 },
   },
 ];

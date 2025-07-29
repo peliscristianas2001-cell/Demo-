@@ -25,8 +25,8 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockTickets, mockSellers } from "@/lib/mock-data"
-import type { Tour, Ticket, Seller } from "@/lib/types"
+import { mockTours, mockSellers, mockReservations } from "@/lib/mock-data"
+import type { Tour, Ticket, Seller, Reservation } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function EmployeeTicketsPage() {
@@ -39,17 +39,36 @@ export default function EmployeeTicketsPage() {
   useEffect(() => {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
-    setTickets(mockTickets); 
-    setSellers(mockSellers);
-    
-    if (storedTours) {
-      setTours(JSON.parse(storedTours, (key, value) => {
+    const storedSellers = localStorage.getItem("ytl_sellers")
+    const storedReservations = localStorage.getItem("ytl_reservations")
+
+    const currentReservations = storedReservations ? JSON.parse(storedReservations) : mockReservations;
+    const currentSellers = storedSellers ? JSON.parse(storedSellers) : mockSellers;
+    const currentTours = storedTours ? JSON.parse(storedTours, (key, value) => {
         if (key === 'date') return new Date(value);
         return value;
-      }));
-    } else {
-      setTours(mockTours)
-    }
+    }) : mockTours;
+    
+    setTours(currentTours);
+    setSellers(currentSellers);
+    
+    // Generate tickets from confirmed reservations
+    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
+    const generatedTickets = confirmedReservations.map((res: Reservation) => {
+        const ticketId = `${res.id}-TKT`;
+        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tours.find(t=>t.id === res.tripId)?.destination };
+        return {
+            id: ticketId,
+            reservationId: res.id,
+            tripId: res.tripId,
+            passengerName: res.passenger,
+            passengerDni: res.passengerIds[0], // Simplified
+            assignment: res.assignedSeats[0] || res.assignedCabins[0] || { seatId: "S/A", unit: 0 },
+            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
+            reservation: res,
+        };
+    });
+    setTickets(generatedTickets);
   }, [])
 
   const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
@@ -78,22 +97,20 @@ export default function EmployeeTicketsPage() {
         quality: 1.0, 
         pixelRatio: 2,
         style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-          fontFamily: 'sans-serif',
+            fontFamily: "'PT Sans', sans-serif",
         },
         fetchRequestInit: {
             headers: new Headers(),
-            mode: 'cors'
+            mode: 'no-cors'
         }
       });
 
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "px",
-        format: [ticketElement.offsetWidth, ticketElement.offsetHeight]
+        format: [ticketElement.offsetWidth + 20, ticketElement.offsetHeight + 20]
       });
-      pdf.addImage(dataUrl, 'PNG', 0, 0, ticketElement.offsetWidth, ticketElement.offsetHeight);
+      pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
       pdf.save(`Ticket_${passengerName.replace(" ", "_")}.pdf`);
     } catch (error) {
       console.error('oops, something went wrong!', error);
@@ -141,7 +158,7 @@ export default function EmployeeTicketsPage() {
             </CardContent>
         </Card>
       ) : (
-        <Accordion type="multiple" className="w-full space-y-4">
+        <Accordion type="multiple" className="w-full space-y-4" defaultValue={filteredTickets.map(t => t.id)}>
           {filteredTickets.map((ticket) => {
             const tour = tours.find(t => t.id === ticket.tripId);
             const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
@@ -164,9 +181,11 @@ export default function EmployeeTicketsPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="bg-secondary/20 p-4 space-y-4 flex flex-col items-center">
-                    <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
-                    <div className="flex justify-end w-full">
+                  <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
+                     <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
+                        <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
+                    </div>
+                    <div className="flex justify-end w-full px-4">
                       <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
                         <Download className="mr-2 h-4 w-4" />
                         Descargar PDF

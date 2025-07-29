@@ -122,6 +122,9 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               pension: tour.pension || defaultPension,
               pricingTiers: tour.pricingTiers || [],
               costs: tour.costs || defaultCosts,
+              vehicles: tour.vehicles || {},
+              airplanes: tour.airplanes || {},
+              cruises: tour.cruises || {},
             });
             
             const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
@@ -242,6 +245,12 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
     let totalTransportUnits = 0;
     const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
+    
+    // Clear previous transport data before assigning new
+    tourDataToSave.vehicles = {};
+    tourDataToSave.airplanes = {};
+    tourDataToSave.cruises = {};
+
 
     for (const category of categories) {
         const entries = layoutEntries[category];
@@ -260,9 +269,9 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 }
                 finalCategoryLayout[entry.type] = entry.count;
                 typesInLayout.add(entry.type);
-                totalTransportUnits++;
             }
             tourDataToSave[category] = finalCategoryLayout as Record<LayoutItemType, number>;
+            totalTransportUnits += entries.reduce((acc, curr) => acc + (Number(curr.count) || 0), 0)
         }
     }
 
@@ -301,7 +310,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport', 'services', 'costs', 'pricing']}>
+                    <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport']}>
                          <AccordionItem value="general">
                             <AccordionTrigger className="text-base font-medium">Información para Tickets</AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-4">
