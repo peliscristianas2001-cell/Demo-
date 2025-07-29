@@ -139,7 +139,7 @@ export default function ReservationsPage() {
     }
   }, [passengers, isClient]);
 
-  const activeTours = useMemo(() => tours.filter(t => new Date(t.date) >= new Date()), [tours]);
+  const activeTours = useMemo(() => tours, [tours]);
   
   const reservationsByTrip = useMemo(() => {
     return activeTours.reduce((acc, tour) => {
@@ -224,17 +224,23 @@ export default function ReservationsPage() {
           if (type === 'seat') {
               const currentAssignments = updatedRes.assignedSeats || [];
               const existingIndex = currentAssignments.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
+              
               if (existingIndex > -1) {
+                  // If seat exists, remove it
                   updatedRes.assignedSeats = currentAssignments.filter((_, index) => index !== existingIndex);
               } else if (currentAssignments.length < updatedRes.paxCount) {
+                  // If seat does not exist and there is space, add it
                   updatedRes.assignedSeats = [...currentAssignments, { seatId: assignmentId, unit: unitNumber }];
               }
           } else if (type === 'cabin') {
               const currentAssignments = updatedRes.assignedCabins || [];
               const existingIndex = currentAssignments.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
+              
               if (existingIndex > -1) {
+                  // If cabin exists, remove it
                   updatedRes.assignedCabins = currentAssignments.filter((_, index) => index !== existingIndex);
               } else if (currentAssignments.length < updatedRes.paxCount) {
+                  // If cabin does not exist and there is space, add it
                   updatedRes.assignedCabins = [...currentAssignments, { cabinId: assignmentId, unit: unitNumber }];
               }
           }
@@ -243,11 +249,14 @@ export default function ReservationsPage() {
       
       setReservations(updatedReservations);
 
-      // Sync the state of the reservation being edited in the dialog
+      // Also update the reservation being actively edited in the dialog
       setEditingReservation(prev => {
-        if (!prev.reservation) return prev;
-        const updatedReservationInDialog = updatedReservations.find(r => r.id === prev.reservation!.id);
-        return { ...prev, reservation: updatedReservationInDialog || prev.reservation };
+        if (!prev.reservation || prev.reservation.id !== reservationId) return prev;
+        const updatedInDialog = updatedReservations.find(r => r.id === reservationId);
+        return {
+          ...prev,
+          reservation: updatedInDialog || prev.reservation,
+        };
       });
   };
 
@@ -448,8 +457,8 @@ export default function ReservationsPage() {
                         layoutType={activeUnit.type}
                         occupiedSeats={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedSeats}
                         occupiedCabins={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedCabins}
-                        selectedSeats={(reservation.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
-                        selectedCabins={(reservation.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
+                        selectedSeats={(editingReservation.reservation?.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => String(s.seatId))}
+                        selectedCabins={(editingReservation.reservation?.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => String(c.cabinId))}
                         onAssignment={(id, type) => handleAssignment(reservation!.id, id, activeUnit.unitNumber, type)}
                         maxAssignments={reservation.paxCount}
                     />
@@ -509,7 +518,10 @@ export default function ReservationsPage() {
                                     const mainPassenger = resPassengers[0];
                                     const seller = sellers.find(s => s.id === res.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
-                                    const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
+                                    const assignedLocations = [
+                                        ...(res.assignedSeats || []).map(s => s.seatId),
+                                        ...(res.assignedCabins || []).map(c => c.cabinId)
+                                    ].join(', ');
 
                                     return (
                                         <Accordion key={res.id} type="single" collapsible>
@@ -530,7 +542,7 @@ export default function ReservationsPage() {
                                                         <InfoCard icon={Users} label="Grupo" value={mainPassenger?.family}/>
 
                                                         <InfoCard icon={MapPin} label="Embarque" value={boardingPoint?.name || 'N/A'}/>
-                                                        <InfoCard icon={Armchair} label="Ubicación" value={assignedCount > 0 ? `${assignedCount} asignados` : 'S/A'}/>
+                                                        <InfoCard icon={Armchair} label="Ubicación" value={assignedLocations || 'S/A'}/>
                                                         <InfoCard icon={Info} label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'}/>
                                                         <InfoCard icon={Info} label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'}/>
                                                         <InfoCard icon={Info} label="Rooming" value={tour.roomType}/>
@@ -574,5 +586,7 @@ const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label
         <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
     </div>
 )
+
+    
 
     
