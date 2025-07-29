@@ -171,7 +171,16 @@ export default function BookingPage() {
         paxTotal = newPassengerList.length;
     }
 
-    const sellerToAssign = loggedInSellerId || 'unassigned';
+    let sellerToAssign = loggedInSellerId || 'unassigned';
+
+    // If it's a client making the reservation, assign a random seller
+    if (!loggedInSellerId) {
+        const availableSellers = sellers.filter(s => s.dni !== '99999999'); // Exclude admin
+        if (availableSellers.length > 0) {
+            const randomSeller = availableSellers[Math.floor(Math.random() * availableSellers.length)];
+            sellerToAssign = randomSeller.id;
+        }
+    }
     
     const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     

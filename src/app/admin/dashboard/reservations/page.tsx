@@ -317,19 +317,6 @@ export default function ReservationsPage() {
         {editingReservation.reservation && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="seller">Vendedor/a</Label>
-               <Select
-                  value={editingReservation.reservation.sellerId}
-                  onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, sellerId: val}}))}
-                >
-                  <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Sin asignar</SelectItem>
-                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="paymentStatus">Estado de Pago</Label>
                <Select
                   value={editingReservation.reservation.paymentStatus}
@@ -551,3 +538,5 @@ export default function ReservationsPage() {
     </>
   )
 }
+
+    
