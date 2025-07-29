@@ -1,13 +1,14 @@
 
 "use client"
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import L, { LatLng } from 'leaflet';
 import type { GeoSettings } from '@/lib/types';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
-
-// This manual approach is more robust against "Map container is already initialized" errors in React's StrictMode.
+import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
+import { MapPin } from 'lucide-react';
 
 interface MapSelectorProps {
     settings: GeoSettings;
@@ -19,11 +20,14 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
     const mapRef = useRef<L.Map | null>(null);
     const markerRef = useRef<L.Marker | null>(null);
     const circleRef = useRef<L.Circle | null>(null);
+    const [isMarking, setIsMarking] = useState(false);
 
     // Initialize map only once
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
-            const map = L.map(mapContainerRef.current).setView([settings.latitude, settings.longitude], 6);
+            const map = L.map(mapContainerRef.current, {
+                zoomControl: true,
+            }).setView([settings.latitude, settings.longitude], 6);
             mapRef.current = map;
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -46,11 +50,13 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         if (!map) return;
 
         const handleClick = (e: L.LeafletMouseEvent) => {
+            if (!isMarking) return;
             onSettingsChange({
                 ...settings,
                 latitude: e.latlng.lat,
                 longitude: e.latlng.lng,
             });
+            setIsMarking(false); // Disable marking mode after a click
         };
 
         map.on('click', handleClick);
@@ -58,7 +64,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         return () => {
             map.off('click', handleClick);
         };
-    }, [onSettingsChange, settings]);
+    }, [isMarking, onSettingsChange, settings]);
 
     // Update marker and circle when settings change
     useEffect(() => {
@@ -66,13 +72,11 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         if (!map) return;
 
         const position = new LatLng(settings.latitude, settings.longitude);
-
-        // Animate view change for smoother UX, but only if it's significantly different
+        
         if (!map.getCenter().equals(position, 0.0001)) {
              map.setView(position, map.getZoom());
         }
 
-        // Update Marker
         if (markerRef.current) {
             markerRef.current.setLatLng(position);
         } else {
@@ -88,7 +92,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
             }).addTo(map);
         }
 
-        // Update Circle
         if (circleRef.current) {
             circleRef.current.setLatLng(position);
             circleRef.current.setRadius(settings.radiusKm * 1000);
@@ -112,7 +115,13 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
     return (
         <div className="space-y-4">
-            <div ref={mapContainerRef} className="h-96 w-full rounded-lg overflow-hidden border z-0" />
+            <div ref={mapContainerRef} className={cn("h-96 w-full rounded-lg overflow-hidden border z-0", isMarking && "cursor-crosshair")} />
+            <div className="flex items-center gap-4">
+                 <Button onClick={() => setIsMarking(!isMarking)} variant="outline">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    {isMarking ? "Cancelar Marcado" : "Marcar Centro en el Mapa"}
+                </Button>
+            </div>
             <div className="space-y-2">
                 <Label htmlFor="radius-slider">Radio de Cobertura: {settings.radiusKm.toLocaleString()} km</Label>
                 <Slider
