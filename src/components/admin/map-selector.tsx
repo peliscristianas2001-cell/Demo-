@@ -1,14 +1,13 @@
 
 "use client"
 
-import { useMemo, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import L, { LatLng } from 'leaflet';
 import type { GeoSettings } from '@/lib/types';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
 
-// react-leaflet's MapContainer does not handle StrictMode's double-render well.
-// This manual approach is more robust against "Map container is already initialized" errors.
+// This manual approach is more robust against "Map container is already initialized" errors in React's StrictMode.
 
 interface MapSelectorProps {
     settings: GeoSettings;
@@ -21,12 +20,10 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
     const markerRef = useRef<L.Marker | null>(null);
     const circleRef = useRef<L.Circle | null>(null);
 
-    const position = useMemo(() => new LatLng(settings.latitude, settings.longitude), [settings.latitude, settings.longitude]);
-
     // Initialize map only once
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
-            const map = L.map(mapContainerRef.current).setView(position, 6);
+            const map = L.map(mapContainerRef.current).setView([settings.latitude, settings.longitude], 6);
             mapRef.current = map;
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -68,8 +65,10 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         const map = mapRef.current;
         if (!map) return;
 
-        // Animate view change for smoother UX
-        if (!map.getCenter().equals(position)) {
+        const position = new LatLng(settings.latitude, settings.longitude);
+
+        // Animate view change for smoother UX, but only if it's significantly different
+        if (!map.getCenter().equals(position, 0.0001)) {
              map.setView(position, map.getZoom());
         }
 
@@ -101,7 +100,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 fillOpacity: 0.2
             }).addTo(map);
         }
-    }, [position, settings.radiusKm, settings]);
+    }, [settings.latitude, settings.longitude, settings.radiusKm]);
 
 
     const handleRadiusChange = (value: number[]) => {
