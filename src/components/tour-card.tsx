@@ -12,21 +12,23 @@ interface TourCardProps {
 }
 
 export function TourCard({ tour, canPurchase = true }: TourCardProps) {
-  const cardContent = (
+  return (
       <Card className="w-full overflow-hidden transition-all duration-300 ease-in-out border-2 border-transparent rounded-2xl group hover:shadow-2xl hover:border-primary hover:-translate-y-2">
         <CardContent className="p-0">
-          <div className="relative overflow-hidden">
-            <Image
-                src={tour.flyerUrl}
-                alt={`Flyer for ${tour.destination}`}
-                width={400}
-                height={300}
-                className="object-cover w-full h-56 transition-transform duration-500 group-hover:scale-110"
-                data-ai-hint="travel destination"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-            <h3 className="absolute bottom-4 left-4 text-3xl font-headline text-white drop-shadow-lg">{tour.destination}</h3>
-          </div>
+          <Link href={`/booking/${tour.id}`} prefetch={false} className="block cursor-pointer">
+            <div className="relative overflow-hidden">
+              <Image
+                  src={tour.flyerUrl}
+                  alt={`Flyer for ${tour.destination}`}
+                  width={400}
+                  height={300}
+                  className="object-cover w-full h-56 transition-transform duration-500 group-hover:scale-110"
+                  data-ai-hint="travel destination"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              <h3 className="absolute bottom-4 left-4 text-3xl font-headline text-white drop-shadow-lg">{tour.destination}</h3>
+            </div>
+          </Link>
           <div className="p-6 space-y-4 bg-card">
             <div className="flex items-center gap-4 text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -39,12 +41,16 @@ export function TourCard({ tour, canPurchase = true }: TourCardProps) {
                 <p className="text-sm text-muted-foreground">Desde</p>
                 <p className="text-4xl font-bold text-foreground">${tour.price.toLocaleString('es-AR')}</p>
               </div>
-              {canPurchase && (
+              {canPurchase ? (
                 <Button asChild size="lg" className="text-base rounded-xl">
                     <Link href={`/booking/${tour.id}`} prefetch={false}>
                       Reservar
                       <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                     </Link>
+                </Button>
+              ) : (
+                 <Button size="lg" className="text-base rounded-xl" disabled>
+                    No Disponible
                 </Button>
               )}
             </div>
@@ -52,16 +58,4 @@ export function TourCard({ tour, canPurchase = true }: TourCardProps) {
         </CardContent>
       </Card>
   );
-
-  // If user cannot purchase, wrap the non-interactive card in a div
-  if (!canPurchase) {
-      return <div>{cardContent}</div>;
-  }
-  
-  // If user can purchase, wrap it in a link to the booking page for better UX
-  return (
-    <Link href={`/booking/${tour.id}`} prefetch={false} className="block">
-      {cardContent}
-    </Link>
-  )
 }
