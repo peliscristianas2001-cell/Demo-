@@ -32,14 +32,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-
-            map.on('click', (e) => {
-                onSettingsChange({
-                    ...settings,
-                    latitude: e.latlng.lat,
-                    longitude: e.latlng.lng,
-                });
-            });
         }
         
         // Cleanup function to remove map on component unmount
@@ -49,7 +41,29 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 mapRef.current = null;
             }
         };
-    }, []); // Empty dependency array ensures this runs only once on mount and cleanup on unmount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); 
+    
+    // Effect to handle map click events
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        const handleClick = (e: L.LeafletMouseEvent) => {
+            onSettingsChange({
+                ...settings,
+                latitude: e.latlng.lat,
+                longitude: e.latlng.lng,
+            });
+        };
+
+        map.on('click', handleClick);
+
+        // Cleanup function
+        return () => {
+            map.off('click', handleClick);
+        };
+    }, [onSettingsChange, settings]);
 
     // Effect to update marker and circle when settings change
     useEffect(() => {
@@ -74,6 +88,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 radius: settings.radiusKm * 1000,
                 color: 'hsl(var(--primary))',
                 fillColor: 'hsl(var(--primary))',
+                fillOpacity: 0.2
             }).addTo(map);
         }
     }, [position, settings.radiusKm, settings]);
