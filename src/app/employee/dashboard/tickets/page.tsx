@@ -25,14 +25,15 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockSellers, mockReservations } from "@/lib/mock-data"
-import type { Tour, Ticket, Seller, Reservation } from "@/lib/types"
+import { mockTours, mockSellers, mockReservations, mockPassengers } from "@/lib/mock-data"
+import type { Tour, Ticket, Seller, Reservation, Passenger } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function EmployeeTicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
   
@@ -41,28 +42,34 @@ export default function EmployeeTicketsPage() {
     const storedTours = localStorage.getItem("ytl_tours")
     const storedSellers = localStorage.getItem("ytl_sellers")
     const storedReservations = localStorage.getItem("ytl_reservations")
+    const storedPassengers = localStorage.getItem("ytl_passengers")
 
-    const currentReservations = storedReservations ? JSON.parse(storedReservations) : mockReservations;
-    const currentSellers = storedSellers ? JSON.parse(storedSellers) : mockSellers;
-    const currentTours = storedTours ? JSON.parse(storedTours, (key, value) => {
+    const currentReservations: Reservation[] = storedReservations ? JSON.parse(storedReservations) : mockReservations;
+    const currentSellers: Seller[] = storedSellers ? JSON.parse(storedSellers) : mockSellers;
+    const currentTours: Tour[] = storedTours ? JSON.parse(storedTours, (key, value) => {
         if (key === 'date') return new Date(value);
         return value;
     }) : mockTours;
+    const currentPassengers: Passenger[] = storedPassengers ? JSON.parse(storedPassengers) : mockPassengers;
     
     setTours(currentTours);
     setSellers(currentSellers);
+    setPassengers(currentPassengers);
     
     // Generate tickets from confirmed reservations
-    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
+    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado' && r.passengerIds && r.passengerIds.length > 0);
     const generatedTickets = confirmedReservations.map((res: Reservation) => {
         const ticketId = `${res.id}-TKT`;
-        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tours.find(t=>t.id === res.tripId)?.destination };
+        const tour = currentTours.find(t => t.id === res.tripId);
+        const mainPassenger = currentPassengers.find(p => p.id === res.passengerIds[0]);
+
+        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour?.destination };
         return {
             id: ticketId,
             reservationId: res.id,
             tripId: res.tripId,
             passengerName: res.passenger,
-            passengerDni: res.passengerIds[0], // Simplified
+            passengerDni: mainPassenger?.dni || "N/A",
             assignment: res.assignedSeats[0] || res.assignedCabins[0] || { seatId: "S/A", unit: 0 },
             qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
             reservation: res,
