@@ -220,28 +220,35 @@ export default function ReservationsPage() {
           if (res.id !== reservationId) return res;
 
           let updatedRes = { ...res };
+          let currentAssignments, maxAssignments;
 
           if (type === 'seat') {
-              const currentAssignments = updatedRes.assignedSeats || [];
-              const existingIndex = currentAssignments.findIndex(s => s.seatId === assignmentId && s.unit === unitNumber);
-              
+              updatedRes.assignedSeats = updatedRes.assignedSeats || [];
+              currentAssignments = updatedRes.assignedSeats.filter(s => s.unit === unitNumber).map(s => s.seatId);
+              maxAssignments = updatedRes.paxCount - (updatedRes.assignedCabins?.length || 0);
+
+              const existingIndex = currentAssignments.findIndex(id => id === assignmentId);
+
               if (existingIndex > -1) {
                   // If seat exists, remove it
-                  updatedRes.assignedSeats = currentAssignments.filter((_, index) => index !== existingIndex);
-              } else if (currentAssignments.length < updatedRes.paxCount) {
+                  updatedRes.assignedSeats = updatedRes.assignedSeats.filter(s => !(s.seatId === assignmentId && s.unit === unitNumber));
+              } else if (currentAssignments.length < maxAssignments) {
                   // If seat does not exist and there is space, add it
-                  updatedRes.assignedSeats = [...currentAssignments, { seatId: assignmentId, unit: unitNumber }];
+                  updatedRes.assignedSeats.push({ seatId: assignmentId, unit: unitNumber });
               }
           } else if (type === 'cabin') {
-              const currentAssignments = updatedRes.assignedCabins || [];
-              const existingIndex = currentAssignments.findIndex(c => c.cabinId === assignmentId && c.unit === unitNumber);
+               updatedRes.assignedCabins = updatedRes.assignedCabins || [];
+               currentAssignments = updatedRes.assignedCabins.filter(c => c.unit === unitNumber).map(c => c.cabinId);
+               maxAssignments = updatedRes.paxCount - (updatedRes.assignedSeats?.length || 0);
+
+               const existingIndex = currentAssignments.findIndex(id => id === assignmentId);
               
               if (existingIndex > -1) {
                   // If cabin exists, remove it
-                  updatedRes.assignedCabins = currentAssignments.filter((_, index) => index !== existingIndex);
-              } else if (currentAssignments.length < updatedRes.paxCount) {
+                  updatedRes.assignedCabins = updatedRes.assignedCabins.filter(c => !(c.cabinId === assignmentId && c.unit === unitNumber));
+              } else if (currentAssignments.length < maxAssignments) {
                   // If cabin does not exist and there is space, add it
-                  updatedRes.assignedCabins = [...currentAssignments, { cabinId: assignmentId, unit: unitNumber }];
+                  updatedRes.assignedCabins.push({ cabinId: assignmentId, unit: unitNumber });
               }
           }
           return updatedRes;
@@ -351,7 +358,7 @@ export default function ReservationsPage() {
                     {installments.details.map((inst, index) => (
                        <div key={index} className="flex items-center gap-2">
                           <Label className="w-20">Cuota {index + 1}</Label>
-                          <Input type="number" value={inst.amount} onChange={(e) => {
+                          <Input type="number" value={inst.amount || ''} onChange={(e) => {
                             const newDetails = [...installments.details];
                             newDetails[index].amount = parseFloat(e.target.value) || 0;
                             setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
@@ -592,6 +599,8 @@ const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label
         <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
     </div>
 )
+
+    
 
     
 
