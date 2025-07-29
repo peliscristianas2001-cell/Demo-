@@ -54,6 +54,11 @@ export interface GeoSettings {
     radiusKm: number;
 }
 
+export interface BoardingPoint {
+    id: string;
+    name: string;
+}
+
 export interface Tour {
   id: string;
   destination: string;
@@ -98,6 +103,11 @@ export type AssignedCabin = {
   unit: number;
 }
 
+export interface Installment {
+    amount: number;
+    isPaid: boolean;
+}
+
 export interface Passenger {
   id: string;
   fullName: string;
@@ -108,6 +118,7 @@ export interface Passenger {
   nationality: string;
   tierId: string; // 'adult' or one of the pricingTier IDs
   password?: string;
+  boardingPointId?: string;
 }
 
 export type Reservation = {
@@ -122,6 +133,11 @@ export type Reservation = {
     paymentStatus: PaymentStatus;
     sellerId: string;
     finalPrice: number;
+    boardingPointId?: string;
+    installments?: {
+        count: number;
+        details: Installment[];
+    }
 }
 
 export type Ticket = {

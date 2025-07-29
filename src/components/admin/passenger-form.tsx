@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
-import type { Passenger } from "@/lib/types"
+import type { Passenger, BoardingPoint } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
 interface PassengerFormProps {
   isOpen: boolean
@@ -30,14 +31,21 @@ const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
     dni: "",
     dob: undefined,
     phone: "",
-    family: ""
+    family: "",
+    boardingPointId: undefined
 }
 
 export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily }: PassengerFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
+    const storedPoints = localStorage.getItem("ytl_boarding_points");
+    if (storedPoints) {
+        setBoardingPoints(JSON.parse(storedPoints));
+    }
+
     if (isOpen) {
         if (passenger) {
             setFormData({
@@ -103,6 +111,16 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
                 <Label htmlFor="family">Familia</Label>
                 <Input id="family" value={formData.family} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario)"/>
             </div>
+             <div className="space-y-2">
+                <Label htmlFor="boardingPointId">Punto de Embarque (por defecto)</Label>
+                 <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                    <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">Ninguno</SelectItem>
+                        {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
         
         <DialogFooter>
@@ -113,5 +131,3 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
     </Dialog>
   )
 }
-
-    

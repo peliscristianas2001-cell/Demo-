@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -9,9 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2 } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
 const MapSelector = dynamic(
@@ -31,21 +32,26 @@ export default function SettingsPage() {
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
+    const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
     useEffect(() => {
         const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
-        if (storedGeneralSettings) {
-            setGeneralSettings(JSON.parse(storedGeneralSettings));
-        }
+        if (storedGeneralSettings) setGeneralSettings(JSON.parse(storedGeneralSettings));
+        
         const storedGeoSettings = localStorage.getItem("ytl_geo_settings");
-        if (storedGeoSettings) {
-            setGeoSettings(JSON.parse(storedGeoSettings));
-        }
+        if (storedGeoSettings) setGeoSettings(JSON.parse(storedGeoSettings));
+        
+        const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        if (storedBoardingPoints) setBoardingPoints(JSON.parse(storedBoardingPoints));
+
+
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
+        const newBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        if (newBoardingPoints) setBoardingPoints(JSON.parse(newBoardingPoints));
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
@@ -159,6 +165,26 @@ export default function SettingsPage() {
         toast({ title: "¡Guardado!", description: `El layout "${newConfig.name}" se ha guardado.` });
     };
 
+    const handleAddBoardingPoint = () => {
+        setBoardingPoints(prev => [...prev, { id: `BP-${Date.now()}`, name: '' }]);
+    }
+
+    const handleBoardingPointChange = (id: string, name: string) => {
+        setBoardingPoints(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+    }
+
+    const handleRemoveBoardingPoint = (id: string) => {
+        setBoardingPoints(prev => prev.filter(p => p.id !== id));
+    }
+    
+    const handleSaveBoardingPoints = () => {
+        const filteredPoints = boardingPoints.filter(p => p.name.trim() !== "");
+        localStorage.setItem("ytl_boarding_points", JSON.stringify(filteredPoints));
+        setBoardingPoints(filteredPoints);
+        toast({ title: "Puntos de embarque guardados." });
+        window.dispatchEvent(new Event('storage'));
+    }
+
     const layoutCategoryDetails = {
         vehicles: { icon: Bus, title: "Tipos de Vehículo" },
         airplanes: { icon: Plane, title: "Tipos de Avión" },
@@ -234,6 +260,37 @@ export default function SettingsPage() {
                     Guardar Ajustes
                 </Button>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Pin className="w-6 h-6"/> Puntos de Embarque</CardTitle>
+                    <CardDescription>Añade y gestiona las paradas o puntos de encuentro para los viajes.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        {boardingPoints.map((point) => (
+                           <div key={point.id} className="flex items-center gap-2">
+                               <Input 
+                                   value={point.name}
+                                   onChange={(e) => handleBoardingPointChange(point.id, e.target.value)}
+                                   placeholder="Nombre de la parada..."
+                                />
+                               <Button variant="ghost" size="icon" onClick={() => handleRemoveBoardingPoint(point.id)}>
+                                    <Trash2 className="w-4 h-4 text-destructive"/>
+                               </Button>
+                           </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <Button variant="outline" onClick={handleAddBoardingPoint}>
+                           <PlusCircle className="mr-2 h-4 w-4"/> Añadir Parada
+                        </Button>
+                         <Button onClick={handleSaveBoardingPoints}>
+                           <Save className="mr-2 h-4 w-4"/> Guardar Paradas
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
             
             <div className="space-y-4 p-4 border rounded-lg">
                 <Label className="text-lg font-medium flex items-center gap-2"><MapPin className="w-5 h-5"/> Zona Geográfica</Label>
@@ -295,5 +352,3 @@ export default function SettingsPage() {
     </>
   )
 }
-
-    

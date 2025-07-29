@@ -10,14 +10,6 @@ import {
   CardDescription
 } from "@/components/ui/card"
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table"
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -36,14 +28,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -52,13 +36,14 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign } from "lucide-react"
 import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger } from "@/lib/types"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { AddReservationForm } from "@/components/admin/add-reservation-form"
+import { Checkbox } from "@/components/ui/checkbox"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -84,11 +69,24 @@ type AddReservationState = {
     tour: Tour | null;
 }
 
+const calculateAge = (dob: Date | string | undefined) => {
+    if (!dob) return null;
+    const birthDate = typeof dob === 'string' ? new Date(dob) : dob;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
@@ -103,11 +101,13 @@ export default function ReservationsPage() {
     const storedTours = localStorage.getItem("ytl_tours")
     const storedSellers = localStorage.getItem("ytl_sellers")
     const storedPassengers = localStorage.getItem("ytl_passengers")
+    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points")
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : [])
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
@@ -115,10 +115,12 @@ export default function ReservationsPage() {
        const newStoredTours = localStorage.getItem("ytl_tours")
        const newStoredSellers = localStorage.getItem("ytl_sellers")
        const newStoredPassengers = localStorage.getItem("ytl_passengers")
+       const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points")
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
+       setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : [])
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -264,30 +266,6 @@ export default function ReservationsPage() {
       
     return { occupiedSeats, occupiedCabins };
   };
-
-  const getStatusVariant = (status: ReservationStatus) => {
-    switch (status) {
-      case "Confirmado":
-        return "secondary"
-      case "Pendiente":
-        return "outline"
-      default:
-        return "default"
-    }
-  }
-
-   const getPaymentStatusVariant = (status?: PaymentStatus) => {
-    switch (status) {
-      case "Pagado":
-        return "secondary";
-      case "Parcial":
-        return "outline";
-      case "Pendiente":
-        return "destructive";
-      default:
-        return "default";
-    }
-  };
   
   const getTransportIdentifier = (unit: ExpandedTransportUnit) => {
     return `${unit.category}_${unit.type}_${unit.globalUnitNum}`;
@@ -327,6 +305,7 @@ export default function ReservationsPage() {
             allReservations={reservations}
             onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
             sellers={sellers}
+            boardingPoints={boardingPoints}
         />
     )}
 
@@ -338,53 +317,84 @@ export default function ReservationsPage() {
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        {editingReservation.reservation && (
+        {editingReservation.reservation && (() => {
+           const reservation = editingReservation.reservation!;
+           const installments = reservation.installments || { count: 1, details: [{ amount: reservation.finalPrice, isPaid: false }] };
+           const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
+           const balance = reservation.finalPrice - paidAmount;
+
+          return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
             {/* Columna Izquierda: Edición de Datos */}
             <div className="space-y-4">
               <Card>
-                <CardHeader><CardTitle>Datos de Pago</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5"/> Datos de Pago</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentStatus">Estado de Pago</Label>
-                    <Select
-                      value={editingReservation.reservation.paymentStatus}
-                      onValueChange={(val: PaymentStatus) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, paymentStatus: val}}))}
-                    >
-                      <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pagado">Pagado</SelectItem>
-                        <SelectItem value="Parcial">Parcial</SelectItem>
-                        <SelectItem value="Pendiente">Pendiente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="totalPrice">Precio Final</Label>
                     <Input
                       id="totalPrice"
                       type="number"
-                      value={editingReservation.reservation.finalPrice}
+                      value={reservation.finalPrice}
                       onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, finalPrice: parseFloat(e.target.value) || 0}}))}
                     />
                   </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="installments-count">Cantidad de Cuotas</Label>
+                    <Input
+                      id="installments-count"
+                      type="number"
+                      min="1"
+                      value={installments.count}
+                      onChange={(e) => {
+                          const newCount = parseInt(e.target.value) || 1;
+                          const newDetails = Array.from({ length: newCount }, (_, i) => installments.details[i] || { amount: 0, isPaid: false });
+                          setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { count: newCount, details: newDetails }}}))
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                      <Label>Detalle de Cuotas</Label>
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                        {installments.details.map((inst, index) => (
+                           <div key={index} className="flex items-center gap-2">
+                              <Label className="w-20">Cuota {index + 1}</Label>
+                              <Input type="number" value={inst.amount} onChange={(e) => {
+                                const newDetails = [...installments.details];
+                                newDetails[index].amount = parseFloat(e.target.value) || 0;
+                                setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                              }}/>
+                              <Checkbox checked={inst.isPaid} onCheckedChange={(checked) => {
+                                 const newDetails = [...installments.details];
+                                 newDetails[index].isPaid = !!checked;
+                                 setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                              }}/>
+                              <Label>Pagada</Label>
+                           </div>
+                        ))}
+                      </div>
+                  </div>
+                  <div className="flex justify-between font-semibold p-2 bg-muted rounded-md">
+                     <span>Saldo Pendiente:</span>
+                     <span>${balance.toLocaleString('es-AR')}</span>
+                  </div>
                 </CardContent>
               </Card>
-               <Card>
-                  <CardHeader><CardTitle>Acciones Rápidas</CardTitle></CardHeader>
-                  <CardContent className="flex flex-col space-y-2">
-                     <Button variant="outline" onClick={() => handleStatusChange(editingReservation.reservation!.id, 'Confirmado')}>
-                      <CheckCircle className="mr-2 h-4 w-4" /> Confirmar Reserva
-                    </Button>
-                    <Button variant="outline" onClick={() => handleStatusChange(editingReservation.reservation!.id, 'Pendiente')}>
-                      <Clock className="mr-2 h-4 w-4" /> Marcar como Pendiente
-                    </Button>
-                     <Button variant="destructive" onClick={() => {
-                       handleDelete(editingReservation.reservation!.id);
-                       setEditingReservation({isOpen: false, reservation: null});
-                     }}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar Reserva
-                    </Button>
+              <Card>
+                  <CardHeader><CardTitle>Detalles Adicionales</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="boardingPointId">Punto de Embarque</Label>
+                        <Select
+                            value={reservation.boardingPointId}
+                            onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, boardingPointId: val}}))}
+                        >
+                            <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                            <SelectContent>
+                                {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                   </CardContent>
               </Card>
             </div>
@@ -394,14 +404,14 @@ export default function ReservationsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Asignación de Lugares</CardTitle>
-                  <CardDescription>Reserva para {editingReservation.reservation.paxCount} pasajeros.</CardDescription>
-                   {activeUnit && getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!)?.length > 1 && (
+                  <CardDescription>Reserva para {reservation.paxCount} pasajeros.</CardDescription>
+                   {activeUnit && getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!)?.length > 1 && (
                      <div className="flex items-center gap-2 pt-2">
                           <Bus className="w-5 h-5 text-muted-foreground"/>
                           <Select
-                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                              value={activeUnit ? getTransportIdentifier(getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
                               onValueChange={(val) => {
-                                  const selectedUnit = getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).find(b => getTransportIdentifier(b) === val);
+                                  const selectedUnit = getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).find(b => getTransportIdentifier(b) === val);
                                   if (selectedUnit) {
                                       setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
                                   }
@@ -411,13 +421,13 @@ export default function ReservationsPage() {
                                   <SelectValue placeholder="Seleccionar unidad" />
                               </SelectTrigger>
                               <SelectContent>
-                                  {getExpandedTransportList(tours.find(t=>t.id === editingReservation.reservation?.tripId)!).map(unit => {
+                                  {getExpandedTransportList(tours.find(t=>t.id === reservation.tripId)!).map(unit => {
                                       const Icon = categoryIcons[unit.category];
                                       return (
                                           <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
                                               <div className="flex items-center gap-2">
                                                   <Icon className="w-4 h-4 text-muted-foreground"/>
-                                                  <span>{unit.typeName} {getTransportCount(tours.find(t=>t.id === editingReservation.reservation?.tripId)!) > 1 ? unit.instanceNum : ''}</span>
+                                                  <span>{unit.typeName} {getTransportCount(tours.find(t=>t.id === reservation.tripId)!) > 1 ? unit.instanceNum : ''}</span>
                                               </div>
                                           </SelectItem>
                                       )
@@ -428,16 +438,16 @@ export default function ReservationsPage() {
                    )}
                 </CardHeader>
                 <CardContent>
-                  {activeUnit && editingReservation.reservation && (
+                  {activeUnit && reservation && (
                     <SeatSelector
                         category={activeUnit.category}
                         layoutType={activeUnit.type}
-                        occupiedSeats={getOccupiedForTour(editingReservation.reservation.tripId, activeUnit.unitNumber, editingReservation.reservation.id).occupiedSeats}
-                        occupiedCabins={getOccupiedForTour(editingReservation.reservation.tripId, activeUnit.unitNumber, editingReservation.reservation.id).occupiedCabins}
-                        selectedSeats={(editingReservation.reservation.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
-                        selectedCabins={(editingReservation.reservation.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
-                        onAssignment={(id, type) => handleAssignment(editingReservation.reservation!.id, id, activeUnit.unitNumber, type)}
-                        maxAssignments={editingReservation.reservation.paxCount}
+                        occupiedSeats={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedSeats}
+                        occupiedCabins={getOccupiedForTour(reservation.tripId, activeUnit.unitNumber, reservation.id).occupiedCabins}
+                        selectedSeats={(reservation.assignedSeats || []).filter(s => s.unit === activeUnit.unitNumber).map(s => s.seatId)}
+                        selectedCabins={(reservation.assignedCabins || []).filter(c => c.unit === activeUnit.unitNumber).map(c => c.cabinId)}
+                        onAssignment={(id, type) => handleAssignment(reservation!.id, id, activeUnit.unitNumber, type)}
+                        maxAssignments={reservation.paxCount}
                     />
                   )}
                 </CardContent>
@@ -445,8 +455,14 @@ export default function ReservationsPage() {
             </div>
 
           </div>
-        )}
+        )})}
         <DialogFooter className="mt-auto pt-4 border-t">
+          <Button variant="destructive" className="mr-auto" onClick={() => {
+              if (editingReservation.reservation) handleDelete(editingReservation.reservation.id);
+              setEditingReservation({isOpen: false, reservation: null});
+            }}>
+              <Trash2 className="mr-2 h-4 w-4" /> Eliminar Reserva
+            </Button>
           <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
           <Button onClick={handleUpdateReservation}>Guardar Cambios</Button>
         </DialogFooter>
@@ -468,68 +484,65 @@ export default function ReservationsPage() {
                     No hay viajes activos con reservas.
                 </div>
             ) : (
-                <Accordion type="multiple" className="w-full" defaultValue={Object.keys(reservationsByTrip)}>
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={Object.keys(reservationsByTrip)}>
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
-                       const expandedUnitList = getExpandedTransportList(tour);
-                       const totalVehicleCount = expandedUnitList.length;
-
                        return (
-                       <AccordionItem value={tour.id} key={tour.id}>
-                           <AccordionTrigger className="text-lg font-medium hover:no-underline">
+                       <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
+                           <AccordionTrigger className="text-lg font-medium hover:no-underline bg-muted/50 px-4 rounded-t-lg">
                                {tour.destination} ({tripReservations.length} reservas)
                             </AccordionTrigger>
-                           <AccordionContent>
-                                <div className="flex justify-end mb-4">
+                           <AccordionContent className="p-0">
+                                <div className="flex justify-end p-4 border-x border-b rounded-b-lg">
                                     <Button onClick={() => setAddingReservation({isOpen: true, tour: tour})}>
                                         <UserPlus className="mr-2 h-4 w-4"/>
                                         Agregar Reserva
                                     </Button>
                                 </div>
                                {tripReservations.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Pasajero</TableHead>
-                                        <TableHead>Vendedor/a</TableHead>
-                                        <TableHead>Asientos</TableHead>
-                                        <TableHead>Pago</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                        <TableHead className="text-right">Acciones</TableHead>
-                                    </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {tripReservations.map((res) => {
-                                            const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
-                                            const seller = sellers.find(s => s.id === res.sellerId);
-                                            return (
-                                                <TableRow key={res.id}>
-                                                    <TableCell>{res.passenger}</TableCell>
-                                                    <TableCell>{seller?.name || <Badge variant="outline">Sin Asignar</Badge>}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline">{assignedCount} / {res.paxCount}</Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={getPaymentStatusVariant(res.paymentStatus)}>
-                                                          {res.paymentStatus || "Pendiente"}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={getStatusVariant(res.status)}>
-                                                        {res.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleDialogOpen(tour, res)}>
-                                                          <Edit className="mr-2 h-4 w-4" /> Gestionar
-                                                        </Button>
+                                <div className="space-y-2 mt-4">
+                                {tripReservations.map((res) => {
+                                    const resPassengers = passengers.filter(p => res.passengerIds.includes(p.id));
+                                    const mainPassenger = resPassengers[0];
+                                    const seller = sellers.find(s => s.id === res.sellerId);
+                                    const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
+                                    const assignedCount = (res.assignedSeats?.length || 0) + (res.assignedCabins?.length || 0);
+
+                                    return (
+                                        <Accordion key={res.id} type="single" collapsible>
+                                            <AccordionItem value={res.id} className="border rounded-lg">
+                                                <AccordionTrigger className="px-4 hover:no-underline text-base">
+                                                    <div className="flex items-center gap-4">
+                                                        <span>{res.passenger}</span>
+                                                        <Badge variant={res.status === 'Confirmado' ? 'secondary' : 'outline'}>{res.status}</Badge>
                                                     </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </TableBody>
-                                </Table>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="p-4 bg-secondary/20">
+                                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                                        <InfoCard icon={Users} label="Pasajero P." value={mainPassenger?.fullName}/>
+                                                        <InfoCard icon={Users} label="DNI" value={mainPassenger?.dni}/>
+                                                        <InfoCard icon={Calendar} label="F. Nac" value={mainPassenger?.dob ? new Date(mainPassenger.dob).toLocaleDateString() : 'N/A'}/>
+                                                        <InfoCard icon={Users} label="Edad" value={calculateAge(mainPassenger?.dob)}/>
+                                                        <InfoCard icon={Users} label="Cant." value={res.paxCount}/>
+                                                        <InfoCard icon={Users} label="Grupo" value={mainPassenger?.family}/>
+
+                                                        <InfoCard icon={MapPin} label="Embarque" value={boardingPoint?.name || 'N/A'}/>
+                                                        <InfoCard icon={Armchair} label="Ubicación" value={assignedCount > 0 ? `${assignedCount} asignados` : 'S/A'}/>
+                                                        <InfoCard icon={Info} label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'}/>
+                                                        <InfoCard icon={Info} label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'}/>
+                                                        <InfoCard icon={Info} label="Rooming" value={tour.roomType}/>
+                                                        <InfoCard icon={DollarSign} label="A Pagar" value={`$${res.finalPrice.toLocaleString()}`}/>
+                                                     </div>
+                                                     <div className="flex justify-end gap-2 mt-4">
+                                                        <Button variant="outline" size="sm" onClick={() => handleDialogOpen(tour, res)}>
+                                                            <Edit className="mr-2 h-4 w-4" /> Gestionar
+                                                        </Button>
+                                                     </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    )
+                                })}
+                                </div>
                                ) : (
                                 <div className="text-center text-muted-foreground py-8">
                                     No hay reservas para este viaje aún.
@@ -547,3 +560,13 @@ export default function ReservationsPage() {
     </>
   )
 }
+
+const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | number | null | undefined}) => (
+    <div className="p-2 border rounded-md bg-background">
+        <div className="flex items-center gap-2">
+            <Icon className="w-4 h-4 text-muted-foreground"/>
+            <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+        </div>
+        <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
+    </div>
+)

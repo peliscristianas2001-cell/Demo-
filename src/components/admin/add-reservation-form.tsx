@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import type { Passenger, Seller, Reservation, PaymentStatus, Tour } from "@/lib/types"
+import type { Passenger, Seller, Reservation, PaymentStatus, Tour, BoardingPoint } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -33,6 +34,7 @@ interface AddReservationFormProps {
   allReservations: Reservation[]
   onPassengerCreated: (passenger: Passenger) => void
   sellers: Seller[]
+  boardingPoints: BoardingPoint[]
 }
 
 const defaultReservation = {
@@ -41,10 +43,11 @@ const defaultReservation = {
     sellerId: "unassigned",
     finalPrice: 0,
     paymentStatus: "Pendiente" as PaymentStatus,
-    selectedPassengerIds: [] as string[]
+    selectedPassengerIds: [] as string[],
+    boardingPointId: undefined
 }
 
-export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers }: AddReservationFormProps) {
+export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const { toast } = useToast();
@@ -97,6 +100,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         mainPassengerId: passengerId,
         selectedPassengerIds: [passengerId],
         paxCount: 1,
+        boardingPointId: passenger.boardingPointId,
     }));
   }
 
@@ -152,6 +156,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         paymentStatus: formData.paymentStatus,
         sellerId: formData.sellerId,
         finalPrice: formData.finalPrice,
+        boardingPointId: formData.boardingPointId,
     }
 
     onSave(reservationToSave);
@@ -275,6 +280,16 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="boardingPointId">Punto de Embarque</Label>
+                        <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                            <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                            <SelectContent>
+                                {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </>
             )}
