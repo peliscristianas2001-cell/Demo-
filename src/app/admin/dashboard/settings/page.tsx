@@ -3,15 +3,24 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2 } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
+
+const MapSelector = dynamic(
+  () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
+  { 
+    ssr: false,
+    loading: () => <div className="h-96 flex items-center justify-center bg-muted rounded-lg"><Loader2 className="w-8 h-8 animate-spin"/></div>
+  }
+)
 
 type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
 
@@ -21,7 +30,7 @@ export default function SettingsPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
-    const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: 0, longitude: 0, radiusKm: 0 });
+    const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
@@ -228,39 +237,11 @@ export default function SettingsPage() {
             
             <div className="space-y-4 p-4 border rounded-lg">
                 <Label className="text-lg font-medium flex items-center gap-2"><MapPin className="w-5 h-5"/> Zona Geográfica</Label>
-                <p className="text-sm text-muted-foreground">Define el centro y el radio de tu zona de servicio.</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="latitude">Latitud del Centro</Label>
-                        <Input 
-                            id="latitude"
-                            type="number"
-                            placeholder="-34.6037"
-                            value={geoSettings.latitude}
-                            onChange={(e) => setGeoSettings(prev => ({...prev, latitude: parseFloat(e.target.value) || 0}))}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="longitude">Longitud del Centro</Label>
-                        <Input 
-                            id="longitude"
-                            type="number"
-                            placeholder="-58.3816"
-                             value={geoSettings.longitude}
-                            onChange={(e) => setGeoSettings(prev => ({...prev, longitude: parseFloat(e.target.value) || 0}))}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="radius">Radio (km)</Label>
-                        <Input 
-                            id="radius"
-                            type="number"
-                            placeholder="100"
-                             value={geoSettings.radiusKm}
-                            onChange={(e) => setGeoSettings(prev => ({...prev, radiusKm: parseFloat(e.target.value) || 0}))}
-                        />
-                    </div>
-                </div>
+                <p className="text-sm text-muted-foreground">Haz clic en el mapa para definir el centro y ajusta el radio de tu zona de servicio.</p>
+                 <MapSelector
+                    settings={geoSettings}
+                    onSettingsChange={setGeoSettings}
+                 />
                 <Button onClick={handleGeoSettingsSave}>
                     <Save className="mr-2 h-4 w-4" />
                     Guardar Zona
@@ -314,3 +295,5 @@ export default function SettingsPage() {
     </>
   )
 }
+
+    
