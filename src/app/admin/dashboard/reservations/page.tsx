@@ -534,7 +534,7 @@ export default function ReservationsPage() {
                                                         <InfoCard icon={Info} label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'}/>
                                                         <InfoCard icon={Info} label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'}/>
                                                         <InfoCard icon={Info} label="Rooming" value={tour.roomType}/>
-                                                        <InfoCard icon={DollarSign} label="A Pagar" value={`$${res.finalPrice.toLocaleString()}`}/>
+                                                        <InfoCard icon={DollarSign} label="A Pagar" value={res.finalPrice ? `$${res.finalPrice.toLocaleString()}` : 'N/A'}/>
                                                      </div>
                                                      <div className="flex justify-end gap-2 mt-4">
                                                         <Button variant="outline" size="sm" onClick={() => handleDialogOpen(tour, res)}>
@@ -574,3 +574,5 @@ const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label
         <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
     </div>
 )
+
+    
