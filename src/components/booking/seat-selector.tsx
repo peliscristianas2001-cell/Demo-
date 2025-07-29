@@ -108,7 +108,7 @@ export function SeatSelector({
                             const isSeat = cell.type === 'seat';
                             const id = isSeat ? String(cell.number) : String(cell.number);
                             const isOccupied = isSeat ? occupiedSeats.includes(id) : occupiedCabins.includes(id);
-                            const isSelected = isSeat ? selectedSeats.includes(id) : selectedCabins.includes(id);
+                            const isSelected = isSeat ? selectedSeats.includes(String(id)) : selectedCabins.includes(String(id));
                             const isDisabled = isOccupied;
                             const Icon = isSeat ? Armchair : BedDouble;
                             const text = isSeat ? String(cell.number) : cell.number;
