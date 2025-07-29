@@ -29,77 +29,104 @@ import type { Tour, Ticket, Seller, Reservation, Passenger } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function EmployeeTicketsPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
   
   useEffect(() => {
-    setIsClient(true)
-    const storedTours = localStorage.getItem("ytl_tours")
-    const storedSellers = localStorage.getItem("ytl_sellers")
-    const storedReservations = localStorage.getItem("ytl_reservations")
-    const storedPassengers = localStorage.getItem("ytl_passengers")
+    setIsClient(true);
+    // Load all data from localStorage or mocks
+    const storedReservations = localStorage.getItem("ytl_reservations");
+    const storedTours = localStorage.getItem("ytl_tours");
+    const storedSellers = localStorage.getItem("ytl_sellers");
+    const storedPassengers = localStorage.getItem("ytl_passengers");
 
-    const currentReservations: Reservation[] = storedReservations ? JSON.parse(storedReservations) : mockReservations;
-    const currentSellers: Seller[] = storedSellers ? JSON.parse(storedSellers) : mockSellers;
-    const currentTours: Tour[] = storedTours ? JSON.parse(storedTours, (key, value) => {
-        if (key === 'date') return new Date(value);
-        return value;
-    }) : mockTours;
-    const currentPassengers: Passenger[] = storedPassengers ? JSON.parse(storedPassengers) : mockPassengers;
+    setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
+    setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
+    setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers);
+    setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
+
+    // Add storage event listeners to update state on changes from other tabs
+    const handleStorageChange = () => {
+        const newStoredReservations = localStorage.getItem("ytl_reservations");
+        const newStoredTours = localStorage.getItem("ytl_tours");
+        const newStoredSellers = localStorage.getItem("ytl_sellers");
+        const newStoredPassengers = localStorage.getItem("ytl_passengers");
+        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
+        setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
+        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);
+        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Effect to regenerate tickets whenever underlying data changes
+  useEffect(() => {
+    const confirmedReservations = reservations.filter((r: Reservation) => r.status === 'Confirmado');
     
-    setTours(currentTours);
-    setSellers(currentSellers);
-    setPassengers(currentPassengers);
-    
-    // Generate tickets from confirmed reservations
-    const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
     const generatedTickets = confirmedReservations.flatMap((res: Reservation): Ticket[] => {
-       if (!res.passengerIds || res.passengerIds.length === 0) return [];
+        if (!res.passengerIds || res.passengerIds.length === 0) return [];
 
-        const tour = currentTours.find(t => t.id === res.tripId);
-        const mainPassenger = currentPassengers.find(p => p.id === res.passengerIds[0]);
+        const tour = tours.find(t => t.id === res.tripId);
+        // Find the main passenger from the complete passenger list
+        const mainPassenger = passengers.find(p => p.id === res.passengerIds[0]);
 
+        // If tour or main passenger is not found, we can't generate a valid ticket.
         if (!tour || !mainPassenger) {
-            return []; // Skip ticket generation if essential data is missing
+            console.warn(`Skipping ticket for reservation ${res.id}: missing tour or main passenger.`);
+            return [];
         }
         
         const ticketId = `${res.id}-TKT`;
-        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour?.destination };
-        
+        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour.destination };
+
         return [{
             id: ticketId,
             reservationId: res.id,
             tripId: res.tripId,
-            passengerName: res.passenger,
-            passengerDni: mainPassenger?.dni || "N/A",
+            passengerName: mainPassenger.fullName, // Use the real-time name
+            passengerDni: mainPassenger.dni || "N/A",
             assignment: res.assignedSeats[0] || res.assignedCabins[0] || { seatId: "S/A", unit: 0 },
             qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
             reservation: res,
         }];
     });
-    setTickets(generatedTickets);
-  }, [])
+    setAllTickets(generatedTickets);
+  }, [reservations, tours, passengers]);
 
-  const filteredTickets = useMemo(() => {
-    if (selectedTripId === "all") return tickets;
-    return tickets.filter(ticket => ticket.tripId === selectedTripId);
-  }, [tickets, selectedTripId]);
+
+  const ticketsByTrip = useMemo(() => {
+    const filtered = selectedTripId === "all" 
+      ? allTickets 
+      : allTickets.filter(ticket => ticket.tripId === selectedTripId);
+
+    return filtered.reduce((acc, ticket) => {
+      const { tripId } = ticket;
+      if (!acc[tripId]) {
+        acc[tripId] = [];
+      }
+      acc[tripId].push(ticket);
+      return acc;
+    }, {} as Record<string, Ticket[]>);
+  }, [allTickets, selectedTripId]);
   
   const toursWithTickets = useMemo(() => {
-      const tripIdsWithTickets = new Set(tickets.map(t => t.tripId));
+      const tripIdsWithTickets = new Set(allTickets.map(t => t.tripId));
       return tours.filter(t => tripIdsWithTickets.has(t.id));
-  }, [tickets, tours]);
+  }, [allTickets, tours]);
+
 
   const ticketRefs = useMemo(() => 
-    filteredTickets.reduce((acc, ticket) => {
+    allTickets.reduce((acc, ticket) => {
       acc[ticket.id] = createRef<HTMLDivElement>();
       return acc;
     }, {} as Record<string, React.RefObject<HTMLDivElement>>),
-  [filteredTickets]);
+  [allTickets]);
 
   const handleDownload = async (ticketId: string, passengerName: string) => {
     const ticketElement = ticketRefs[ticketId].current;
@@ -109,7 +136,7 @@ export default function EmployeeTicketsPage() {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
         pixelRatio: 2,
-        style: {
+         style: {
             fontFamily: "'PT Sans', sans-serif",
         },
         fetchRequestInit: {
@@ -124,7 +151,7 @@ export default function EmployeeTicketsPage() {
         format: [ticketElement.offsetWidth + 20, ticketElement.offsetHeight + 20]
       });
       pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
-      pdf.save(`Ticket_${passengerName.replace(" ", "_")}.pdf`);
+      pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
       console.error('oops, something went wrong!', error);
     }
@@ -161,7 +188,7 @@ export default function EmployeeTicketsPage() {
         </CardContent>
        </Card>
 
-      {filteredTickets.length === 0 ? (
+      {Object.keys(ticketsByTrip).length === 0 ? (
         <Card>
             <CardContent className="p-12 text-center flex flex-col items-center gap-4">
                 <TicketCheck className="w-16 h-16 text-muted-foreground/50"/>
@@ -171,44 +198,54 @@ export default function EmployeeTicketsPage() {
             </CardContent>
         </Card>
       ) : (
-        <Accordion type="multiple" className="w-full space-y-4" defaultValue={filteredTickets.map(t => t.id)}>
-          {filteredTickets.map((ticket) => {
-            const tour = tours.find(t => t.id === ticket.tripId);
-            const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
+        <Accordion type="multiple" className="w-full space-y-4" defaultValue={Object.keys(ticketsByTrip)}>
+         {Object.entries(ticketsByTrip).map(([tripId, tripTickets]) => {
+            const tour = tours.find(t => t.id === tripId);
             if (!tour) return null;
-            
+
             return (
-            <AccordionItem value={ticket.id} key={ticket.id} className="border-b-0">
-              <Card className="overflow-hidden">
-                <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="p-2 rounded-full bg-primary/10 text-primary">
-                        <User className="w-5 h-5"/>
-                    </div>
-                    <div>
-                        <p className="font-semibold">{ticket.passengerName}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Plane className="w-4 h-4"/>{tour.destination}
-                        </p>
-                    </div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
-                     <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
-                        <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
-                    </div>
-                    <div className="flex justify-end w-full px-4">
-                      <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Descargar PDF
-                      </Button>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </Card>
-            </AccordionItem>
-          )})}
+                 <AccordionItem value={tripId} key={tripId} className="border-b-0">
+                    <Card>
+                        <AccordionTrigger className="p-4 text-lg font-semibold hover:no-underline hover:bg-muted/50">
+                            {tour.destination} ({tripTickets.length} tickets)
+                        </AccordionTrigger>
+                        <AccordionContent className="p-0">
+                             <Accordion type="multiple" className="w-full">
+                                {tripTickets.map((ticket) => {
+                                    const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
+                                    return (
+                                        <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
+                                            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
+                                                 <div className="flex items-center gap-4 text-left">
+                                                    <div className="p-2 rounded-full bg-primary/10 text-primary"><User className="w-5 h-5"/></div>
+                                                    <div>
+                                                        <p className="font-semibold">{ticket.passengerName}</p>
+                                                        <p className="text-sm text-muted-foreground">DNI: {ticket.passengerDni}</p>
+                                                    </div>
+                                                  </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
+                                                    <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
+                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
+                                                    </div>
+                                                    <div className="flex justify-end w-full px-4">
+                                                    <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
+                                                        <Download className="mr-2 h-4 w-4" />
+                                                        Descargar PDF
+                                                    </Button>
+                                                    </div>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    )
+                                })}
+                             </Accordion>
+                        </AccordionContent>
+                    </Card>
+                 </AccordionItem>
+            )
+         })}
         </Accordion>
       )}
     </div>

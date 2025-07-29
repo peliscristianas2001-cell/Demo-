@@ -27,6 +27,8 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   const reservation = ticket.reservation;
   const assignedButacas = (reservation.assignedSeats && reservation.assignedSeats.length > 0) 
     ? reservation.assignedSeats.map(s => s.seatId).join(', ') 
+    : (reservation.assignedCabins && reservation.assignedCabins.length > 0)
+    ? reservation.assignedCabins.map(c => c.cabinId).join(', ')
     : "A confirmar";
   
   return (
@@ -49,7 +51,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
         <div className="flex mt-4 gap-5">
             <div className="w-[70%] space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <InfoBox label="Pasajero Principal" value={reservation.passenger} className="col-span-2" />
+                    <InfoBox label="Pasajero Principal" value={ticket.passengerName} className="col-span-2" />
                 </div>
                  <div className="grid grid-cols-4 gap-4">
                      <InfoBox label="Cant. Pax" value={reservation.paxCount} />
@@ -87,7 +89,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
 
         <div className="grid grid-cols-4 gap-4 mt-4">
             <InfoBox label="Plataforma" value={tour.platform}/>
-            <InfoBox label="Butacas" value={assignedButacas}/>
+            <InfoBox label="Butacas/Cabinas" value={assignedButacas}/>
             <div className="col-span-2">
                 <InfoBox label="Coordinador/a Asignado/a" value={`${tour.coordinator || "A confirmar"} (Tel: ${tour.coordinatorPhone || "S/A"})`} />
             </div>
