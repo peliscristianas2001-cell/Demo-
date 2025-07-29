@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import 'leaflet/dist/leaflet.css';
-
 body {
   font-family: var(--font-body), sans-serif;
 }
@@ -101,5 +99,3 @@ body {
 .animate-fade-in-up {
   animation: keyframes-up 0.6s ease-out forwards;
 }
-
-    

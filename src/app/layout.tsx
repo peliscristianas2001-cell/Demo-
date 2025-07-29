@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
 
