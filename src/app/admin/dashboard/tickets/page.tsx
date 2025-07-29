@@ -58,13 +58,19 @@ export default function TicketsAdminPage() {
     
     // Generate tickets from confirmed reservations
     const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado' && r.passengerIds && r.passengerIds.length > 0);
-    const generatedTickets = confirmedReservations.map((res: Reservation) => {
-        const ticketId = `${res.id}-TKT`;
+    
+    const generatedTickets = confirmedReservations.flatMap((res: Reservation): Ticket[] => {
         const tour = currentTours.find(t => t.id === res.tripId);
         const mainPassenger = currentPassengers.find(p => p.id === res.passengerIds[0]);
 
+        if (!tour || !mainPassenger) {
+            return []; // Skip ticket generation if essential data is missing
+        }
+        
+        const ticketId = `${res.id}-TKT`;
         const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour?.destination };
-        return {
+
+        return [{
             id: ticketId,
             reservationId: res.id,
             tripId: res.tripId,
@@ -73,7 +79,7 @@ export default function TicketsAdminPage() {
             assignment: res.assignedSeats[0] || res.assignedCabins[0] || { seatId: "S/A", unit: 0 },
             qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
             reservation: res,
-        };
+        }];
     });
     setTickets(generatedTickets);
 

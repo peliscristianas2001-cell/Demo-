@@ -26,8 +26,12 @@ const InfoBox = ({ label, value, className, largeValue = false }: { label: strin
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller }, ref) => {
 
   const reservation = ticket.reservation;
-  const assignedButacas = reservation.assignedSeats.map(s => s.seatId).join(', ') || "A confirmar";
-  const mainPassenger = reservation.passengerIds[0] || "N/A";
+  const assignedButacas = (reservation.assignedSeats && reservation.assignedSeats.length > 0) 
+    ? reservation.assignedSeats.map(s => s.seatId).join(', ') 
+    : "A confirmar";
+  const mainPassenger = (reservation.passengerIds && reservation.passengerIds.length > 0)
+    ? reservation.passengerIds[0]
+    : "N/A";
 
   return (
     <div ref={ref} className={cn(
@@ -112,4 +116,3 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
-
