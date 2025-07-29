@@ -139,7 +139,7 @@ export default function SellersPage() {
     }
 
     const sellerData: Seller = {
-        id: selectedSeller?.id || `S${Date.now()}`,
+        id: selectedSeller?.id || `S-${Math.random().toString(36).substring(2, 11)}`,
         ...formData
     }
 

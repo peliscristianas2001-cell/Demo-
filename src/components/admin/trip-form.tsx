@@ -162,7 +162,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   }
 
   const handleAddTier = () => {
-      setPricingTiers(prev => [...prev, { id: `T${Date.now()}`, name: '', price: 0 }]);
+      setPricingTiers(prev => [...prev, { id: `T-${Math.random().toString(36).substring(2, 9)}`, name: '', price: 0 }]);
   }
 
   const handleTierChange = (id: string, field: 'name' | 'price', value: string | number) => {
@@ -180,7 +180,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   }
 
   const handleAddExtraCost = () => {
-    setCosts(prev => ({...prev, extras: [...(prev.extras || []), {id: `E${Date.now()}`, description: '', amount: 0}]}));
+    setCosts(prev => ({...prev, extras: [...(prev.extras || []), {id: `E-${Math.random().toString(36).substring(2, 9)}`, description: '', amount: 0}]}));
   }
 
   const handleExtraCostChange = (id: string, field: 'description' | 'amount', value: string | number) => {
@@ -453,5 +453,3 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
-
-    

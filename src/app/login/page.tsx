@@ -215,7 +215,7 @@ function RegisterForm() {
         }
 
         const newPassenger: Passenger = {
-            id: `P${Date.now()}`,
+            id: `P-${Math.random().toString(36).substring(2, 11)}`,
             family: fullName.split(' ').pop() || 'Familia',
             nationality: 'Argentina',
             tierId: 'adult',

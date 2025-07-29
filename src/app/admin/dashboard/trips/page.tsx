@@ -125,7 +125,7 @@ export default function TripsPage() {
     if (selectedTour) {
       setTours(tours.map(t => t.id === tourData.id ? tourData : t))
     } else {
-      setTours([...tours, { ...tourData, id: `T${Date.now()}` }])
+      setTours([...tours, { ...tourData, id: `T-${Math.random().toString(36).substring(2, 11)}` }])
     }
     setIsFormOpen(false)
     setSelectedTour(null)

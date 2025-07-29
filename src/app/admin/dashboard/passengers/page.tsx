@@ -100,7 +100,7 @@ export default function PassengersPage() {
         setPassengers(passengers.map(p => p.id === passengerData.id ? passengerData : p))
         toast({ title: "Pasajero actualizado", description: "Los datos se guardaron correctamente." });
     } else {
-        setPassengers([...passengers, { ...passengerData, id: `P${Date.now()}` }])
+        setPassengers([...passengers, { ...passengerData, id: `P-${Math.random().toString(36).substring(2, 11)}` }])
         toast({ title: "Pasajero creado", description: "El nuevo pasajero fue añadido al sistema." });
     }
     setIsFormOpen(false)
@@ -252,5 +252,3 @@ export default function PassengersPage() {
     </>
   )
 }
-
-    

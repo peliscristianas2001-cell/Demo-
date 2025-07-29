@@ -92,7 +92,7 @@ export default function BookingPage() {
         }
     } else {
          setBookingPassengers([{
-            id: `P${Date.now()}`, firstName: "", lastName: "", dni: "",
+            id: `P-${Math.random().toString(36).substring(2, 11)}`, firstName: "", lastName: "", dni: "",
             dob: undefined, phone: "", family: "", nationality: "Argentina", tierId: 'adult'
         }]);
     }
@@ -105,7 +105,7 @@ export default function BookingPage() {
   // --- Logic for non-logged-in users ---
   const addPassenger = () => {
     setBookingPassengers(prev => [...prev, {
-        id: `P${Date.now()}`, firstName: "", lastName: "", dni: "",
+        id: `P-${Math.random().toString(36).substring(2, 11)}`, firstName: "", lastName: "", dni: "",
         dob: undefined, phone: "", family: "", nationality: "Argentina", tierId: 'adult'
     }]);
   }
@@ -418,5 +418,3 @@ export default function BookingPage() {
     </div>
   )
 }
-
-    

@@ -116,7 +116,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   const handleAddNewPassenger = (newPassengerData: Omit<Passenger, 'id'>) => {
     const newPassenger: Passenger = {
       ...newPassengerData,
-      id: `P${Date.now()}`,
+      id: `P-${Math.random().toString(36).substring(2, 11)}`,
       family: selectedMainPassenger?.family || `Familia ${newPassengerData.fullName.split(' ').pop()}`,
       nationality: 'Argentina',
       tierId: 'adult'
