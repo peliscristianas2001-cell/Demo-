@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet';
 import { LatLng } from 'leaflet';
 import type { GeoSettings } from '@/lib/types';
@@ -42,7 +42,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
     return (
         <div className="space-y-4">
-            <div className="h-96 w-full rounded-lg overflow-hidden border">
+            <div className="h-96 w-full rounded-lg overflow-hidden border z-0">
                 <MapContainer center={position} zoom={6} scrollWheelZoom={true} className="h-full w-full">
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
