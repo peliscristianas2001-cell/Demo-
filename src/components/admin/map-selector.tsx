@@ -23,8 +23,8 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
     const position = useMemo(() => new LatLng(settings.latitude, settings.longitude), [settings.latitude, settings.longitude]);
 
+    // Initialize map only once
     useEffect(() => {
-        // Initialize map only if it hasn't been initialized yet and the container is ready
         if (mapContainerRef.current && !mapRef.current) {
             const map = L.map(mapContainerRef.current).setView(position, 6);
             mapRef.current = map;
@@ -34,7 +34,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
             }).addTo(map);
         }
         
-        // Cleanup function to remove map on component unmount
         return () => {
             if (mapRef.current) {
                 mapRef.current.remove();
@@ -44,7 +43,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); 
     
-    // Effect to handle map click events
+    // Handle map click events
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
@@ -59,24 +58,35 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
         map.on('click', handleClick);
 
-        // Cleanup function
         return () => {
             map.off('click', handleClick);
         };
     }, [onSettingsChange, settings]);
 
-    // Effect to update marker and circle when settings change
+    // Update marker and circle when settings change
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
 
-        map.setView(position, map.getZoom());
+        // Animate view change for smoother UX
+        if (!map.getCenter().equals(position)) {
+             map.setView(position, map.getZoom());
+        }
 
         // Update Marker
         if (markerRef.current) {
             markerRef.current.setLatLng(position);
         } else {
-            markerRef.current = L.marker(position).addTo(map);
+            markerRef.current = L.marker(position, {
+                 icon: new L.Icon({
+                    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map);
         }
 
         // Update Circle
