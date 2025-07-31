@@ -25,7 +25,7 @@ import {
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers } from "@/lib/mock-data"
-import type { Tour, Ticket, Seller, Reservation, Passenger } from "@/lib/types"
+import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function TicketsAdminPage() {
@@ -33,6 +33,7 @@ export default function TicketsAdminPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
@@ -44,11 +45,13 @@ export default function TicketsAdminPage() {
     const storedTours = localStorage.getItem("ytl_tours");
     const storedSellers = localStorage.getItem("ytl_sellers");
     const storedPassengers = localStorage.getItem("ytl_passengers");
+    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
 
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
     setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers);
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : []);
 
     // Add storage event listeners to update state on changes from other tabs
     const handleStorageChange = () => {
@@ -56,10 +59,12 @@ export default function TicketsAdminPage() {
         const newStoredTours = localStorage.getItem("ytl_tours");
         const newStoredSellers = localStorage.getItem("ytl_sellers");
         const newStoredPassengers = localStorage.getItem("ytl_passengers");
+        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
         setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
         setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
+        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : []);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -75,6 +80,7 @@ export default function TicketsAdminPage() {
         const tour = tours.find(t => t.id === res.tripId);
         // Find the main passenger from the complete passenger list
         const mainPassenger = passengers.find(p => p.id === res.passengerIds[0]);
+        const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
 
         // If tour or main passenger is not found, we can't generate a valid ticket.
         if (!tour || !mainPassenger) {
@@ -91,13 +97,13 @@ export default function TicketsAdminPage() {
             tripId: res.tripId,
             passengerName: mainPassenger.fullName, // Use the real-time name
             passengerDni: mainPassenger.dni || "N/A",
-            assignment: res.assignedSeats[0] || res.assignedCabins[0] || { seatId: "S/A", unit: 0 },
             qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
             reservation: res,
+            boardingPointId: res.boardingPointId,
         }];
     });
     setAllTickets(generatedTickets);
-  }, [reservations, tours, passengers]);
+  }, [reservations, tours, passengers, boardingPoints]);
 
 
   const ticketsByTrip = useMemo(() => {
@@ -213,6 +219,7 @@ export default function TicketsAdminPage() {
                              <Accordion type="multiple" className="w-full">
                                 {tripTickets.map((ticket) => {
                                     const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
+                                    const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
                                     return (
                                         <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
                                             <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
@@ -227,7 +234,7 @@ export default function TicketsAdminPage() {
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
                                                     <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
-                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller}/>
+                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint}/>
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
                                                     <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>

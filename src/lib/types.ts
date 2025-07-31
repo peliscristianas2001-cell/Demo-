@@ -1,5 +1,6 @@
 
 
+
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -146,9 +147,9 @@ export type Ticket = {
   tripId: string;
   passengerName: string;
   passengerDni: string;
-  assignment: AssignedSeat | AssignedCabin;
   qrCodeUrl: string;
   reservation: Reservation; // Include full reservation for ticket details
+  boardingPointId?: string;
 }
 
 export type Seller = {
@@ -159,5 +160,3 @@ export type Seller = {
     commission: number; // Percentage
     password?: string;
 }
-
-    

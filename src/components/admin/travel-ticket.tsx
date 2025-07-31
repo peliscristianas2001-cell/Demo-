@@ -4,89 +4,125 @@
 import React from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import type { Ticket as TicketType, Tour, Seller } from "@/lib/types"
+import type { Ticket as TicketType, Tour, Seller, BoardingPoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
-import { Barcode, Plane, User, Calendar, Clock, MapPin, BedDouble, Utensils, Shield, Armchair } from "lucide-react"
+import { Building, User, Users, Map, Calendar, Bed, Utensils, Bus, Pin, DoorOpen, Clock, Armchair, FileText, AlertTriangle, Phone, UserSquare } from "lucide-react"
 
 interface TravelTicketProps {
   ticket: TicketType;
   tour: Tour;
   seller?: Seller;
+  boardingPoint?: BoardingPoint;
 }
 
-const InfoItem = ({ label, value, icon: Icon, className }: { label: string, value: string | number | undefined, icon?: React.ElementType, className?: string }) => (
-    <div className={cn("flex flex-col", className)}>
-        <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-            {Icon && <Icon className="w-3 h-3"/>}
-            {label}
-        </p>
-        <p className="font-bold text-lg text-foreground truncate">{value || "—"}</p>
-    </div>
-)
+const SectionTitle = ({ icon: Icon, title }: { icon: React.ElementType, title: string }) => (
+  <div className="flex items-center gap-2 mt-4 mb-2">
+    <Icon className="w-5 h-5 text-primary" />
+    <h3 className="text-sm font-bold uppercase tracking-wider text-primary">{title}</h3>
+  </div>
+);
 
-export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller }, ref) => {
+const InfoPair = ({ label, value }: { label: string, value: string | undefined | null }) => (
+  <div>
+    <p className="text-xs text-muted-foreground">{label}</p>
+    <p className="font-semibold text-foreground">{value || "—"}</p>
+  </div>
+);
+
+export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint }, ref) => {
   const reservation = ticket.reservation;
   const assignedLocations = [
-    ...(reservation.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
-    ...(reservation.assignedCabins || []).map(c => `Cabina ${c.cabinId}`)
-  ].join(', ') || "A confirmar";
-  
+    ...(reservation.assignedSeats || []).map(s => s.seatId),
+    ...(reservation.assignedCabins || []).map(c => c.cabinId)
+  ].join(', ') || "Asignada por coordinador";
+
+  const nightsAndRoom = tour.nights && tour.nights > 0 
+    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || 'Hab. no especificada'}`
+    : "Solo ida";
+
   return (
     <div ref={ref} className={cn(
-      "bg-white text-black rounded-2xl shadow-2xl overflow-hidden",
-      "w-[800px] h-[420px] p-6 font-sans break-inside-avoid flex flex-col justify-between"
+      "bg-white text-black rounded-lg shadow-lg overflow-hidden",
+      "w-[700px] p-5 font-sans break-inside-avoid border"
     )}>
-        {/* Header */}
-        <div className="flex justify-between items-start pb-4 border-b-2 border-dashed border-slate-300">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+        <Logo />
+        <div className="text-right">
+            <p className="text-xs font-semibold">PASE DE ABORDO</p>
+            <p className="text-2xl font-bold text-primary">{tour.destination}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-6">
+        {/* Left Column */}
+        <div>
+          <SectionTitle icon={Users} title="Pasajeros"/>
+          <InfoPair label="Pasajero Principal" value={`${reservation.passenger} x ${reservation.paxCount}`} />
+          
+          <SectionTitle icon={Building} title="Agencia"/>
+          <InfoPair label="Nombre de la agencia" value="YO TE LLEVO" />
+
+          <SectionTitle icon={Map} title="Origen y Destino"/>
+          <InfoPair label="Origen" value={tour.origin} />
+          <InfoPair label="Destino" value={tour.destination} />
+          
+          <SectionTitle icon={Calendar} title="Fecha de Salida"/>
+          <InfoPair label="Fecha" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
+
+          <SectionTitle icon={Bed} title="Noches / Habitación"/>
+          <InfoPair label="Cantidad de noches / tipo de habitación" value={nightsAndRoom} />
+          
+          <SectionTitle icon={Utensils} title="Régimen de Comidas"/>
+          <InfoPair label="Tipo de comida incluida" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
+          
+        </div>
+        {/* Right Column */}
+        <div>
+           <SectionTitle icon={Bus} title="Datos del Transporte"/>
+           <div className="grid grid-cols-2 gap-x-4">
+                <InfoPair label="Bus" value={tour.bus} />
+                <InfoPair label="Plataforma" value={tour.platform} />
+           </div>
+           <InfoPair label="Embarque" value={boardingPoint?.name} />
+           
+           <SectionTitle icon={Clock} title="Horario"/>
+           <div className="grid grid-cols-2 gap-x-4">
+               <InfoPair label="Hora de presentación" value={tour.presentationTime} />
+               <InfoPair label="Hora de salida" value={tour.departureTime} />
+           </div>
+           
+           <SectionTitle icon={Armchair} title="Butacas"/>
+           <InfoPair label="Ubicación" value={assignedLocations} />
+
+           <SectionTitle icon={UserSquare} title="Vendedor/a"/>
+           <InfoPair label="Nombre" value={seller?.name || "Agencia"} />
+        </div>
+      </div>
+
+       {/* Bottom Section */}
+      <div className="mt-4 pt-3 border-t border-slate-200 space-y-3">
+        <div>
+            <SectionTitle icon={FileText} title="Condiciones"/>
+            <p className="text-xs text-muted-foreground">{tour.cancellationPolicy}</p>
+        </div>
+         <div>
+            <p className="text-xs font-bold">Observaciones: <span className="font-normal">Obligatorio llevar D.N.I.</span></p>
+            {tour.observations && <p className="text-xs font-bold">Aclaraciones Adicionales: <span className="font-normal">{tour.observations}</span></p>}
+        </div>
+        <div className="p-2 text-center bg-yellow-100 border border-yellow-300 rounded-md">
+            <p className="font-bold text-sm text-yellow-800">IMPORTANTE: PUNTUALIDAD CON LOS HORARIOS</p>
+        </div>
+         <div className="grid grid-cols-2 gap-x-6 text-sm">
             <div>
-                <Logo />
-                <p className="text-xs text-muted-foreground mt-1">Vendido por: {seller?.name || 'YO TE LLEVO'}</p>
+                <p className="font-bold flex items-center gap-1.5"><Phone className="w-4 h-4"/> Coordinador</p>
+                <p>{tour.coordinator}: {tour.coordinatorPhone}</p>
             </div>
-            <div className="text-right">
-                <p className="text-sm text-muted-foreground">Pase de Abordo / Boarding Pass</p>
-                <h1 className="text-4xl font-extrabold tracking-tighter text-primary">{tour.destination}</h1>
-            </div>
-        </div>
+         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex gap-6 mt-4">
-            {/* Left Column */}
-            <div className="w-[70%] space-y-5">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                    <InfoItem label="Pasajero Principal" value={ticket.passengerName} icon={User} className="col-span-2"/>
-                    <InfoItem label="Documento" value={ticket.passengerDni} />
-                    <InfoItem label="Cantidad de Pasajeros" value={`${reservation.paxCount}`} />
-                </div>
-                 <div className="grid grid-cols-3 gap-6 pt-4 border-t border-dashed">
-                    <InfoItem label="Sale de" value={tour.origin} icon={MapPin}/>
-                    <InfoItem label="Fecha" value={format(new Date(tour.date), "EEE dd, MMM", { locale: es })} icon={Calendar}/>
-                    <InfoItem label="Hora" value={tour.departureTime ? `${tour.departureTime} hs` : undefined} icon={Clock}/>
-                 </div>
-                 <div className="grid grid-cols-4 gap-6">
-                    <InfoItem label="Ubicación" value={assignedLocations} icon={Armchair}/>
-                    <InfoItem label="Rooming" value={tour.roomType} icon={BedDouble}/>
-                    <InfoItem label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No incluye'} icon={Utensils}/>
-                    <InfoItem label="Seguro" value={tour.insurance?.active ? 'Incluido' : 'No incluido'} icon={Shield}/>
-                 </div>
-            </div>
-
-            {/* Right Column (QR & ID) */}
-            <div className="w-[30%] flex flex-col items-center justify-around p-4 border-l-2 border-dashed border-slate-300 text-center">
-                 <img src={ticket.qrCodeUrl} alt="QR Code" className="w-36 h-36" />
-                 <div className="w-full">
-                    <p className="text-xs text-muted-foreground">ID Reserva</p>
-                    <p className="font-mono font-bold text-xl tracking-wider">{reservation.id}</p>
-                 </div>
-                 <Barcode className="w-full h-12 text-black"/>
-            </div>
-        </div>
-        
-        {/* Footer */}
-        <div className="mt-4 text-center border-t-2 border-dashed border-slate-300 pt-3">
-            <p className="font-bold text-lg text-primary">¡Gracias por viajar con nosotros!</p>
-            <p className="text-xs text-muted-foreground mt-1">Presentate en {tour.departurePoint} a las {tour.presentationTime} hs. ¡No te olvides tu DNI!</p>
-        </div>
     </div>
   )
 })
