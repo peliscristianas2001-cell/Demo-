@@ -7,10 +7,6 @@ import { es } from "date-fns/locale"
 import type { Ticket as TicketType, Tour, Seller, BoardingPoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
-import { 
-    Users, MapPin, Calendar, Bed, Utensils, Bus, Clock, Armchair, FileText, 
-    AlertTriangle, Phone, UserSquare, Building, TicketIcon, Info
-} from "lucide-react"
 
 interface TravelTicketProps {
   ticket: TicketType;
@@ -19,128 +15,88 @@ interface TravelTicketProps {
   boardingPoint?: BoardingPoint;
 }
 
-const InfoSection = ({ title, icon: Icon, children }: { title: string, icon: React.ElementType, children: React.ReactNode }) => (
-    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-        <div className="flex items-center gap-2 mb-2 border-b border-slate-200 pb-2">
-            <Icon className="w-5 h-5 text-primary" />
-            <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">{title}</h3>
-        </div>
-        <div className="space-y-1.5 text-sm">
-            {children}
+const InfoBox = ({ label, value, className, labelClassName, valueClassName }: { label: string, value?: React.ReactNode, className?: string, labelClassName?: string, valueClassName?: string }) => (
+    <div className={cn("border border-black p-1 text-center", className)}>
+        <p className={cn("text-xs font-bold uppercase", labelClassName)}>{label}</p>
+        <div className={cn("font-semibold text-sm h-6 flex items-center justify-center", valueClassName)}>
+            {value || "—"}
         </div>
     </div>
-);
-
-const InfoPair = ({ label, value }: { label: string, value: string | undefined | null }) => (
-  <div className="flex justify-between">
-    <p className="text-slate-500">{label}:</p>
-    <p className="font-semibold text-slate-800 text-right">{value || "—"}</p>
-  </div>
 );
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint }, ref) => {
   const reservation = ticket.reservation;
   const assignedLocations = [
-    ...(reservation.assignedSeats || []).map(s => s.seatId),
+    ...(reservation.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
     ...(reservation.assignedCabins || []).map(c => c.cabinId)
   ].join(', ') || "Asignada por coordinador";
 
   const nightsAndRoom = tour.nights && tour.nights > 0 
-    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || 'Hab. no especificada'}`
+    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || ''}`
     : "Solo ida";
+
 
   return (
     <div ref={ref} className={cn(
-      "bg-white text-black rounded-lg shadow-xl overflow-hidden",
-      "w-[750px] p-6 font-sans break-inside-avoid border-4 border-slate-200"
+      "bg-white text-black rounded-sm overflow-hidden",
+      "w-[794px] h-[1123px] p-4 font-sans border-2 border-black flex flex-col"
     )}>
-      
-      {/* Header */}
-      <header className="flex justify-between items-start pb-4 border-b-2 border-slate-300 border-dashed mb-4">
-        <Logo />
-        <div className="text-right">
-            <p className="text-sm font-semibold text-slate-600">PASE DE ABORDO</p>
-            <p className="text-3xl font-bold text-primary tracking-tight">{tour.destination}</p>
-            <p className="font-mono text-xs bg-slate-200 inline-block px-2 py-1 rounded mt-1">{ticket.id}</p>
-        </div>
-      </header>
+        <div className="grid grid-cols-12 gap-2 flex-grow">
+            {/* Columna Izquierda */}
+            <div className="col-span-3 space-y-2 flex flex-col">
+                <div className="flex-shrink-0">
+                    <Logo />
+                </div>
+                <InfoBox label="Vendedor/a" value={seller?.name} />
+                <InfoBox label="Cantidad" value={`${reservation.paxCount} PAX`} />
+                <div className="grid grid-cols-1 gap-2 flex-grow">
+                    <InfoBox label="BUS" value={tour.bus} />
+                    <InfoBox label="EMBARQUE" value={boardingPoint?.name} />
+                </div>
+            </div>
 
-      {/* Main Content Grid */}
-      <main className="grid grid-cols-2 gap-4">
-        {/* Left Column */}
-        <div className="space-y-4">
-            <InfoSection title="Pasajeros" icon={Users}>
-                <InfoPair label="Nombre del Pasajero" value={reservation.passenger} />
-                <InfoPair label="Cantidad de Personas (PAX)" value={`${reservation.paxCount} PAX`} />
-            </InfoSection>
-
-            <InfoSection title="Agencia" icon={Building}>
-                <InfoPair label="Nombre de la agencia" value="YO TE LLEVO" />
-            </InfoSection>
-
-            <InfoSection title="Origen y Destino" icon={MapPin}>
-                <InfoPair label="Origen" value={tour.origin} />
-                <InfoPair label="Destino" value={tour.destination} />
-            </InfoSection>
-
-             <InfoSection title="Fecha de Salida" icon={Calendar}>
-                <InfoPair label="Fecha" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
-            </InfoSection>
-            
-            <InfoSection title="Noches / Habitación" icon={Bed}>
-                <InfoPair label="Cantidad / Tipo" value={nightsAndRoom} />
-            </InfoSection>
-
-            <InfoSection title="Régimen de Comidas" icon={Utensils}>
-                <InfoPair label="Tipo de comida incluida" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
-            </InfoSection>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-4">
-             <InfoSection title="Datos del Transporte" icon={Bus}>
-                <InfoPair label="Bus" value={tour.bus} />
-                <InfoPair label="Embarque" value={boardingPoint?.name} />
-                <InfoPair label="Plataforma" value={tour.platform} />
-           </InfoSection>
-           
-           <InfoSection title="Horario" icon={Clock}>
-               <InfoPair label="Hora de presentación" value={tour.presentationTime} />
-               <InfoPair label="Hora de salida" value={tour.departureTime} />
-           </InfoSection>
-           
-           <InfoSection title="Butacas" icon={Armchair}>
-                <InfoPair label="Ubicación" value={assignedLocations} />
-           </InfoSection>
-           
-           <InfoSection title="Coordinador" icon={Phone}>
-                <InfoPair label="Nombre" value={tour.coordinator} />
-                <InfoPair label="Teléfono" value={tour.coordinatorPhone} />
-           </InfoSection>
-
-            <InfoSection title="Vendedor/a" icon={UserSquare}>
-                <InfoPair label="Nombre" value={seller?.name || "Agencia"} />
-            </InfoSection>
+            {/* Columna Derecha */}
+            <div className="col-span-9 grid grid-rows-6 gap-2">
+                <div className="row-span-1 grid grid-cols-3 gap-2">
+                    <InfoBox label="PASAJEROS" value={`${reservation.passenger} x ${reservation.paxCount}`} className="col-span-2" />
+                    <InfoBox label="AGENCIA" value="YO TE LLEVO" />
+                </div>
+                 <div className="row-span-4 grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-2">
+                        <div className="border border-black p-1 h-full">
+                           <p className="text-xs text-center text-gray-600">En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.</p>
+                        </div>
+                    </div>
+                     <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-2 gap-2">
+                            <InfoBox label="ORIGEN" value={tour.origin} />
+                            <InfoBox label="DESTINO" value={tour.destination} />
+                        </div>
+                        <InfoBox label="FECHA DE SALIDA" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
+                        <div className="grid grid-cols-2 gap-2">
+                            <InfoBox label="CANTIDAD DE NOCHES" value={tour.nights ? `${tour.nights}` : 'Solo ida'} />
+                            <InfoBox label="HABITACION" value={tour.roomType} />
+                        </div>
+                         <div className="grid grid-cols-2 gap-2">
+                            <InfoBox label="REGIMEN DE COMIDAS" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
+                            <InfoBox label="PLATAFORMA" value={tour.platform} />
+                        </div>
+                    </div>
+                 </div>
+                 <div className="row-span-1 grid grid-cols-3 gap-2">
+                    <InfoBox label="HORA DE PRESENTACION" value={tour.presentationTime} />
+                    <InfoBox label="HORA DE SALIDA" value={tour.departureTime} />
+                    <InfoBox label="BUTACAS" value={assignedLocations} />
+                </div>
+            </div>
         </div>
 
-         {/* Full-width Sections */}
-        <div className="col-span-2 space-y-4">
-             <InfoSection title="Condiciones" icon={FileText}>
-                <p className="text-xs text-slate-600 leading-relaxed">{tour.cancellationPolicy}</p>
-            </InfoSection>
-            <InfoSection title="Observaciones" icon={Info}>
-                <p className="text-sm font-semibold">Obligatorio llevar D.N.I.</p>
-                {tour.observations && <p className="text-xs text-slate-600 mt-1">{tour.observations}</p>}
-            </InfoSection>
+        {/* Footer */}
+        <div className="space-y-1 mt-2">
+             <InfoBox label="OBSERVACIONES" value="Obligatorio llevar D.N.I." className="text-left" labelClassName="text-left" valueClassName="justify-start"/>
+             <InfoBox label="IMPORTANTE" value="PUNTUALIDAD CON LOS HORARIOS" className="text-left bg-gray-200" labelClassName="text-left" valueClassName="justify-start"/>
+             <InfoBox label="COORDINADOR" value={`${tour.coordinator || ''} TEL: ${tour.coordinatorPhone || ''}`} className="text-left" labelClassName="text-left" valueClassName="justify-start"/>
         </div>
-      </main>
-
-       {/* Footer */}
-      <footer className="mt-4 pt-4 border-t-2 border-slate-300 border-dashed text-center">
-        <div className="p-2 text-center bg-yellow-100 border border-yellow-300 rounded-md">
-            <p className="font-bold text-sm text-yellow-800 flex items-center justify-center gap-2"><AlertTriangle className="w-5 h-5"/>IMPORTANTE: PUNTUALIDAD CON LOS HORARIOS</p>
-        </div>
-      </footer>
     </div>
   )
 })
