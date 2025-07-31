@@ -7,7 +7,10 @@ import { es } from "date-fns/locale"
 import type { Ticket as TicketType, Tour, Seller, BoardingPoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
-import { Building, User, Users, Map, Calendar, Bed, Utensils, Bus, Pin, DoorOpen, Clock, Armchair, FileText, AlertTriangle, Phone, UserSquare } from "lucide-react"
+import { 
+    Users, MapPin, Calendar, Bed, Utensils, Bus, Clock, Armchair, FileText, 
+    AlertTriangle, Phone, UserSquare, Building, TicketIcon, Info
+} from "lucide-react"
 
 interface TravelTicketProps {
   ticket: TicketType;
@@ -16,17 +19,22 @@ interface TravelTicketProps {
   boardingPoint?: BoardingPoint;
 }
 
-const SectionTitle = ({ icon: Icon, title }: { icon: React.ElementType, title: string }) => (
-  <div className="flex items-center gap-2 mt-4 mb-2">
-    <Icon className="w-5 h-5 text-primary" />
-    <h3 className="text-sm font-bold uppercase tracking-wider text-primary">{title}</h3>
-  </div>
+const InfoSection = ({ title, icon: Icon, children }: { title: string, icon: React.ElementType, children: React.ReactNode }) => (
+    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-2 mb-2 border-b border-slate-200 pb-2">
+            <Icon className="w-5 h-5 text-primary" />
+            <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">{title}</h3>
+        </div>
+        <div className="space-y-1.5 text-sm">
+            {children}
+        </div>
+    </div>
 );
 
 const InfoPair = ({ label, value }: { label: string, value: string | undefined | null }) => (
-  <div>
-    <p className="text-xs text-muted-foreground">{label}</p>
-    <p className="font-semibold text-foreground">{value || "—"}</p>
+  <div className="flex justify-between">
+    <p className="text-slate-500">{label}:</p>
+    <p className="font-semibold text-slate-800 text-right">{value || "—"}</p>
   </div>
 );
 
@@ -43,86 +51,96 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
 
   return (
     <div ref={ref} className={cn(
-      "bg-white text-black rounded-lg shadow-lg overflow-hidden",
-      "w-[700px] p-5 font-sans break-inside-avoid border"
+      "bg-white text-black rounded-lg shadow-xl overflow-hidden",
+      "w-[750px] p-6 font-sans break-inside-avoid border-4 border-slate-200"
     )}>
       
       {/* Header */}
-      <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+      <header className="flex justify-between items-start pb-4 border-b-2 border-slate-300 border-dashed mb-4">
         <Logo />
         <div className="text-right">
-            <p className="text-xs font-semibold">PASE DE ABORDO</p>
-            <p className="text-2xl font-bold text-primary">{tour.destination}</p>
+            <p className="text-sm font-semibold text-slate-600">PASE DE ABORDO</p>
+            <p className="text-3xl font-bold text-primary tracking-tight">{tour.destination}</p>
+            <p className="font-mono text-xs bg-slate-200 inline-block px-2 py-1 rounded mt-1">{ticket.id}</p>
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-2 gap-x-6">
+      {/* Main Content Grid */}
+      <main className="grid grid-cols-2 gap-4">
         {/* Left Column */}
-        <div>
-          <SectionTitle icon={Users} title="Pasajeros"/>
-          <InfoPair label="Pasajero Principal" value={`${reservation.passenger} x ${reservation.paxCount}`} />
-          
-          <SectionTitle icon={Building} title="Agencia"/>
-          <InfoPair label="Nombre de la agencia" value="YO TE LLEVO" />
+        <div className="space-y-4">
+            <InfoSection title="Pasajeros" icon={Users}>
+                <InfoPair label="Nombre del Pasajero" value={reservation.passenger} />
+                <InfoPair label="Cantidad de Personas (PAX)" value={`${reservation.paxCount} PAX`} />
+            </InfoSection>
 
-          <SectionTitle icon={Map} title="Origen y Destino"/>
-          <InfoPair label="Origen" value={tour.origin} />
-          <InfoPair label="Destino" value={tour.destination} />
-          
-          <SectionTitle icon={Calendar} title="Fecha de Salida"/>
-          <InfoPair label="Fecha" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
+            <InfoSection title="Agencia" icon={Building}>
+                <InfoPair label="Nombre de la agencia" value="YO TE LLEVO" />
+            </InfoSection>
 
-          <SectionTitle icon={Bed} title="Noches / Habitación"/>
-          <InfoPair label="Cantidad de noches / tipo de habitación" value={nightsAndRoom} />
-          
-          <SectionTitle icon={Utensils} title="Régimen de Comidas"/>
-          <InfoPair label="Tipo de comida incluida" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
-          
+            <InfoSection title="Origen y Destino" icon={MapPin}>
+                <InfoPair label="Origen" value={tour.origin} />
+                <InfoPair label="Destino" value={tour.destination} />
+            </InfoSection>
+
+             <InfoSection title="Fecha de Salida" icon={Calendar}>
+                <InfoPair label="Fecha" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
+            </InfoSection>
+            
+            <InfoSection title="Noches / Habitación" icon={Bed}>
+                <InfoPair label="Cantidad / Tipo" value={nightsAndRoom} />
+            </InfoSection>
+
+            <InfoSection title="Régimen de Comidas" icon={Utensils}>
+                <InfoPair label="Tipo de comida incluida" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
+            </InfoSection>
         </div>
+
         {/* Right Column */}
-        <div>
-           <SectionTitle icon={Bus} title="Datos del Transporte"/>
-           <div className="grid grid-cols-2 gap-x-4">
+        <div className="space-y-4">
+             <InfoSection title="Datos del Transporte" icon={Bus}>
                 <InfoPair label="Bus" value={tour.bus} />
+                <InfoPair label="Embarque" value={boardingPoint?.name} />
                 <InfoPair label="Plataforma" value={tour.platform} />
-           </div>
-           <InfoPair label="Embarque" value={boardingPoint?.name} />
+           </InfoSection>
            
-           <SectionTitle icon={Clock} title="Horario"/>
-           <div className="grid grid-cols-2 gap-x-4">
+           <InfoSection title="Horario" icon={Clock}>
                <InfoPair label="Hora de presentación" value={tour.presentationTime} />
                <InfoPair label="Hora de salida" value={tour.departureTime} />
-           </div>
+           </InfoSection>
            
-           <SectionTitle icon={Armchair} title="Butacas"/>
-           <InfoPair label="Ubicación" value={assignedLocations} />
+           <InfoSection title="Butacas" icon={Armchair}>
+                <InfoPair label="Ubicación" value={assignedLocations} />
+           </InfoSection>
+           
+           <InfoSection title="Coordinador" icon={Phone}>
+                <InfoPair label="Nombre" value={tour.coordinator} />
+                <InfoPair label="Teléfono" value={tour.coordinatorPhone} />
+           </InfoSection>
 
-           <SectionTitle icon={UserSquare} title="Vendedor/a"/>
-           <InfoPair label="Nombre" value={seller?.name || "Agencia"} />
+            <InfoSection title="Vendedor/a" icon={UserSquare}>
+                <InfoPair label="Nombre" value={seller?.name || "Agencia"} />
+            </InfoSection>
         </div>
-      </div>
 
-       {/* Bottom Section */}
-      <div className="mt-4 pt-3 border-t border-slate-200 space-y-3">
-        <div>
-            <SectionTitle icon={FileText} title="Condiciones"/>
-            <p className="text-xs text-muted-foreground">{tour.cancellationPolicy}</p>
+         {/* Full-width Sections */}
+        <div className="col-span-2 space-y-4">
+             <InfoSection title="Condiciones" icon={FileText}>
+                <p className="text-xs text-slate-600 leading-relaxed">{tour.cancellationPolicy}</p>
+            </InfoSection>
+            <InfoSection title="Observaciones" icon={Info}>
+                <p className="text-sm font-semibold">Obligatorio llevar D.N.I.</p>
+                {tour.observations && <p className="text-xs text-slate-600 mt-1">{tour.observations}</p>}
+            </InfoSection>
         </div>
-         <div>
-            <p className="text-xs font-bold">Observaciones: <span className="font-normal">Obligatorio llevar D.N.I.</span></p>
-            {tour.observations && <p className="text-xs font-bold">Aclaraciones Adicionales: <span className="font-normal">{tour.observations}</span></p>}
-        </div>
+      </main>
+
+       {/* Footer */}
+      <footer className="mt-4 pt-4 border-t-2 border-slate-300 border-dashed text-center">
         <div className="p-2 text-center bg-yellow-100 border border-yellow-300 rounded-md">
-            <p className="font-bold text-sm text-yellow-800">IMPORTANTE: PUNTUALIDAD CON LOS HORARIOS</p>
+            <p className="font-bold text-sm text-yellow-800 flex items-center justify-center gap-2"><AlertTriangle className="w-5 h-5"/>IMPORTANTE: PUNTUALIDAD CON LOS HORARIOS</p>
         </div>
-         <div className="grid grid-cols-2 gap-x-6 text-sm">
-            <div>
-                <p className="font-bold flex items-center gap-1.5"><Phone className="w-4 h-4"/> Coordinador</p>
-                <p>{tour.coordinator}: {tour.coordinatorPhone}</p>
-            </div>
-         </div>
-      </div>
-
+      </footer>
     </div>
   )
 })
