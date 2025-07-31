@@ -21,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog"
@@ -36,7 +35,7 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
 import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
@@ -44,6 +43,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { AddReservationForm } from "@/components/admin/add-reservation-form"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -139,10 +139,8 @@ export default function ReservationsPage() {
     }
   }, [passengers, isClient]);
 
-  const activeTours = useMemo(() => tours, [tours]);
-  
   const reservationsByTrip = useMemo(() => {
-    return activeTours.reduce((acc, tour) => {
+    return tours.reduce((acc, tour) => {
         const tripReservations = reservations.filter(res => res.tripId === tour.id);
         if (tripReservations.length > 0) {
             acc[tour.id] = {
@@ -155,7 +153,7 @@ export default function ReservationsPage() {
         }
         return acc;
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
-  }, [reservations, activeTours]);
+  }, [reservations, tours]);
 
   const getExpandedTransportList = (tour: Tour): ExpandedTransportUnit[] => {
     const transportList: ExpandedTransportUnit[] = [];
@@ -193,12 +191,6 @@ export default function ReservationsPage() {
     }
     return totalCount;
   }
-
-  const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
-    setReservations(reservations.map(res => 
-      res.id === reservationId ? { ...res, status: newStatus } : res
-    ))
-  }
   
   const handleAddReservation = (newReservation: Reservation) => {
     setReservations(prev => [...prev, newReservation]);
@@ -224,39 +216,34 @@ export default function ReservationsPage() {
 
           if (type === 'seat') {
               updatedRes.assignedSeats = updatedRes.assignedSeats || [];
-              currentAssignments = updatedRes.assignedSeats.filter(s => s.unit === unitNumber).map(s => s.seatId);
-              maxAssignments = updatedRes.paxCount - (updatedRes.assignedCabins?.length || 0);
-
-              const existingIndex = currentAssignments.findIndex(id => id === assignmentId);
-
-              if (existingIndex > -1) {
-                  // If seat exists, remove it
+              const isAlreadyAssigned = updatedRes.assignedSeats.some(s => s.seatId === assignmentId && s.unit === unitNumber);
+              
+              if (isAlreadyAssigned) {
                   updatedRes.assignedSeats = updatedRes.assignedSeats.filter(s => !(s.seatId === assignmentId && s.unit === unitNumber));
-              } else if (currentAssignments.length < maxAssignments) {
-                  // If seat does not exist and there is space, add it
-                  updatedRes.assignedSeats.push({ seatId: assignmentId, unit: unitNumber });
+              } else {
+                   const totalAssignments = (updatedRes.assignedSeats.length || 0) + (updatedRes.assignedCabins?.length || 0);
+                   if (totalAssignments < updatedRes.paxCount) {
+                        updatedRes.assignedSeats.push({ seatId: assignmentId, unit: unitNumber });
+                   }
               }
           } else if (type === 'cabin') {
                updatedRes.assignedCabins = updatedRes.assignedCabins || [];
-               currentAssignments = updatedRes.assignedCabins.filter(c => c.unit === unitNumber).map(c => c.cabinId);
-               maxAssignments = updatedRes.paxCount - (updatedRes.assignedSeats?.length || 0);
+               const isAlreadyAssigned = updatedRes.assignedCabins.some(c => c.cabinId === assignmentId && c.unit === unitNumber);
 
-               const existingIndex = currentAssignments.findIndex(id => id === assignmentId);
-              
-              if (existingIndex > -1) {
-                  // If cabin exists, remove it
+               if (isAlreadyAssigned) {
                   updatedRes.assignedCabins = updatedRes.assignedCabins.filter(c => !(c.cabinId === assignmentId && c.unit === unitNumber));
-              } else if (currentAssignments.length < maxAssignments) {
-                  // If cabin does not exist and there is space, add it
-                  updatedRes.assignedCabins.push({ cabinId: assignmentId, unit: unitNumber });
-              }
+               } else {
+                   const totalAssignments = (updatedRes.assignedSeats?.length || 0) + (updatedRes.assignedCabins?.length || 0);
+                   if (totalAssignments < updatedRes.paxCount) {
+                       updatedRes.assignedCabins.push({ cabinId: assignmentId, unit: unitNumber });
+                   }
+               }
           }
           return updatedRes;
       });
       
       setReservations(updatedReservations);
 
-      // Also update the reservation being actively edited in the dialog
       setEditingReservation(prev => {
         if (!prev.reservation || prev.reservation.id !== reservationId) return prev;
         const updatedInDialog = updatedReservations.find(r => r.id === reservationId);
@@ -545,22 +532,57 @@ export default function ReservationsPage() {
                                                         <Badge variant={res.status === 'Confirmado' ? 'secondary' : 'outline'}>{res.status}</Badge>
                                                     </div>
                                                 </AccordionTrigger>
-                                                <AccordionContent className="p-4 bg-secondary/20">
-                                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                                        <InfoCard icon={Users} label="Pasajero P." value={mainPassenger?.fullName}/>
-                                                        <InfoCard icon={Users} label="DNI" value={mainPassenger?.dni}/>
-                                                        <InfoCard icon={Calendar} label="F. Nac" value={mainPassenger?.dob ? new Date(mainPassenger.dob).toLocaleDateString() : 'N/A'}/>
-                                                        <InfoCard icon={Users} label="Edad" value={calculateAge(mainPassenger?.dob)}/>
-                                                        <InfoCard icon={Users} label="Cant." value={res.paxCount}/>
-                                                        <InfoCard icon={Users} label="Grupo" value={mainPassenger?.family}/>
+                                                <AccordionContent className="p-4 bg-secondary/20 space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                        {/* Passenger Info */}
+                                                        <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-lg flex items-center gap-2">
+                                                                    <Users className="w-5 h-5 text-primary"/>
+                                                                    Pasajero Principal
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent className="space-y-3 text-sm">
+                                                                <InfoRow label="Nombre" value={mainPassenger?.fullName}/>
+                                                                <InfoRow label="DNI" value={mainPassenger?.dni}/>
+                                                                <InfoRow label="F. Nac." value={mainPassenger?.dob ? new Date(mainPassenger.dob).toLocaleDateString() : 'N/A'}/>
+                                                                <InfoRow label="Edad" value={calculateAge(mainPassenger?.dob)}/>
+                                                                <InfoRow label="Grupo" value={mainPassenger?.family}/>
+                                                            </CardContent>
+                                                        </Card>
 
-                                                        <InfoCard icon={MapPin} label="Embarque" value={boardingPoint?.name || 'N/A'}/>
-                                                        <InfoCard icon={Armchair} label="Ubicación" value={assignedLocations || 'S/A'}/>
-                                                        <InfoCard icon={Info} label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'}/>
-                                                        <InfoCard icon={Info} label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'}/>
-                                                        <InfoCard icon={Info} label="Rooming" value={tour.roomType}/>
-                                                        <InfoCard icon={DollarSign} label="A Pagar" value={res.finalPrice ? `$${res.finalPrice.toLocaleString()}` : 'N/A'}/>
-                                                     </div>
+                                                        {/* Reservation Info */}
+                                                        <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-lg flex items-center gap-2">
+                                                                    <Tag className="w-5 h-5 text-primary"/>
+                                                                    Detalles de Reserva
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent className="space-y-3 text-sm">
+                                                                <InfoRow label="Cantidad" value={`${res.paxCount} pasajero(s)`}/>
+                                                                <InfoRow label="Embarque" value={boardingPoint?.name}/>
+                                                                <InfoRow label="Ubicación" value={assignedLocations}/>
+                                                                <InfoRow label="Vendedor/a" value={seller?.name}/>
+                                                                <InfoRow label="A Pagar" value={res.finalPrice ? `$${res.finalPrice.toLocaleString()}` : 'N/A'}/>
+                                                            </CardContent>
+                                                        </Card>
+
+                                                        {/* Trip Info */}
+                                                         <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-lg flex items-center gap-2">
+                                                                    <Home className="w-5 h-5 text-primary"/>
+                                                                    Detalles del Viaje
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent className="space-y-3 text-sm">
+                                                                <InfoRow label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
+                                                                <InfoRow label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
+                                                                <InfoRow label="Rooming" value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </div>
                                                      <div className="flex justify-end gap-2 mt-4">
                                                         <Button variant="outline" size="sm" onClick={() => handleDialogOpen(tour, res)}>
                                                             <Edit className="mr-2 h-4 w-4" /> Gestionar
@@ -590,15 +612,16 @@ export default function ReservationsPage() {
   )
 }
 
-const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | number | null | undefined}) => (
-    <div className="p-2 border rounded-md bg-background">
+const InfoRow = ({ label, value, icon }: { label: string, value: string | number | null | undefined, icon?: React.ReactNode}) => (
+    <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4 text-muted-foreground"/>
-            <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+            {icon}
+            <p className="text-muted-foreground font-medium">{label}</p>
         </div>
-        <p className="mt-1 font-medium text-sm truncate">{value || 'N/A'}</p>
+        <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
+    
 
     
 
