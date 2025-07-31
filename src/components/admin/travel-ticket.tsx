@@ -15,14 +15,20 @@ interface TravelTicketProps {
   boardingPoint?: BoardingPoint;
 }
 
-const InfoBox = ({ label, value, className, labelClassName, valueClassName }: { label: string, value?: React.ReactNode, className?: string, labelClassName?: string, valueClassName?: string }) => (
-    <div className={cn("border border-black p-1 text-center", className)}>
-        <p className={cn("text-xs font-bold uppercase", labelClassName)}>{label}</p>
-        <div className={cn("font-semibold text-sm h-6 flex items-center justify-center", valueClassName)}>
-            {value || "—"}
-        </div>
+const InfoSection = ({ title, children, className }: { title: string, children: React.ReactNode, className?: string }) => (
+    <div className={cn("border border-black/80 rounded", className)}>
+        <h3 className="bg-black/80 text-white text-center font-bold text-sm py-0.5 rounded-t-sm">{title}</h3>
+        <div className="p-2 text-sm">{children}</div>
     </div>
 );
+
+const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) => (
+    <div className="flex justify-between">
+        <span className="font-semibold text-gray-600">{label}:</span>
+        <span className="text-right font-medium text-black">{value || "—"}</span>
+    </div>
+)
+
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint }, ref) => {
   const reservation = ticket.reservation;
@@ -32,71 +38,87 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   ].join(', ') || "Asignada por coordinador";
 
   const nightsAndRoom = tour.nights && tour.nights > 0 
-    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || ''}`
+    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || 'No especificada'}`
     : "Solo ida";
 
 
   return (
     <div ref={ref} className={cn(
       "bg-white text-black rounded-sm overflow-hidden",
-      "w-[794px] h-[1123px] p-4 font-sans border-2 border-black flex flex-col"
+      "w-[794px] h-[1123px] p-6 font-sans border-2 border-black flex flex-col gap-4"
     )}>
-        <div className="grid grid-cols-12 gap-2 flex-grow">
+        <header className="flex justify-between items-center border-b-2 border-black pb-2">
+           <Logo />
+           <div className="text-right">
+                <h2 className="text-xl font-bold">PASE DE ABORDO</h2>
+                <p className="text-sm text-gray-600">ID Reserva: {reservation.id}</p>
+           </div>
+        </header>
+
+        <main className="grid grid-cols-12 gap-4 flex-grow">
             {/* Columna Izquierda */}
-            <div className="col-span-3 space-y-2 flex flex-col">
-                <div className="flex-shrink-0">
-                    <Logo />
-                </div>
-                <InfoBox label="Vendedor/a" value={seller?.name} />
-                <InfoBox label="Cantidad" value={`${reservation.paxCount} PAX`} />
-                <div className="grid grid-cols-1 gap-2 flex-grow">
-                    <InfoBox label="BUS" value={tour.bus} />
-                    <InfoBox label="EMBARQUE" value={boardingPoint?.name} />
-                </div>
+            <div className="col-span-8 space-y-3">
+                 <InfoSection title="PASAJEROS">
+                    <InfoRow label="Nombre Pasajero" value={reservation.passenger} />
+                    <InfoRow label="Cantidad (PAX)" value={`${reservation.paxCount} persona(s)`} />
+                 </InfoSection>
+                 <div className="grid grid-cols-2 gap-3">
+                    <InfoSection title="ORIGEN Y DESTINO">
+                        <InfoRow label="Origen" value={tour.origin} />
+                        <InfoRow label="Destino" value={tour.destination} />
+                    </InfoSection>
+                    <InfoSection title="FECHA DE SALIDA">
+                        <InfoRow label="Fecha" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
+                    </InfoSection>
+                 </div>
+                 <InfoSection title="DETALLES DEL ALOJAMIENTO">
+                    <InfoRow label="Noches / Habitación" value={nightsAndRoom} />
+                    <InfoRow label="Régimen de Comidas" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
+                 </InfoSection>
+                 <InfoSection title="DATOS DEL TRANSPORTE">
+                    <InfoRow label="Bus" value={tour.bus} />
+                    <InfoRow label="Embarque" value={boardingPoint?.name} />
+                    <InfoRow label="Plataforma" value={tour.platform} />
+                 </InfoSection>
+                  <div className="grid grid-cols-2 gap-3">
+                    <InfoSection title="HORARIO">
+                        <InfoRow label="Presentación" value={tour.presentationTime} />
+                        <InfoRow label="Salida" value={tour.departureTime} />
+                    </InfoSection>
+                     <InfoSection title="BUTACAS">
+                        <InfoRow label="Ubicación" value={assignedLocations} />
+                    </InfoSection>
+                  </div>
             </div>
 
             {/* Columna Derecha */}
-            <div className="col-span-9 grid grid-rows-6 gap-2">
-                <div className="row-span-1 grid grid-cols-3 gap-2">
-                    <InfoBox label="PASAJEROS" value={`${reservation.passenger} x ${reservation.paxCount}`} className="col-span-2" />
-                    <InfoBox label="AGENCIA" value="YO TE LLEVO" />
-                </div>
-                 <div className="row-span-4 grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-2">
-                        <div className="border border-black p-1 h-full">
-                           <p className="text-xs text-center text-gray-600">En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.</p>
-                        </div>
-                    </div>
-                     <div className="flex flex-col gap-2">
-                        <div className="grid grid-cols-2 gap-2">
-                            <InfoBox label="ORIGEN" value={tour.origin} />
-                            <InfoBox label="DESTINO" value={tour.destination} />
-                        </div>
-                        <InfoBox label="FECHA DE SALIDA" value={format(new Date(tour.date), "dd/MM/yyyy", { locale: es })} />
-                        <div className="grid grid-cols-2 gap-2">
-                            <InfoBox label="CANTIDAD DE NOCHES" value={tour.nights ? `${tour.nights}` : 'Solo ida'} />
-                            <InfoBox label="HABITACION" value={tour.roomType} />
-                        </div>
-                         <div className="grid grid-cols-2 gap-2">
-                            <InfoBox label="REGIMEN DE COMIDAS" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
-                            <InfoBox label="PLATAFORMA" value={tour.platform} />
-                        </div>
-                    </div>
-                 </div>
-                 <div className="row-span-1 grid grid-cols-3 gap-2">
-                    <InfoBox label="HORA DE PRESENTACION" value={tour.presentationTime} />
-                    <InfoBox label="HORA DE SALIDA" value={tour.departureTime} />
-                    <InfoBox label="BUTACAS" value={assignedLocations} />
-                </div>
+            <div className="col-span-4 space-y-3">
+                 <InfoSection title="AGENCIA">
+                    <InfoRow label="Nombre" value="YO TE LLEVO" />
+                 </InfoSection>
+                 <InfoSection title="COORDINADOR/A">
+                    <InfoRow label="Nombre" value={tour.coordinator} />
+                    <InfoRow label="Teléfono" value={tour.coordinatorPhone} />
+                 </InfoSection>
+                  <InfoSection title="VENDEDOR/A">
+                    <InfoRow label="Nombre" value={seller?.name} />
+                 </InfoSection>
             </div>
-        </div>
-
-        {/* Footer */}
-        <div className="space-y-1 mt-2">
-             <InfoBox label="OBSERVACIONES" value="Obligatorio llevar D.N.I." className="text-left" labelClassName="text-left" valueClassName="justify-start"/>
-             <InfoBox label="IMPORTANTE" value="PUNTUALIDAD CON LOS HORARIOS" className="text-left bg-gray-200" labelClassName="text-left" valueClassName="justify-start"/>
-             <InfoBox label="COORDINADOR" value={`${tour.coordinator || ''} TEL: ${tour.coordinatorPhone || ''}`} className="text-left" labelClassName="text-left" valueClassName="justify-start"/>
-        </div>
+        </main>
+        
+        <footer className="space-y-3 border-t-2 border-black pt-2 text-xs">
+            <InfoSection title="CONDICIONES">
+                <p className="text-gray-700 text-center">{tour.cancellationPolicy || "Consulte la política de cancelación."}</p>
+            </InfoSection>
+            <div className="grid grid-cols-2 gap-3">
+                 <InfoSection title="OBSERVACIONES">
+                    <p className="font-semibold text-center">{tour.observations || "Obligatorio llevar D.N.I."}</p>
+                </InfoSection>
+                 <InfoSection title="IMPORTANTE">
+                    <p className="font-bold text-red-600 text-center">¡PUNTUALIDAD CON LOS HORARIOS!</p>
+                </InfoSection>
+            </div>
+        </footer>
     </div>
   )
 })
