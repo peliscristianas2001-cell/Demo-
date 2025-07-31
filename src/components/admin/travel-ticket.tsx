@@ -63,10 +63,11 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                     <InfoItem label="Fecha" value={format(new Date(tour.date), "EEE dd, MMM", { locale: es })} icon={Calendar}/>
                     <InfoItem label="Hora" value={tour.departureTime ? `${tour.departureTime} hs` : undefined} icon={Clock}/>
                  </div>
-                 <div className="grid grid-cols-3 gap-6">
+                 <div className="grid grid-cols-4 gap-6">
                     <InfoItem label="Ubicación" value={assignedLocations} icon={Armchair}/>
-                    <InfoItem label="Noches" value={`${tour.nights}`} />
-                    <InfoItem label="Pensión" value={tour.pension?.type || "No incluye"} icon={Utensils}/>
+                    <InfoItem label="Rooming" value={tour.roomType} icon={BedDouble}/>
+                    <InfoItem label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No incluye'} icon={Utensils}/>
+                    <InfoItem label="Seguro" value={tour.insurance?.active ? 'Incluido' : 'No incluido'} icon={Shield}/>
                  </div>
             </div>
 
