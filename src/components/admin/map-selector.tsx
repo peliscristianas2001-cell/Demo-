@@ -34,13 +34,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
         }
-        
-        return () => {
-            if (mapRef.current) {
-                mapRef.current.remove();
-                mapRef.current = null;
-            }
-        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); 
     
