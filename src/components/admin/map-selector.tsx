@@ -22,28 +22,33 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
     const circleRef = useRef<L.Circle | null>(null);
     const [isMarking, setIsMarking] = useState(false);
 
-    // Initialize map only once
+    // Effect for initializing the map once
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
-            const map = L.map(mapContainerRef.current, {
+            mapRef.current = L.map(mapContainerRef.current, {
                 zoomControl: true,
-            }).setView([settings.latitude, settings.longitude], 6);
-            mapRef.current = map;
+            });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+            }).addTo(mapRef.current);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); 
-    
-    // Handle map click events
+
+        // Cleanup on component unmount
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+        };
+    }, []);
+
+    // Effect for handling map click events when isMarking changes
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
 
         const handleClick = (e: L.LeafletMouseEvent) => {
-            if (!isMarking) return;
             onSettingsChange({
                 ...settings,
                 latitude: e.latlng.lat,
@@ -52,28 +57,31 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
             setIsMarking(false); // Disable marking mode after a click
         };
 
-        map.on('click', handleClick);
+        if (isMarking) {
+            map.on('click', handleClick);
+        }
 
         return () => {
             map.off('click', handleClick);
         };
     }, [isMarking, onSettingsChange, settings]);
 
-    // Update marker and circle when settings change
+    // Effect for updating marker and circle when settings change
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
 
         const position = new LatLng(settings.latitude, settings.longitude);
         
-        // Only pan if the center is significantly different
-        if (!map.getCenter().equals(position, 0.001)) {
-             map.panTo(position);
+        // Set view and zoom only if they are not set, or very different
+        if (map.getZoom() < 4) {
+             map.setView(position, 6);
+        } else if (!map.getCenter().equals(position, 0.01)) {
+            map.panTo(position);
         }
 
-        if (markerRef.current) {
-            markerRef.current.setLatLng(position);
-        } else {
+        // Marker logic
+        if (!markerRef.current) {
             markerRef.current = L.marker(position, {
                  icon: new L.Icon({
                     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -84,18 +92,21 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                     shadowSize: [41, 41]
                 })
             }).addTo(map);
+        } else {
+            markerRef.current.setLatLng(position);
         }
 
-        if (circleRef.current) {
-            circleRef.current.setLatLng(position);
-            circleRef.current.setRadius(settings.radiusKm * 1000);
-        } else {
+        // Circle logic
+        if (!circleRef.current) {
             circleRef.current = L.circle(position, {
                 radius: settings.radiusKm * 1000,
                 color: 'hsl(var(--primary))',
                 fillColor: 'hsl(var(--primary))',
                 fillOpacity: 0.2
             }).addTo(map);
+        } else {
+            circleRef.current.setLatLng(position);
+            circleRef.current.setRadius(settings.radiusKm * 1000);
         }
     }, [settings]);
 
