@@ -163,7 +163,7 @@ function LoginForm() {
       }
   }
   
-  if (showRoleSelector) {
+  if (showRoleSelector && matchedUser) {
       return <RoleSelector onSelectRole={(role) => handleRoleSelection(role, matchedUser)} />
   }
 
