@@ -25,23 +25,13 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
     // Effect for initializing the map once
     useEffect(() => {
         if (mapContainerRef.current && !mapRef.current) {
-            mapRef.current = L.map(mapContainerRef.current, {
-                zoomControl: true,
-            });
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            const map = L.map(mapContainerRef.current).setView([settings.latitude, settings.longitude], 6);
+             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(mapRef.current);
+            }).addTo(map);
+            mapRef.current = map;
         }
-
-        // Cleanup on component unmount
-        return () => {
-            if (mapRef.current) {
-                mapRef.current.remove();
-                mapRef.current = null;
-            }
-        };
-    }, []);
+    }, [settings.latitude, settings.longitude]);
 
     // Effect for handling map click events when isMarking changes
     useEffect(() => {
@@ -54,11 +44,13 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 latitude: e.latlng.lat,
                 longitude: e.latlng.lng,
             });
-            setIsMarking(false); // Disable marking mode after a click
+            setIsMarking(false);
         };
 
         if (isMarking) {
             map.on('click', handleClick);
+        } else {
+            map.off('click', handleClick);
         }
 
         return () => {
@@ -72,18 +64,12 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         if (!map) return;
 
         const position = new LatLng(settings.latitude, settings.longitude);
-        
-        // Set view and zoom only if they are not set, or very different
-        if (map.getZoom() < 4) {
-             map.setView(position, 6);
-        } else if (!map.getCenter().equals(position, 0.01)) {
-            map.panTo(position);
-        }
 
-        // Marker logic
+        map.panTo(position);
+
         if (!markerRef.current) {
             markerRef.current = L.marker(position, {
-                 icon: new L.Icon({
+                icon: new L.Icon({
                     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
                     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
                     iconSize: [25, 41],
@@ -96,7 +82,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
             markerRef.current.setLatLng(position);
         }
 
-        // Circle logic
         if (!circleRef.current) {
             circleRef.current = L.circle(position, {
                 radius: settings.radiusKm * 1000,
