@@ -73,8 +73,9 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
         const position = new LatLng(settings.latitude, settings.longitude);
         
-        if (!map.getCenter().equals(position, 0.0001)) {
-             map.setView(position, map.getZoom());
+        // Only pan if the center is significantly different
+        if (!map.getCenter().equals(position, 0.001)) {
+             map.panTo(position);
         }
 
         if (markerRef.current) {
@@ -103,7 +104,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
                 fillOpacity: 0.2
             }).addTo(map);
         }
-    }, [settings.latitude, settings.longitude, settings.radiusKm]);
+    }, [settings]);
 
 
     const handleRadiusChange = (value: number[]) => {
