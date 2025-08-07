@@ -1,6 +1,3 @@
-
-
-
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -45,8 +42,18 @@ export interface TourCosts {
     extras?: ExtraCost[];
 }
 
+export interface ContactSettings {
+    address?: string;
+    phone?: string;
+    email?: string;
+    hours?: string;
+    instagram?: string;
+    facebook?: string;
+}
+
 export interface GeneralSettings {
     mainWhatsappNumber?: string;
+    contact?: ContactSettings;
 }
 
 export interface GeoSettings {
@@ -150,6 +157,7 @@ export type Ticket = {
   qrCodeUrl: string;
   reservation: Reservation; // Include full reservation for ticket details
   boardingPointId?: string;
+  boardingPoint?: BoardingPoint;
 }
 
 export type Seller = {

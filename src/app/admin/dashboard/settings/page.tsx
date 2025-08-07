@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -10,9 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 
 const MapSelector = dynamic(
@@ -31,6 +30,7 @@ export default function SettingsPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
+    const [contactSettings, setContactSettings] = useState<ContactSettings>({});
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -38,7 +38,13 @@ export default function SettingsPage() {
 
     useEffect(() => {
         const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
-        if (storedGeneralSettings) setGeneralSettings(JSON.parse(storedGeneralSettings));
+        if (storedGeneralSettings) {
+          const parsed = JSON.parse(storedGeneralSettings);
+          setGeneralSettings(parsed);
+          if (parsed.contact) {
+            setContactSettings(parsed.contact);
+          }
+        }
         
         const storedGeoSettings = localStorage.getItem("ytl_geo_settings");
         if (storedGeoSettings) setGeoSettings(JSON.parse(storedGeoSettings));
@@ -96,11 +102,17 @@ export default function SettingsPage() {
     }
 
     const handleGeneralSettingsSave = () => {
-        localStorage.setItem("ytl_general_settings", JSON.stringify(generalSettings));
+        const newSettings = { ...generalSettings, contact: contactSettings };
+        localStorage.setItem("ytl_general_settings", JSON.stringify(newSettings));
         toast({
             title: "Configuración guardada",
             description: "Los ajustes generales han sido actualizados."
         })
+        window.dispatchEvent(new Event('storage'));
+    }
+
+    const handleContactSettingsChange = (field: keyof ContactSettings, value: string) => {
+        setContactSettings(prev => ({ ...prev, [field]: value }));
     }
     
     const handleGeoSettingsSave = () => {
@@ -139,25 +151,20 @@ export default function SettingsPage() {
 
         const currentFullConfig = getLayoutConfig();
 
-        // Ensure category object exists
         if (!currentFullConfig[category]) {
             currentFullConfig[category] = {};
         }
 
         const categoryConfig = currentFullConfig[category];
         
-        // If it's an existing layout and its key is changing, remove the old one first
         if (originalKey && originalKey !== newKey) {
             delete categoryConfig[originalKey];
         }
         
-        // Add or update the layout with the new key
         categoryConfig[newKey] = newConfig;
         
-        // Save the entire updated configuration object back to storage
         saveLayoutConfig(currentFullConfig);
         
-        // Update the component's state to reflect the changes immediately
         setLayoutConfig(currentFullConfig);
 
         setIsEditorOpen(false);
@@ -250,7 +257,7 @@ export default function SettingsPage() {
                         id="main-whatsapp"
                         type="tel"
                         placeholder="Ej: 5491122334455"
-                        value={generalSettings.mainWhatsappNumber}
+                        value={generalSettings.mainWhatsappNumber || ''}
                         onChange={(e) => setGeneralSettings(prev => ({...prev, mainWhatsappNumber: e.target.value}))}
                     />
                     <p className="text-xs text-muted-foreground">Este número se usará si un vendedor no tiene uno asignado.</p>
@@ -260,6 +267,44 @@ export default function SettingsPage() {
                     Guardar Ajustes
                 </Button>
             </div>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Contact className="w-6 h-6"/> Datos de Contacto</CardTitle>
+                    <CardDescription>Esta información se mostrará en la página de contacto pública.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="contact-address">Dirección</Label>
+                            <Input id="contact-address" value={contactSettings.address || ''} onChange={(e) => handleContactSettingsChange('address', e.target.value)} placeholder="Calle Falsa 123, Ciudad"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="contact-phone">Teléfono de Contacto</Label>
+                            <Input id="contact-phone" value={contactSettings.phone || ''} onChange={(e) => handleContactSettingsChange('phone', e.target.value)} placeholder="011-4567-8901"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="contact-email">Email</Label>
+                            <Input id="contact-email" type="email" value={contactSettings.email || ''} onChange={(e) => handleContactSettingsChange('email', e.target.value)} placeholder="contacto@empresa.com"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="contact-hours">Horario de Atención</Label>
+                            <Input id="contact-hours" value={contactSettings.hours || ''} onChange={(e) => handleContactSettingsChange('hours', e.target.value)} placeholder="Lunes a Viernes de 9 a 18hs"/>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="contact-instagram">Instagram</Label>
+                            <Input id="contact-instagram" value={contactSettings.instagram || ''} onChange={(e) => handleContactSettingsChange('instagram', e.target.value)} placeholder="https://instagram.com/usuario"/>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="contact-facebook">Facebook</Label>
+                            <Input id="contact-facebook" value={contactSettings.facebook || ''} onChange={(e) => handleContactSettingsChange('facebook', e.target.value)} placeholder="https://facebook.com/usuario"/>
+                        </div>
+                    </div>
+                     <Button onClick={handleGeneralSettingsSave}>
+                        <Save className="mr-2 h-4 w-4"/> Guardar Datos de Contacto
+                    </Button>
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
