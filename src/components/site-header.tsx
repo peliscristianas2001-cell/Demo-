@@ -5,7 +5,7 @@ import Link from "next/link"
 import React, { useState } from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { MenuIcon, LogInIcon, UserPlus } from "lucide-react"
 
 export function SiteHeader() {
@@ -43,10 +43,11 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+              <SheetHeader className="p-6">
+                <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+                 <Logo />
+              </SheetHeader>
               <div className="flex flex-col h-full">
-                <div className="p-6">
-                  <Logo />
-                </div>
                 <nav className="flex flex-col gap-4 p-6 text-lg font-medium">
                   {navLinks.map(({ href, label }) => (
                     <Link
