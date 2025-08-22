@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input"
 import { AddReservationForm } from "@/components/admin/add-reservation-form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -343,7 +344,10 @@ export default function ReservationsPage() {
                   <Label>Detalle de Cuotas</Label>
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                     {installments.details.map((inst, index) => (
-                       <div key={index} className="flex items-center gap-2">
+                       <div key={index} className={cn(
+                        "flex items-center gap-2 p-2 rounded-md border",
+                        inst.isPaid && "bg-pink-100 border-pink-200"
+                       )}>
                           <Label className="w-20">Cuota {index + 1}</Label>
                           <Input type="number" value={inst.amount || ''} onChange={(e) => {
                             const newDetails = [...installments.details];
