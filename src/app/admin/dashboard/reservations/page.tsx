@@ -526,7 +526,7 @@ export default function ReservationsPage() {
                                         ...(res.assignedSeats || []).map(s => s.seatId),
                                         ...(res.assignedCabins || []).map(c => c.cabinId)
                                     ].join(', ');
-                                    const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice, isPaid: false }] };
+                                    const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice || 0, isPaid: false }] };
                                     const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
                                     const finalPrice = res.finalPrice || 0;
                                     const balance = finalPrice - paidAmount;
@@ -585,9 +585,21 @@ export default function ReservationsPage() {
                                                               </CardTitle>
                                                           </CardHeader>
                                                           <CardContent className="space-y-3 text-sm">
-                                                              <InfoRow label="Monto Total" value={`$${finalPrice.toLocaleString()}`} />
-                                                              <InfoRow label="Pagado" value={`$${paidAmount.toLocaleString()}`} />
-                                                              <InfoRow label="Saldo" value={`$${balance.toLocaleString()}`} />
+                                                              <InfoRow label="Monto Total" value={`$${finalPrice.toLocaleString('es-AR')}`} />
+                                                              <InfoRow label="Pagado" value={`$${paidAmount.toLocaleString('es-AR')}`} />
+                                                              <InfoRow label="Saldo" value={`$${balance.toLocaleString('es-AR')}`} />
+                                                              <Separator className="my-2" />
+                                                              <div className="space-y-2">
+                                                                  {installments.details.map((inst, index) => (
+                                                                    <div key={index} className="flex justify-between items-center text-xs">
+                                                                        <div className="flex items-center gap-2">
+                                                                             {inst.isPaid ? <CheckCircle className="w-4 h-4 text-green-600"/> : <Clock className="w-4 h-4 text-muted-foreground"/>}
+                                                                            <span>Cuota {index + 1}</span>
+                                                                        </div>
+                                                                        <span className="font-mono">${(inst.amount || 0).toLocaleString('es-AR')}</span>
+                                                                    </div>
+                                                                  ))}
+                                                              </div>
                                                           </CardContent>
                                                         </Card>
 
@@ -644,6 +656,8 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
+    
+
     
 
     
