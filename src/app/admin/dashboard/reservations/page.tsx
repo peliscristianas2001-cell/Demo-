@@ -615,7 +615,7 @@ export default function ReservationsPage() {
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
                                                                 <InfoRow label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
-                                                                <InfoRow label="Rooming" value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
+                                                                <InfoRow label="Tipo de Habitación" value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
                                                         </Card>
                                                     </div>
@@ -657,6 +657,8 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
+    
+
     
 
     
