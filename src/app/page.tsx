@@ -1,6 +1,6 @@
 
 "use client"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -18,11 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel"
+import Autoplay from "embla-carousel-autoplay"
+
 
 export default function Home() {
   const [tours, setTours] = useState<Tour[]>([])
   const [isClient, setIsClient] = useState(false)
   const router = useRouter()
+  const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }))
 
   useEffect(() => {
     setIsClient(true)
@@ -55,15 +63,41 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1">
         <section className="relative w-full h-[80vh] md:h-[90vh] flex items-center justify-center text-center text-white overflow-hidden">
-          <Image
-            src="https://placehold.co/1920x1080.png"
-            alt="Destino destacado"
-            layout="fill"
-            objectFit="cover"
-            className="absolute inset-0 z-[-1] brightness-[0.6]"
-            data-ai-hint="tropical beach sunset"
-            priority
-          />
+           <Carousel
+            plugins={[plugin.current]}
+            className="absolute inset-0 z-[-1]"
+            onMouseEnter={plugin.current.stop}
+            onMouseLeave={plugin.current.reset}
+          >
+            <CarouselContent>
+              {activeTours.length > 0 ? activeTours.map((tour) => (
+                <CarouselItem key={tour.id}>
+                  <Image
+                    src={tour.flyerUrl}
+                    alt={tour.destination}
+                    layout="fill"
+                    objectFit="cover"
+                    className="brightness-[0.6]"
+                    data-ai-hint="travel destination"
+                    priority={tour.id === activeTours[0].id}
+                  />
+                </CarouselItem>
+              )) : (
+                 <CarouselItem>
+                  <Image
+                    src="https://placehold.co/1920x1080.png"
+                    alt="Destino destacado"
+                    layout="fill"
+                    objectFit="cover"
+                    className="brightness-[0.6]"
+                    data-ai-hint="tropical beach sunset"
+                    priority
+                  />
+                </CarouselItem>
+              )}
+            </CarouselContent>
+          </Carousel>
+
           <div className="container px-4 md:px-6 z-10">
             <h1 className="text-4xl sm:text-5xl font-headline tracking-tight md:text-7xl drop-shadow-2xl animate-fade-in-down">
               Tu Próxima Aventura Comienza Aquí
