@@ -528,7 +528,8 @@ export default function ReservationsPage() {
                                     ].join(', ');
                                     const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice, isPaid: false }] };
                                     const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
-                                    const balance = res.finalPrice - paidAmount;
+                                    const finalPrice = res.finalPrice || 0;
+                                    const balance = finalPrice - paidAmount;
 
 
                                     return (
@@ -584,7 +585,7 @@ export default function ReservationsPage() {
                                                               </CardTitle>
                                                           </CardHeader>
                                                           <CardContent className="space-y-3 text-sm">
-                                                              <InfoRow label="Monto Total" value={`$${res.finalPrice.toLocaleString()}`} />
+                                                              <InfoRow label="Monto Total" value={`$${finalPrice.toLocaleString()}`} />
                                                               <InfoRow label="Pagado" value={`$${paidAmount.toLocaleString()}`} />
                                                               <InfoRow label="Saldo" value={`$${balance.toLocaleString()}`} />
                                                           </CardContent>
@@ -643,6 +644,8 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
+    
+
     
 
     
