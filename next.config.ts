@@ -26,4 +26,5 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Forcing a cache refresh
 export default nextConfig;
