@@ -141,7 +141,8 @@ export default function ReservationsPage() {
   }, [passengers, isClient]);
 
   const reservationsByTrip = useMemo(() => {
-    return tours.reduce((acc, tour) => {
+    const activeTours = tours.filter(tour => new Date(tour.date) >= new Date());
+    return activeTours.reduce((acc, tour) => {
         const tripReservations = reservations.filter(res => res.tripId === tour.id);
         if (tripReservations.length > 0) {
             acc[tour.id] = {
@@ -656,8 +657,6 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
-    
-
     
 
     

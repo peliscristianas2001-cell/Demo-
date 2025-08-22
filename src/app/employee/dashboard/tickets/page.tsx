@@ -122,7 +122,7 @@ export default function EmployeeTicketsPage() {
   
   const toursWithTickets = useMemo(() => {
       const tripIdsWithTickets = new Set(allTickets.map(t => t.tripId));
-      return tours.filter(t => tripIdsWithTickets.has(t.id));
+      return tours.filter(t => tripIdsWithTickets.has(t.id) && new Date(t.date) >= new Date());
   }, [allTickets, tours]);
 
 

@@ -111,7 +111,7 @@ export default function EmployeeReservationsPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-            <Accordion type="multiple" className="w-full">
+            <Accordion type="multiple" className="w-full" defaultValue={Object.keys(reservationsByTrip)}>
                 {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => (
                    <AccordionItem value={tour.id} key={tour.id}>
                        <AccordionTrigger className="text-lg font-medium hover:no-underline">
