@@ -102,7 +102,7 @@ export default function Home() {
             <h1 className="text-4xl sm:text-5xl font-headline tracking-tight md:text-7xl drop-shadow-2xl animate-fade-in-down">
               Tu Próxima Aventura Comienza Aquí
             </h1>
-            <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down" style={{ animationDelay: '0.2s' }}>
+            <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down " style={{ animationDelay: '0.2s' }}>
               Explora los destinos más increíbles. Encontrá tu viaje soñado con YO TE LLEVO.
             </p>
             <div className="max-w-xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
