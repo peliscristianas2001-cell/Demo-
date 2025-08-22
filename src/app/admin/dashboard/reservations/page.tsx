@@ -461,7 +461,7 @@ export default function ReservationsPage() {
     )}
 
     <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
-      <DialogContent className="max-w-4xl flex flex-col max-h-[90vh]">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-w-4xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
