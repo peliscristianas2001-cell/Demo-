@@ -134,6 +134,7 @@ export type Reservation = {
     tripId: string;
     passenger: string; // Main passenger's name for display
     passengerIds: string[]; // IDs of all passengers in the reservation
+    insuredPassengerIds?: string[]; // IDs of passengers who opted for insurance
     paxCount: number; // Total number of passengers
     assignedSeats: AssignedSeat[];
     assignedCabins: AssignedCabin[];
