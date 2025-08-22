@@ -526,6 +526,10 @@ export default function ReservationsPage() {
                                         ...(res.assignedSeats || []).map(s => s.seatId),
                                         ...(res.assignedCabins || []).map(c => c.cabinId)
                                     ].join(', ');
+                                    const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice, isPaid: false }] };
+                                    const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
+                                    const balance = res.finalPrice - paidAmount;
+
 
                                     return (
                                         <Accordion key={res.id} type="single" collapsible>
@@ -537,7 +541,7 @@ export default function ReservationsPage() {
                                                     </div>
                                                 </AccordionTrigger>
                                                 <AccordionContent className="p-4 bg-secondary/20 space-y-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                         {/* Passenger Info */}
                                                         <Card>
                                                             <CardHeader>
@@ -568,8 +572,22 @@ export default function ReservationsPage() {
                                                                 <InfoRow label="Embarque" value={boardingPoint?.name}/>
                                                                 <InfoRow label="Ubicación" value={assignedLocations}/>
                                                                 <InfoRow label="Vendedor/a" value={seller?.name}/>
-                                                                <InfoRow label="A Pagar" value={res.finalPrice ? `$${res.finalPrice.toLocaleString()}` : 'N/A'}/>
                                                             </CardContent>
+                                                        </Card>
+
+                                                        {/* Payment Info */}
+                                                        <Card>
+                                                          <CardHeader>
+                                                              <CardTitle className="text-lg flex items-center gap-2">
+                                                                  <CreditCard className="w-5 h-5 text-primary"/>
+                                                                  Información de Pago
+                                                              </CardTitle>
+                                                          </CardHeader>
+                                                          <CardContent className="space-y-3 text-sm">
+                                                              <InfoRow label="Monto Total" value={`$${res.finalPrice.toLocaleString()}`} />
+                                                              <InfoRow label="Pagado" value={`$${paidAmount.toLocaleString()}`} />
+                                                              <InfoRow label="Saldo" value={`$${balance.toLocaleString()}`} />
+                                                          </CardContent>
                                                         </Card>
 
                                                         {/* Trip Info */}
@@ -625,6 +643,8 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
+    
+
     
 
     
