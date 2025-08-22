@@ -26,5 +26,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Forcing a cache refresh
+// Forcing a cache refresh - Change this value to force a refresh: 1
 export default nextConfig;
