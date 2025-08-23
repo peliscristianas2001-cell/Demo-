@@ -82,14 +82,14 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Subir Nuevo Flyer</DialogTitle>
           <DialogDescription>
             Selecciona el viaje y el archivo de imagen o video para el flyer promocional.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="flex-1 space-y-4 py-4 overflow-y-auto pr-4">
           <div className="space-y-2">
             <Label htmlFor="trip">Viaje</Label>
             <Select onValueChange={setSelectedTrip} value={selectedTrip}>
@@ -119,14 +119,14 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
             <div className="space-y-2">
               <Label>Vista Previa</Label>
               {fileType === 'video' ? (
-                <video src={previewUrl} controls className="rounded-md w-full aspect-[4/5] object-cover" />
+                <video src={previewUrl} controls className="rounded-md w-full aspect-video object-contain bg-black" />
               ) : (
-                <img src={previewUrl} alt="Vista previa del flyer" className="rounded-md object-cover w-full aspect-[4/5]" />
+                <img src={previewUrl} alt="Vista previa del flyer" className="rounded-md object-contain w-full" />
               )}
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit}>Guardar Flyer</Button>
         </DialogFooter>
