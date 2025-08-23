@@ -16,10 +16,10 @@ export default function FlyersPage() {
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
 
-  const handleFlyerUpload = (tripId: string, flyerUrl: string) => {
+  const handleFlyerUpload = (tripId: string, flyerUrl: string, flyerType: 'image' | 'video') => {
     setTours(prevTours => 
       prevTours.map(tour => 
-        tour.id === tripId ? { ...tour, flyerUrl } : tour
+        tour.id === tripId ? { ...tour, flyerUrl, flyerType } : tour
       )
     )
     setIsFormOpen(false)
@@ -37,7 +37,7 @@ export default function FlyersPage() {
         <div>
           <h2 className="text-2xl font-bold">Gestión de Flyers</h2>
           <p className="text-muted-foreground">
-            Sube y administra los flyers promocionales para los viajes.
+            Sube y administra los flyers (fotos o videos) promocionales para los viajes.
           </p>
         </div>
         <Button onClick={() => setIsFormOpen(true)}>
@@ -56,16 +56,29 @@ export default function FlyersPage() {
             {activeTours.map((tour) => (
             <Card key={tour.id} className="overflow-hidden group">
                 <CardContent className="p-0">
-                <div className="relative aspect-[4/5] w-full">
-                    <Image
-                    src={tour.flyerUrl}
-                    alt={tour.destination}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-300 group-hover:scale-105"
-                    data-ai-hint="travel flyer"
-                    />
-                </div>
+                  <div className="relative aspect-[4/5] w-full bg-muted">
+                    {tour.flyerType === 'video' ? (
+                       <video
+                        src={tour.flyerUrl}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      >
+                        Tu navegador no soporta videos.
+                      </video>
+                    ) : (
+                      <Image
+                        src={tour.flyerUrl}
+                        alt={tour.destination}
+                        layout="fill"
+                        objectFit="cover"
+                        className="transition-transform duration-300 group-hover:scale-105"
+                        data-ai-hint="travel flyer"
+                      />
+                    )}
+                  </div>
                 </CardContent>
                 <CardFooter className="p-3 bg-muted/50">
                     <p className="font-semibold truncate text-sm">{tour.destination}</p>

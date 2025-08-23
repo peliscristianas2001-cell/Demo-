@@ -53,14 +53,29 @@ export default function EmployeeFlyersPage() {
         {activeTours.map((tour) => (
           <Card key={tour.id} className="overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
             <CardContent className="p-0">
-              <Image
-                src={tour.flyerUrl}
-                alt={`Flyer de ${tour.destination}`}
-                width={400}
-                height={500}
-                className="w-full h-auto object-cover aspect-[4/5]"
-                data-ai-hint="travel flyer"
-              />
+               <div className="relative aspect-[4/5] w-full bg-muted">
+                    {tour.flyerType === 'video' ? (
+                       <video
+                        src={tour.flyerUrl}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      >
+                        Tu navegador no soporta videos.
+                      </video>
+                    ) : (
+                      <Image
+                        src={tour.flyerUrl}
+                        alt={`Flyer de ${tour.destination}`}
+                        width={400}
+                        height={500}
+                        className="w-full h-auto object-cover aspect-[4/5]"
+                        data-ai-hint="travel flyer"
+                      />
+                    )}
+                  </div>
             </CardContent>
           </Card>
         ))}

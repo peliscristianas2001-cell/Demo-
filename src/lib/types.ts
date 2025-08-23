@@ -73,6 +73,7 @@ export interface Tour {
   date: Date;
   price: number;
   flyerUrl: string;
+  flyerType?: 'image' | 'video';
   
   origin?: string;
   nights?: number;

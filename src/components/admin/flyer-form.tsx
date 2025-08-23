@@ -27,13 +27,14 @@ interface FlyerFormProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   tours: Tour[]
-  onSave: (tripId: string, flyerUrl: string) => void
+  onSave: (tripId: string, flyerUrl: string, flyerType: 'image' | 'video') => void
 }
 
 export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProps) {
   const [selectedTrip, setSelectedTrip] = useState("")
   const [flyerFile, setFlyerFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
   const { toast } = useToast()
 
   useEffect(() => {
@@ -41,12 +42,21 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
       setSelectedTrip("")
       setFlyerFile(null)
       setPreviewUrl(null)
+      setFileType(null);
     }
   }, [isOpen])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.type.startsWith('image/')) {
+        setFileType('image');
+      } else if (file.type.startsWith('video/')) {
+        setFileType('video');
+      } else {
+        toast({ title: "Archivo no soportado", description: "Por favor, sube una imagen o un video.", variant: "destructive" });
+        return;
+      }
       setFlyerFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -57,7 +67,7 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
   }
 
   const handleSubmit = () => {
-    if (!selectedTrip || !flyerFile || !previewUrl) {
+    if (!selectedTrip || !flyerFile || !previewUrl || !fileType) {
       toast({
         title: "Faltan datos",
         description: "Por favor, selecciona un viaje y sube un archivo.",
@@ -67,7 +77,7 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
     }
     // In a real app, you would upload the file to a storage service and get a URL.
     // For this mock, we'll just use the local data URL from the preview.
-    onSave(selectedTrip, previewUrl)
+    onSave(selectedTrip, previewUrl, fileType)
   }
 
   return (
@@ -76,7 +86,7 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
         <DialogHeader>
           <DialogTitle>Subir Nuevo Flyer</DialogTitle>
           <DialogDescription>
-            Selecciona el viaje y el archivo de imagen para el flyer promocional.
+            Selecciona el viaje y el archivo de imagen o video para el flyer promocional.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -96,11 +106,11 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="flyerFile">Archivo del Flyer</Label>
+            <Label htmlFor="flyerFile">Archivo del Flyer (Imagen o Video)</Label>
             <Input
               id="flyerFile"
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleFileChange}
               className="file:text-primary-foreground file:font-bold file:mr-4 file:px-4 file:py-2 file:rounded-full file:border-0 file:bg-primary hover:file:bg-primary/90"
             />
@@ -108,7 +118,11 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
           {previewUrl && (
             <div className="space-y-2">
               <Label>Vista Previa</Label>
-              <img src={previewUrl} alt="Vista previa del flyer" className="rounded-md object-cover w-full aspect-[4/5]" />
+              {fileType === 'video' ? (
+                <video src={previewUrl} controls className="rounded-md w-full aspect-[4/5] object-cover" />
+              ) : (
+                <img src={previewUrl} alt="Vista previa del flyer" className="rounded-md object-cover w-full aspect-[4/5]" />
+              )}
             </div>
           )}
         </div>
