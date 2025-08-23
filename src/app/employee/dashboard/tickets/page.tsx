@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockSellers, mockReservations, mockPassengers } from "@/lib/mock-data"
+import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
@@ -51,7 +51,7 @@ export default function EmployeeTicketsPage() {
     setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers);
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
-    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : []);
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
     // Add storage event listeners to update state on changes from other tabs
     const handleStorageChange = () => {
@@ -64,7 +64,7 @@ export default function EmployeeTicketsPage() {
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
         setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
-        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : []);
+        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);

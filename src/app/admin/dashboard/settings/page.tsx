@@ -13,6 +13,7 @@ import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, 
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
+import { mockBoardingPoints } from "@/lib/mock-data"
 
 const MapSelector = dynamic(
   () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
@@ -50,14 +51,14 @@ export default function SettingsPage() {
         if (storedGeoSettings) setGeoSettings(JSON.parse(storedGeoSettings));
         
         const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
-        if (storedBoardingPoints) setBoardingPoints(JSON.parse(storedBoardingPoints));
+        setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
 
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
         const newBoardingPoints = localStorage.getItem("ytl_boarding_points");
-        if (newBoardingPoints) setBoardingPoints(JSON.parse(newBoardingPoints));
+        setBoardingPoints(newBoardingPoints ? JSON.parse(newBoardingPoints) : mockBoardingPoints);
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);

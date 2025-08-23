@@ -158,14 +158,4 @@ export type Ticket = {
   qrCodeUrl: string;
   reservation: Reservation; // Include full reservation for ticket details
   boardingPointId?: string;
-  boardingPoint?: BoardingPoint;
-}
-
-export type Seller = {
-    id: string;
-    name: string;
-    dni: string;
-    phone: string;
-    commission: number; // Percentage
-    password?: string;
 }

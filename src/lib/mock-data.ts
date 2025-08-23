@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger, AssignedCabin } from './types';
+import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger, AssignedCabin, BoardingPoint } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -139,12 +139,20 @@ export const mockSellers: Seller[] = [
     { id: 'S000', name: 'Angela Rojas', dni: '99999999', phone: '1111111111', commission: 15, password: 'AngelaRojasYTL' }
 ]
 
+export const mockBoardingPoints: BoardingPoint[] = [
+    { id: 'BP01', name: 'Terminal de Ómnibus Rosario' },
+    { id: 'BP02', name: 'Cruce Alberdi (Rosario)' },
+    { id: 'BP03', name: 'Plaza del Soldado (Santa Fe)' },
+    { id: 'BP04', name: 'Terminal de Ómnibus Paraná' },
+    { id: 'BP05', name: 'Shell San Lorenzo (Autopista)' },
+];
+
 export const mockPassengers: Passenger[] = [
-    { id: "P001", fullName: "Juan Pérez", dni: "30123456", dob: new Date('1983-05-10'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "adult" },
+    { id: "P001", fullName: "Juan Pérez", dni: "30123456", dob: new Date('1983-05-10'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "adult", boardingPointId: "BP02" },
     { id: "P002", fullName: "María García", dni: "32654987", dob: new Date('1987-11-22'), phone: "1147859632", family: "García", nationality: "Argentina", tierId: "adult" },
     { id: "P003", fullName: "Carlos López", dni: "28789123", dob: new Date('1980-01-15'), phone: "1132145698", family: "López", nationality: "Argentina", tierId: "adult" },
     { id: "P004", fullName: "Ana Martínez", dni: "35987654", dob: new Date('1992-09-30'), phone: "1154789632", family: "López", nationality: "Argentina", tierId: "adult" },
-    { id: "P005", fullName: "Lucía Hernández", dni: "38456789", dob: new Date('1995-07-18'), phone: "1165893214", family: "Hernández", nationality: "Argentina", tierId: "adult" },
+    { id: "P005", fullName: "Lucía Hernández", dni: "38456789", dob: new Date('1995-07-18'), phone: "1165893214", family: "Hernández", nationality: "Argentina", tierId: "adult", boardingPointId: "BP01" },
     { id: "P006", fullName: "Jorge Rodriguez", dni: "25123789", dob: new Date('1975-03-05'), phone: "1121458796", family: "Rodriguez", nationality: "Argentina", tierId: "adult" },
     { id: "P007", fullName: "Laura Pérez", dni: "45123456", dob: new Date('2015-08-12'), phone: "1158963214", family: "Pérez", nationality: "Argentina", tierId: "T1_CHILD" },
     { id: "P008", fullName: "Jose Luis Godoy", dni: "43580345", dob: new Date('2001-08-11'), phone: "", family: "Godoy", nationality: "Argentina", tierId: "adult", password: '@Vector2016' },
@@ -153,12 +161,12 @@ export const mockPassengers: Passenger[] = [
 
 
 export const mockReservations: Reservation[] = [
-    { id: "R001", tripId: "1", passenger: "Juan Pérez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 310000 },
+    { id: "R001", tripId: "1", passenger: "Juan Pérez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 310000, boardingPointId: 'BP02' },
     { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", finalPrice: 155000 },
     { id: "R002", tripId: "2", passenger: "María García", passengerIds: ["P002"], paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 125000 },
     { id: "R003", tripId: "1", passenger: "Carlos López", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 620000 },
     { id: "R004", tripId: "3", passenger: "Ana Martínez", passengerIds: ["P004"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 270000 },
-    { id: "R005", tripId: "2", passenger: "Lucía Hernández", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000 },
+    { id: "R005", tripId: "2", passenger: "Lucía Hernández", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000, boardingPointId: 'BP01' },
     { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
     { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 1250000 },
 ];
@@ -204,8 +212,7 @@ export const mockTickets: Ticket[] = confirmedReservations.flatMap(res => {
         reservationId: res.id,
         tripId: res.tripId,
         passengerName: res.passenger,
-        passengerDni: mainPassenger.dni, // Use main passenger's DNI
-        assignment: assignment as AssignedSeat | AssignedCabin, // Cast for simplicity
+        passengerDni: mainPassenger.dni || "N/A",
         qrCodeUrl: qrCodeUrl,
         reservation: res
     });

@@ -36,7 +36,7 @@ import {
 
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
-import { mockTours, mockReservations, mockSellers, mockPassengers } from "@/lib/mock-data"
+import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
@@ -108,7 +108,7 @@ export default function ReservationsPage() {
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
-    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : [])
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints)
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
@@ -121,7 +121,7 @@ export default function ReservationsPage() {
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
-       setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : [])
+       setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints)
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -524,7 +524,7 @@ export default function ReservationsPage() {
                                     const seller = sellers.find(s => s.id === res.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
                                     const assignedLocations = [
-                                        ...(res.assignedSeats || []).map(s => s.seatId),
+                                        ...(res.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
                                         ...(res.assignedCabins || []).map(c => c.cabinId)
                                     ].join(', ');
                                     const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice || 0, isPaid: false }] };
@@ -586,9 +586,9 @@ export default function ReservationsPage() {
                                                               </CardTitle>
                                                           </CardHeader>
                                                           <CardContent className="space-y-3 text-sm">
-                                                              <InfoRow label="Monto Total" value={`$${finalPrice.toLocaleString('es-AR')}`} />
-                                                              <InfoRow label="Pagado" value={`$${paidAmount.toLocaleString('es-AR')}`} />
-                                                              <InfoRow label="Saldo" value={`$${balance.toLocaleString('es-AR')}`} />
+                                                              <InfoRow label="Monto Total" value={`$${(finalPrice || 0).toLocaleString('es-AR')}`} />
+                                                              <InfoRow label="Pagado" value={`$${(paidAmount || 0).toLocaleString('es-AR')}`} />
+                                                              <InfoRow label="Saldo" value={`$${(balance || 0).toLocaleString('es-AR')}`} />
                                                               <Separator className="my-2" />
                                                               <div className="space-y-2">
                                                                   {installments.details.map((inst, index) => (
