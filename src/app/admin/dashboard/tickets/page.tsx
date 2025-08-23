@@ -107,9 +107,13 @@ export default function TicketsAdminPage() {
 
 
   const ticketsByTrip = useMemo(() => {
+    const activeToursIds = new Set(tours.filter(t => new Date(t.date) >= new Date()).map(t => t.id));
+
+    const activeTickets = allTickets.filter(ticket => activeToursIds.has(ticket.tripId));
+
     const filtered = selectedTripId === "all" 
-      ? allTickets 
-      : allTickets.filter(ticket => ticket.tripId === selectedTripId);
+      ? activeTickets 
+      : activeTickets.filter(ticket => ticket.tripId === selectedTripId);
 
     return filtered.reduce((acc, ticket) => {
       const { tripId } = ticket;
@@ -119,7 +123,7 @@ export default function TicketsAdminPage() {
       acc[tripId].push(ticket);
       return acc;
     }, {} as Record<string, Ticket[]>);
-  }, [allTickets, selectedTripId]);
+  }, [allTickets, selectedTripId, tours]);
   
   const toursWithTickets = useMemo(() => {
       const tripIdsWithTickets = new Set(allTickets.map(t => t.tripId));
