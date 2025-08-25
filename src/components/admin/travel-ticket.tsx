@@ -44,7 +44,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   const passengerNameDisplay = `${reservation.passenger} (x${reservation.paxCount})`;
 
   const assignedLocations = [
-    ...(reservation.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
+    ...(reservation.assignedSeats || []).map(s => s.seatId),
     ...(reservation.assignedCabins || []).map(c => c.cabinId)
   ].join(', ') || "Asignada por coordinador";
 
