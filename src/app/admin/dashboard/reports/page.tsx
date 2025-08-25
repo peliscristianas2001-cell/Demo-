@@ -15,14 +15,38 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Plane, Building, Package } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { BarChart3, TrendingUp, TrendingDown, DollarSign, Plane, Building, Package, Users } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
 import type { Tour, Reservation, Seller } from "@/lib/types"
+
+type CommissionDetail = {
+    sellerId: string;
+    sellerName: string;
+    totalCommission: number;
+}
 
 type ReportData = {
     tour: Tour;
     totalIncome: number;
     totalCommission: number;
+    commissionDetails: CommissionDetail[];
     totalFixedCosts: number;
     netProfit: number;
     reservationCount: number;
@@ -33,6 +57,8 @@ export default function ReportsPage() {
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [sellers, setSellers] = useState<Seller[]>([])
     const [isClient, setIsClient] = useState(false)
+    const [commissionModalData, setCommissionModalData] = useState<{ tour: Tour, details: CommissionDetail[] } | null>(null);
+
 
     useEffect(() => {
         setIsClient(true)
@@ -45,7 +71,7 @@ export default function ReportsPage() {
         setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
     }, [])
 
-    const reportData = useMemo(() => {
+    const reportData = useMemo((): ReportData[] => {
         const activeTours = tours.filter(t => new Date(t.date) >= new Date());
         
         return activeTours.map(tour => {
@@ -53,13 +79,18 @@ export default function ReportsPage() {
             
             const totalIncome = tripReservations.reduce((sum, res) => sum + res.finalPrice, 0);
 
-            const totalCommission = tripReservations.reduce((sum, res) => {
+            const commissionData = tripReservations.reduce((acc, res) => {
                 const seller = sellers.find(s => s.id === res.sellerId);
                 if (seller) {
-                    return sum + (res.finalPrice * (seller.commission / 100));
+                    const commissionAmount = res.finalPrice * (seller.commission / 100);
+                    if (!acc.details[seller.id]) {
+                        acc.details[seller.id] = { sellerId: seller.id, sellerName: seller.name, totalCommission: 0 };
+                    }
+                    acc.details[seller.id].totalCommission += commissionAmount;
+                    acc.total += commissionAmount;
                 }
-                return sum;
-            }, 0);
+                return acc;
+            }, { total: 0, details: {} as Record<string, CommissionDetail> });
 
             const tourCosts = tour.costs || {};
             const transportCost = tourCosts.transport || 0;
@@ -67,12 +98,13 @@ export default function ReportsPage() {
             const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
             const totalFixedCosts = transportCost + hotelCost + extrasCost;
 
-            const netProfit = totalIncome - totalCommission - totalFixedCosts;
+            const netProfit = totalIncome - commissionData.total - totalFixedCosts;
 
             return {
                 tour,
                 totalIncome,
-                totalCommission,
+                totalCommission: commissionData.total,
+                commissionDetails: Object.values(commissionData.details),
                 totalFixedCosts,
                 netProfit,
                 reservationCount: tripReservations.length
@@ -83,12 +115,47 @@ export default function ReportsPage() {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
     }
+    
+    const handleOpenCommissionModal = (tour: Tour, details: CommissionDetail[]) => {
+        setCommissionModalData({ tour, details });
+    }
 
     if (!isClient) {
         return null;
     }
 
     return (
+        <>
+        <Dialog open={!!commissionModalData} onOpenChange={(isOpen) => !isOpen && setCommissionModalData(null)}>
+             <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Detalle de Comisiones Pagadas</DialogTitle>
+                    <DialogDescription>
+                        Desglose de comisiones para el viaje a {commissionModalData?.tour.destination}.
+                    </DialogDescription>
+                </DialogHeader>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Vendedor/a</TableHead>
+                            <TableHead className="text-right">Comisión a Pagar</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {commissionModalData?.details.map(detail => (
+                            <TableRow key={detail.sellerId}>
+                                <TableCell className="font-medium">{detail.sellerName}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(detail.totalCommission)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setCommissionModalData(null)}>Cerrar</Button>
+                </DialogFooter>
+             </DialogContent>
+        </Dialog>
+
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-bold">Reportes Financieros</h2>
@@ -107,7 +174,7 @@ export default function ReportsPage() {
                 </Card>
             ) : (
                 <Accordion type="multiple" className="w-full space-y-4">
-                    {reportData.map(({ tour, totalIncome, totalCommission, totalFixedCosts, netProfit, reservationCount }) => (
+                    {reportData.map(({ tour, totalIncome, totalCommission, commissionDetails, totalFixedCosts, netProfit, reservationCount }) => (
                         <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
                             <Card className="overflow-hidden">
                                 <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 text-left">
@@ -130,13 +197,16 @@ export default function ReportsPage() {
                                             color="text-green-600"
                                             description="Suma de todos los pagos recibidos."
                                        />
-                                       <InfoCard 
-                                            title="Comisiones Pagadas" 
-                                            value={formatCurrency(totalCommission)} 
-                                            icon={TrendingDown} 
-                                            color="text-red-600"
-                                            description="Total pagado a vendedoras."
-                                       />
+                                       <Card className="cursor-pointer hover:bg-muted/50" onClick={() => handleOpenCommissionModal(tour, commissionDetails)}>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Comisiones Pagadas</CardTitle>
+                                                <Users className="h-5 w-5 text-red-600" />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{formatCurrency(totalCommission)}</div>
+                                                <p className="text-xs text-muted-foreground">Clic para ver detalle por vendedora.</p>
+                                            </CardContent>
+                                        </Card>
                                        <InfoCard 
                                             title="Gastos Fijos" 
                                             value={formatCurrency(totalFixedCosts)} 
@@ -159,6 +229,7 @@ export default function ReportsPage() {
                 </Accordion>
             )}
         </div>
+        </>
     )
 }
 
@@ -182,3 +253,5 @@ const InfoCard = ({ title, value, icon: Icon, color, description }: InfoCardProp
         </CardContent>
     </Card>
 )
+
+    
