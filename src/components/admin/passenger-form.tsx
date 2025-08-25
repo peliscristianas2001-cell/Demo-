@@ -17,6 +17,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { mockBoardingPoints } from "@/lib/mock-data"
 
 interface PassengerFormProps {
   isOpen: boolean
@@ -42,9 +43,7 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
 
   useEffect(() => {
     const storedPoints = localStorage.getItem("ytl_boarding_points");
-    if (storedPoints) {
-        setBoardingPoints(JSON.parse(storedPoints));
-    }
+    setBoardingPoints(storedPoints ? JSON.parse(storedPoints) : mockBoardingPoints);
 
     if (isOpen) {
         if (passenger) {
@@ -113,7 +112,7 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
             </div>
              <div className="space-y-2">
                 <Label htmlFor="boardingPointId">Punto de Embarque (por defecto)</Label>
-                 <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                 <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val === 'none' ? undefined : val)}>
                     <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="none">Ninguno</SelectItem>
