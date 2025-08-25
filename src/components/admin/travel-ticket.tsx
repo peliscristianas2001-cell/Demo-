@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React from "react"
@@ -86,7 +87,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                     <InfoRow label="Régimen de Comidas" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
                  </InfoSection>
                  <InfoSection title="Datos del Transporte" icon={Bus}>
-                    <InfoRow label="Bus" value={tour.bus} />
+                    <InfoRow label="Empresa" value={tour.bus} />
                     <InfoRow label="Embarque" value={boardingPoint?.name} />
                     <InfoRow label="Plataforma" value={tour.platform} />
                  </InfoSection>
