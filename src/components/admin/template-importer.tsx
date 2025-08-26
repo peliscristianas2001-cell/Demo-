@@ -91,13 +91,13 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
-            const headerRow: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "A6:AH6" })[0] || [];
-            const colMap: Record<string, number> = headerRow.reduce((acc, curr, i) => {
-                if (curr) acc[normalizeHeader(curr)] = i;
+            const headerRow: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "B6:AH6" })[0] || [];
+            const colMap: Record<string, string> = headerRow.reduce((acc, curr, i) => {
+                if (curr) acc[normalizeHeader(curr)] = XLSX.utils.encode_col(i + 1); // +1 because we start from column B
                 return acc;
-            }, {} as Record<string, number>);
+            }, {} as Record<string, string>);
 
-            const passengerData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "B7:AH67" });
+            const passengerData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: "A", range: `B7:AH67` });
             const pricingData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "AZ179:BA184" });
             
             let allTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
@@ -118,7 +118,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     id: `T-imported-${index}`,
                     name: row[0] || 'Desconocido',
                     price: parseFloat(row[1]) || 0
-                })).filter(tier => tier.name !== 'Desconocido' && tier.price > 0);
+                })).filter(tier => tier.name !== 'Desconocido' && tier.price > 0 && normalizeHeader(tier.name) !== 'TOTAL');
                 
                 const basePrice = newPricingTiers.find(t => normalizeHeader(t.name) === 'ADULTO')?.price || 0;
 
@@ -139,19 +139,21 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const newReservationsList: Reservation[] = [];
 
             for (const row of passengerData) {
-                const rawPassengerName = row[colMap['PASAJERO'] - 1]?.trim();
-                const passengerName = toTitleCase(rawPassengerName);
-                const passengerDNI = String(row[colMap['DNI'] - 1] || '').replace(/\D/g, '');
+                const passengerNameRaw = row[colMap['PASAJERO']];
+                if (!passengerNameRaw) continue; // Skip empty rows
+
+                const passengerName = toTitleCase(passengerNameRaw.trim());
+                const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
 
                 if (!passengerName || !passengerDNI) continue;
 
                 let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
                 
-                const passengerUpdate: Partial<Passenger> = {
+                const passengerUpdate: Partial<Passenger> & { fullName: string } = {
                     fullName: passengerName,
-                    dob: excelDateToJSDate(row[colMap['FECHA NAC'] - 1]),
-                    phone: row[colMap['TEL'] - 1] ? String(row[colMap['TEL'] - 1]) : undefined,
-                    family: passengerName.split(' ').pop() || 'Familia'
+                    dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
+                    phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
+                    family: passenger?.family || "" // Keep existing family, or default to empty for new passengers
                 };
 
                 if (passenger) {
@@ -169,16 +171,16 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 }
                 updatedPassengersMap.set(passenger.dni, passenger);
                 
-                if(trip && trip.price === 0 && row[colMap['VALOR'] - 1]) {
-                    trip.price = parseFloat(row[colMap['VALOR'] - 1]);
+                if(trip && trip.price === 0 && row[colMap['VALOR']]) {
+                    trip.price = parseFloat(row[colMap['VALOR']]);
                 }
                 
                 const installments: Installment[] = [];
                 const cuotas = [
-                    { amount: row[colMap['CUOTA 1'] - 1] },
-                    { amount: row[colMap['CUOTA 2'] - 1] },
-                    { amount: row[colMap['CUOTA 3'] - 1] },
-                    { amount: row[colMap['CUOTA 4'] - 1] },
+                    { amount: row[colMap['CUOTA 1']] },
+                    { amount: row[colMap['CUOTA 2']] },
+                    { amount: row[colMap['CUOTA 3']] },
+                    { amount: row[colMap['CUOTA 4']] },
                 ];
                 cuotas.forEach(c => {
                     if (c.amount && !isNaN(parseFloat(c.amount))) {
@@ -186,10 +188,10 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     }
                 });
 
-                const finalPrice = row[colMap['VALOR'] - 1] || 0;
+                const finalPrice = row[colMap['VALOR']] || 0;
                 const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
 
-                const sellerName = row[colMap['VENDEDOR'] - 1];
+                const sellerName = row[colMap['VENDEDOR']];
                 const seller = allSellers.find(s => s.name.toLowerCase() === sellerName?.toLowerCase());
 
                 const reservation: Reservation = {
@@ -197,7 +199,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     tripId: trip.id,
                     passenger: passengerName,
                     passengerIds: [passenger.id],
-                    paxCount: row[colMap['CANTIDAD'] - 1] || 1,
+                    paxCount: row[colMap['CANTIDAD']] || 1,
                     status: 'Confirmado',
                     paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
                     finalPrice: finalPrice,
@@ -245,9 +247,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             localStorage.setItem("ytl_passengers", JSON.stringify(allPassengers));
             localStorage.setItem("ytl_reservations", JSON.stringify(allReservations));
             
-            if(!newTourCreated) {
-                window.dispatchEvent(new Event('storage'));
-            }
+            window.dispatchEvent(new Event('storage'));
 
             toast({
                 title: "¡Importación Exitosa!",
@@ -380,5 +380,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
         </Dialog>
     )
 }
+
+    
 
     

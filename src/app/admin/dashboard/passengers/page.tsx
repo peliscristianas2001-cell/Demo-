@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/accordion"
 import { useToast } from "@/hooks/use-toast"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 const calculateAge = (dob: Date | string) => {
     if (!dob) return null;
@@ -151,6 +152,7 @@ export default function PassengersPage() {
         onSave={handleSave}
         passenger={selectedPassenger}
         prefilledFamily={prefilledFamily}
+        allPassengers={passengers}
     />
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -182,26 +184,31 @@ export default function PassengersPage() {
                 {Object.entries(passengersByFamily).map(([family, members]) => (
                     <AccordionItem value={family} key={family}>
                         <AccordionTrigger className="text-lg font-medium group hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <Input 
-                                    defaultValue={family} 
-                                    onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
-                                    disabled={family === 'Sin familia asignada'}
-                                />
+                           <div className={cn("flex items-center gap-2", family === 'Sin familia asignada' && "w-full")}>
+                                {family === 'Sin familia asignada' ? (
+                                    <span className="text-lg font-medium">{family}</span>
+                                ) : (
+                                    <Input 
+                                        defaultValue={family} 
+                                        onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
+                                    />
+                                )}
                                 {family !== 'Sin familia asignada' && <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />}
                                 <span>({members.length})</span>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                              <div className="space-y-4">
-                                <div className="flex justify-end">
-                                    <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
-                                        <UserPlus className="mr-2 h-4 w-4"/>
-                                        Añadir Integrante
-                                    </Button>
-                                </div>
+                                {family !== 'Sin familia asignada' && (
+                                    <div className="flex justify-end">
+                                        <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
+                                            <UserPlus className="mr-2 h-4 w-4"/>
+                                            Añadir Integrante
+                                        </Button>
+                                    </div>
+                                )}
                                 <Table>
                                     <TableHeader>
                                     <TableRow>
@@ -252,3 +259,5 @@ export default function PassengersPage() {
     </>
   )
 }
+
+    

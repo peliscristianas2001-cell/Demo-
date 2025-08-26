@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,7 @@ interface PassengerFormProps {
   onSave: (passenger: Passenger) => void
   passenger: Passenger | null
   prefilledFamily?: string
+  allPassengers?: Passenger[]
 }
 
 const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
@@ -36,10 +37,16 @@ const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
     boardingPointId: undefined
 }
 
-export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily }: PassengerFormProps) {
+export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily, allPassengers = [] }: PassengerFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const { toast } = useToast();
+
+  const existingFamilies = useMemo(() => {
+    const families = new Set(allPassengers.map(p => p.family).filter(Boolean));
+    return Array.from(families);
+  }, [allPassengers]);
+
 
   useEffect(() => {
     const storedPoints = localStorage.getItem("ytl_boarding_points");
@@ -108,7 +115,19 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
             </div>
              <div className="space-y-2">
                 <Label htmlFor="family">Familia</Label>
-                <Input id="family" value={formData.family} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario)"/>
+                <div className="flex gap-2">
+                    <Input id="family" value={formData.family || ''} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario) o seleccionar"/>
+                    {existingFamilies.length > 0 && (
+                        <Select onValueChange={(val) => handleFormChange('family', val)}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Familias existentes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {existingFamilies.map(fam => <SelectItem key={fam} value={fam}>{fam}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    )}
+                </div>
             </div>
              <div className="space-y-2">
                 <Label htmlFor="boardingPointId">Punto de Embarque (por defecto)</Label>
@@ -130,3 +149,5 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
     </Dialog>
   )
 }
+
+    
