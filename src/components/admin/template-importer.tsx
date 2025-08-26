@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { mockTours, mockPassengers, mockReservations, mockSellers, mockBoardingPoints } from "@/lib/mock-data"
-import type { Tour, Passenger, Reservation, Seller, BoardingPoint, Installment, PricingTier } from "@/lib/types"
+import { mockTours, mockPassengers, mockReservations, mockSellers } from "@/lib/mock-data"
+import type { Tour, Passenger, Reservation, Seller, PricingTier, Installment } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
-import { CheckCircle, InfoIcon, Loader2, UploadCloud, Calendar as CalendarIcon, Save } from "lucide-react"
+import { CheckCircle, Loader2, UploadCloud, Calendar as CalendarIcon, Save } from "lucide-react"
 import { DatePicker } from "../ui/date-picker"
 
 interface TemplateImporterProps {
@@ -41,14 +41,21 @@ const monthMap: Record<string, number> = {
     julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11
 };
 
-// Function to convert Excel serial date to JS Date
-const excelDateToJSDate = (serial: number) => {
-   if (typeof serial !== 'number') return undefined;
+const excelDateToJSDate = (serial: number): Date | undefined => {
+   if (typeof serial !== 'number' || isNaN(serial)) return undefined;
+   // Excel's epoch starts on 1900-01-01, but it incorrectly thinks 1900 was a leap year.
+   // This formula correctly handles dates after 1900-02-28.
+   if (serial < 61) { // Before 1900-03-01
+      serial--;
+   }
    const utc_days  = Math.floor(serial - 25569);
    const utc_value = utc_days * 86400;                                        
    const date_info = new Date(utc_value * 1000);
-   return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate());
+   // Adjust for timezone offset
+   return new Date(date_info.getTime() + (date_info.getTimezoneOffset() * 60000));
 }
+
+const normalizeHeader = (header: string) => header.trim().toUpperCase().replace(/\./g, '');
 
 
 export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps) {
@@ -79,19 +86,19 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
-            const header: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "A6:AH6" })[0] || [];
-            const colMap: Record<string, number> = header.reduce((acc, curr, i) => {
-                if (curr) acc[curr.trim().toUpperCase()] = i;
+            const headerRow: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "A6:AH6" })[0] || [];
+            const colMap: Record<string, number> = headerRow.reduce((acc, curr, i) => {
+                if (curr) acc[normalizeHeader(curr)] = i;
                 return acc;
             }, {} as Record<string, number>);
 
-            const passengerData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "A7:AH67" });
+            const passengerData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "B7:AH67" });
             const pricingData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: "AZ179:BA184" });
             
-            const tours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
-            let passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
-            let reservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
-            const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+            let allTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
+            let allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+            let allReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
+            const allSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
             
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const nameParts = fileName.split(' ');
@@ -99,7 +106,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const detectedMonth = monthMap[monthWord];
             const tripName = typeof detectedMonth !== 'undefined' ? nameParts.slice(0, -1).join(' ') : fileName;
 
-            let trip = tours.find(t => t.destination.toLowerCase() === tripName.toLowerCase());
+            let trip = allTours.find(t => t.destination.toLowerCase() === tripName.toLowerCase());
             let newTourCreated = false;
             if (!trip) {
                 const newPricingTiers: PricingTier[] = pricingData.map((row: any[], index: number) => ({
@@ -108,7 +115,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     price: parseFloat(row[1]) || 0
                 })).filter(tier => tier.name !== 'Desconocido' && tier.price > 0);
                 
-                const basePrice = newPricingTiers.find(t => t.name.toUpperCase() === 'ADULTO')?.price || 0;
+                const basePrice = newPricingTiers.find(t => normalizeHeader(t.name) === 'ADULTO')?.price || 0;
 
                 trip = {
                     id: `T-${Date.now()}`,
@@ -123,93 +130,114 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             }
 
             let resultCounts = { newTours: 0, newReservations: 0, newPassengers: 0, updatedPassengers: 0, createdTripId: trip.id, preselectedMonth: detectedMonth };
+            const updatedPassengersMap = new Map<string, Passenger>();
+            const newReservationsList: Reservation[] = [];
 
             for (const row of passengerData) {
-                 if (!row[colMap['PASAJERO']] || !row[colMap['DNI']]) continue;
+                const passengerName = row[colMap['PASAJERO'] - 1]?.trim();
+                const passengerDNI = String(row[colMap['DNI'] - 1] || '').trim();
 
-                const passengerName = row[colMap['PASAJERO']].trim();
-                const passengerDNI = String(row[colMap['DNI']]).trim();
+                if (!passengerName || !passengerDNI) continue;
 
-                let passenger = passengers.find(p => p.dni === passengerDNI);
+                let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
                 
+                const passengerUpdate: Partial<Passenger> = {
+                    fullName: passengerName,
+                    dob: excelDateToJSDate(row[colMap['FECHA NAC'] - 1]),
+                    phone: row[colMap['TEL'] - 1] ? String(row[colMap['TEL'] - 1]) : undefined,
+                    family: passengerName.split(' ').pop() || 'Familia'
+                };
+
                 if (passenger) {
-                    passengers = passengers.map(p => p.id === passenger!.id ? {...p, fullName: passengerName, phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : p.phone} : p)
+                    passenger = { ...passenger, ...passengerUpdate };
                     resultCounts.updatedPassengers++;
                 } else {
                     passenger = {
                         id: `P-${passengerDNI}`,
-                        fullName: passengerName,
                         dni: passengerDNI,
-                        dob: excelDateToJSDate(row[colMap['FECHA NAC.']]),
-                        phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
                         nationality: "Argentina",
-                        tierId: "adult", // Default, could be refined with GRUPO ETARIO
-                    };
-                    passengers.push(passenger);
+                        tierId: "adult",
+                        ...passengerUpdate,
+                    } as Passenger;
                     resultCounts.newPassengers++;
                 }
-
-                if(trip.price === 0 && row[colMap['VALOR']]) {
-                    trip.price = parseFloat(row[colMap['VALOR']]);
+                updatedPassengersMap.set(passenger.dni, passenger);
+                
+                if(trip && trip.price === 0 && row[colMap['VALOR'] - 1]) {
+                    trip.price = parseFloat(row[colMap['VALOR'] - 1]);
                 }
                 
                 const installments: Installment[] = [];
                 const cuotas = [
-                    { amount: row[colMap['CUOTA 1']], paid: true },
-                    { amount: row[colMap['CUOTA 2']], paid: true },
-                    { amount: row[colMap['CUOTA 3']], paid: true },
-                    { amount: row[colMap['CUOTA 4']], paid: true },
+                    { amount: row[colMap['CUOTA 1'] - 1] },
+                    { amount: row[colMap['CUOTA 2'] - 1] },
+                    { amount: row[colMap['CUOTA 3'] - 1] },
+                    { amount: row[colMap['CUOTA 4'] - 1] },
                 ];
                 cuotas.forEach(c => {
                     if (c.amount && !isNaN(parseFloat(c.amount))) {
-                        installments.push({ amount: parseFloat(c.amount), isPaid: c.paid });
+                        installments.push({ amount: parseFloat(c.amount), isPaid: true });
                     }
                 });
 
-                const finalPrice = row[colMap['VALOR']] || 0;
+                const finalPrice = row[colMap['VALOR'] - 1] || 0;
                 const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
 
-                const sellerName = row[colMap['VENDEDOR']];
-                const seller = sellers.find(s => s.name.toLowerCase() === sellerName?.toLowerCase());
+                const sellerName = row[colMap['VENDEDOR'] - 1];
+                const seller = allSellers.find(s => s.name.toLowerCase() === sellerName?.toLowerCase());
 
                 const reservation: Reservation = {
                     id: `R-${trip.id}-${passenger.id}`,
                     tripId: trip.id,
                     passenger: passengerName,
                     passengerIds: [passenger.id],
-                    paxCount: row[colMap['CANTIDAD']] || 1,
+                    paxCount: row[colMap['CANTIDAD'] - 1] || 1,
                     status: 'Confirmado',
                     paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
                     finalPrice: finalPrice,
                     installments: {
                         count: installments.length || 1,
-                        details: installments.length > 0 ? installments : [{ amount: finalPrice, isPaid: false}],
+                        details: installments.length > 0 ? installments : [{ amount: finalPrice, isPaid: false }],
                     },
                     assignedSeats: [],
                     assignedCabins: [],
                     sellerId: seller?.id || 'unassigned'
                 };
-                
-                const existingResIndex = reservations.findIndex(r => r.id === reservation.id);
-                if (existingResIndex > -1) {
-                    reservations[existingResIndex] = reservation;
-                } else {
-                    reservations.push(reservation);
-                    resultCounts.newReservations++;
-                }
+                newReservationsList.push(reservation);
             }
+            resultCounts.newReservations = newReservationsList.length;
 
-            if (newTourCreated) {
-                tours.push(trip);
+            // Merge updated passengers back into the main list
+            updatedPassengersMap.forEach(p => {
+                const index = allPassengers.findIndex(ap => ap.id === p.id);
+                if (index > -1) {
+                    allPassengers[index] = p;
+                } else {
+                    allPassengers.push(p);
+                }
+            });
+
+            // Merge new/updated reservations
+            newReservationsList.forEach(nr => {
+                const index = allReservations.findIndex(ar => ar.id === nr.id);
+                if (index > -1) {
+                    allReservations[index] = nr;
+                } else {
+                    allReservations.push(nr);
+                }
+            });
+
+            if (newTourCreated && trip) {
+                allTours.push(trip);
                 resultCounts.newTours = 1;
-            } else {
-                 const tourIndex = tours.findIndex(t => t.id === trip!.id);
-                 if (tourIndex > -1) tours[tourIndex] = trip;
+            } else if (trip) {
+                 const tourIndex = allTours.findIndex(t => t.id === trip!.id);
+                 if (tourIndex > -1) allTours[tourIndex] = trip;
             }
             
-            localStorage.setItem("ytl_tours", JSON.stringify(tours));
-            localStorage.setItem("ytl_passengers", JSON.stringify(passengers));
-            localStorage.setItem("ytl_reservations", JSON.stringify(reservations));
+            localStorage.setItem("ytl_tours", JSON.stringify(allTours));
+            localStorage.setItem("ytl_passengers", JSON.stringify(allPassengers));
+            localStorage.setItem("ytl_reservations", JSON.stringify(allReservations));
             
             if(!newTourCreated) {
                 window.dispatchEvent(new Event('storage'));
