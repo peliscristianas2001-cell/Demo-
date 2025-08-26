@@ -167,8 +167,8 @@ export function ChatbotWidget() {
             onClick={() => setIsOpen(!isOpen)}
             className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary"
             style={{
-                background: 'radial-gradient(circle at 30% 30%, #87CEEB 0%, #1E90FF 50%, #00008B 100%)',
-                boxShadow: '0 10px 20px rgba(30, 144, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.3)',
+                background: 'radial-gradient(circle at 30% 30%, #4E9DE2 0%, #6B9E3A 40%, #A9C988 55%, #4E9DE2 70%, #FFFFFF 100%)',
+                boxShadow: '0 10px 20px rgba(30, 144, 255, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.2)',
                 animation: 'float 6s ease-in-out infinite'
             }}
             aria-label="Abrir chatbot"
