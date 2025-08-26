@@ -3,6 +3,7 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
+import { ChatbotWidget } from '@/components/chatbot-widget';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${ptSans.variable} ${lilitaOne.variable} font-body antialiased`}>
         {children}
+        <ChatbotWidget />
         <Toaster />
       </body>
     </html>
