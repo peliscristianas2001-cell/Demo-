@@ -55,7 +55,12 @@ const excelDateToJSDate = (serial: number): Date | undefined => {
    return new Date(date_info.getTime() + (date_info.getTimezoneOffset() * 60000));
 }
 
-const normalizeHeader = (header: string) => header.trim().toUpperCase().replace(/\./g, '');
+const normalizeHeader = (header: string) => (header || '').trim().toUpperCase().replace(/\./g, '');
+
+const toTitleCase = (str: string): string => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
 
 
 export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps) {
@@ -134,8 +139,9 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const newReservationsList: Reservation[] = [];
 
             for (const row of passengerData) {
-                const passengerName = row[colMap['PASAJERO'] - 1]?.trim();
-                const passengerDNI = String(row[colMap['DNI'] - 1] || '').trim();
+                const rawPassengerName = row[colMap['PASAJERO'] - 1]?.trim();
+                const passengerName = toTitleCase(rawPassengerName);
+                const passengerDNI = String(row[colMap['DNI'] - 1] || '').replace(/\D/g, '');
 
                 if (!passengerName || !passengerDNI) continue;
 
@@ -374,3 +380,5 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
         </Dialog>
     )
 }
+
+    
