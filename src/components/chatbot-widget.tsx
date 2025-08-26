@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef, FormEvent } from "react"
@@ -12,6 +13,13 @@ type Message = {
   role: "user" | "model"
   content: string
 }
+
+const PlanetIcon = () => (
+    <div className="w-6 h-6 rounded-full bg-blue-400 relative flex items-center justify-center">
+        <div className="absolute w-full h-1/2 bg-blue-300/50 rounded-full top-1/4"></div>
+        <div className="absolute w-[140%] h-1 bg-yellow-300/80 rounded-full rotate-[-30deg]"></div>
+    </div>
+)
 
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
@@ -88,24 +96,24 @@ export function ChatbotWidget() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="w-[calc(100vw-2rem)] sm:w-96 h-[70vh] bg-card border shadow-2xl rounded-2xl flex flex-col origin-bottom-right"
             >
-              <header className="flex items-center justify-between p-4 border-b">
+              <header className="flex items-center justify-between p-4 border-b bg-slate-900 text-white rounded-t-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-primary/10 text-primary">
-                    <Bot className="w-6 h-6" />
+                  <div className="p-2 rounded-full bg-slate-700">
+                    <PlanetIcon />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">Asistente Virtual</h3>
-                    <p className="text-xs text-muted-foreground">YO TE LLEVO</p>
+                    <p className="text-xs text-slate-400">YO TE LLEVO</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-700">
                   <X className="w-5 h-5" />
                 </Button>
               </header>
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {messages.map((message, index) => (
                   <div key={index} className={cn("flex items-start gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
-                    {message.role === 'model' && <Bot className="w-6 h-6 text-primary flex-shrink-0" />}
+                    {message.role === 'model' && <div className="p-1.5 rounded-full bg-slate-700"><PlanetIcon/></div>}
                     <div className={cn(
                         "p-3 rounded-2xl max-w-[85%] text-sm",
                         message.role === 'user'
@@ -118,7 +126,7 @@ export function ChatbotWidget() {
                 ))}
                 {isLoading && (
                    <div className="flex items-start gap-3 justify-start">
-                     <Bot className="w-6 h-6 text-primary flex-shrink-0" />
+                     <div className="p-1.5 rounded-full bg-slate-700"><PlanetIcon/></div>
                      <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-muted rounded-bl-none flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground"/>
                         <span className="text-muted-foreground">Escribiendo...</span>
@@ -143,9 +151,11 @@ export function ChatbotWidget() {
             </motion.div>
           )}
         </AnimatePresence>
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+         <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
           transition={{
             type: "spring",
             stiffness: 260,
@@ -153,16 +163,27 @@ export function ChatbotWidget() {
             delay: 0.5,
           }}
         >
-           <Button
-            size="lg"
-            className="w-16 h-16 rounded-full shadow-lg"
+           <button
             onClick={() => setIsOpen(!isOpen)}
+            className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary"
+            style={{
+                background: 'radial-gradient(circle at 30% 30%, #87CEEB 0%, #1E90FF 50%, #00008B 100%)',
+                boxShadow: '0 10px 20px rgba(30, 144, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.3)',
+                animation: 'float 6s ease-in-out infinite'
+            }}
             aria-label="Abrir chatbot"
           >
-           {isOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8"/>}
-          </Button>
+           {isOpen ? <X className="w-8 h-8" /> : <Sparkles className="w-8 h-8"/>}
+          </button>
         </motion.div>
       </div>
+      <style jsx global>{`
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+      `}</style>
     </>
   )
 }
