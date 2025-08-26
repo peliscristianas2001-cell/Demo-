@@ -14,13 +14,6 @@ type Message = {
   content: string
 }
 
-const PlanetIcon = () => (
-    <div className="w-6 h-6 rounded-full bg-blue-400 relative flex items-center justify-center">
-        <div className="absolute w-full h-1/2 bg-blue-300/50 rounded-full top-1/4"></div>
-        <div className="absolute w-[140%] h-1 bg-yellow-300/80 rounded-full rotate-[-30deg]"></div>
-    </div>
-)
-
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -96,24 +89,24 @@ export function ChatbotWidget() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="w-[calc(100vw-2rem)] sm:w-96 h-[70vh] bg-card border shadow-2xl rounded-2xl flex flex-col origin-bottom-right"
             >
-              <header className="flex items-center justify-between p-4 border-b bg-slate-900 text-white rounded-t-2xl">
+              <header className="flex items-center justify-between p-4 border-b bg-primary/90 text-primary-foreground rounded-t-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-slate-700">
-                    <PlanetIcon />
+                  <div className="p-1.5 rounded-full bg-primary-foreground/20">
+                    <Bot className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">Asistente Virtual</h3>
-                    <p className="text-xs text-slate-400">YO TE LLEVO</p>
+                    <p className="text-xs text-primary-foreground/80">YO TE LLEVO</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-700">
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/20">
                   <X className="w-5 h-5" />
                 </Button>
               </header>
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {messages.map((message, index) => (
                   <div key={index} className={cn("flex items-start gap-3", message.role === "user" ? "justify-end" : "justify-start")}>
-                    {message.role === 'model' && <div className="p-1.5 rounded-full bg-slate-700"><PlanetIcon/></div>}
+                    {message.role === 'model' && <div className="p-1.5 rounded-full bg-muted text-primary"><Bot className="w-6 h-6" /></div>}
                     <div className={cn(
                         "p-3 rounded-2xl max-w-[85%] text-sm",
                         message.role === 'user'
@@ -126,7 +119,7 @@ export function ChatbotWidget() {
                 ))}
                 {isLoading && (
                    <div className="flex items-start gap-3 justify-start">
-                     <div className="p-1.5 rounded-full bg-slate-700"><PlanetIcon/></div>
+                     <div className="p-1.5 rounded-full bg-muted text-primary"><Bot className="w-6 h-6" /></div>
                      <div className="p-3 rounded-2xl max-w-[85%] text-sm bg-muted rounded-bl-none flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground"/>
                         <span className="text-muted-foreground">Escribiendo...</span>
@@ -163,18 +156,16 @@ export function ChatbotWidget() {
             delay: 0.5,
           }}
         >
-           <button
+           <Button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary"
+            className="w-16 h-16 rounded-full shadow-2xl"
+            aria-label="Abrir chatbot"
             style={{
-                background: 'radial-gradient(circle at 30% 30%, #4E9DE2 0%, #6B9E3A 40%, #A9C988 55%, #4E9DE2 70%, #FFFFFF 100%)',
-                boxShadow: '0 10px 20px rgba(30, 144, 255, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.2)',
                 animation: 'float 6s ease-in-out infinite'
             }}
-            aria-label="Abrir chatbot"
           >
-           {isOpen ? <X className="w-8 h-8" /> : <Sparkles className="w-8 h-8"/>}
-          </button>
+           {isOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8"/>}
+          </Button>
         </motion.div>
       </div>
       <style jsx global>{`
