@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import React, { useState } from "react"
+import React from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
