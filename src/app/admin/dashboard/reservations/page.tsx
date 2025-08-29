@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
@@ -33,13 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { SearchableSelect } from "@/components/searchable-select"
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown } from "lucide-react"
 import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
@@ -61,7 +57,6 @@ type ActiveTransportUnitInfo = {
 type EditReservationState = {
   isOpen: boolean;
   reservation: Reservation | null;
-  sellerPopoverOpen?: boolean;
 }
 
 type AddReservationState = {
@@ -97,7 +92,7 @@ export default function ReservationsPage() {
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
-  const [editingReservation, setEditingReservation] = useState<EditReservationState>({ isOpen: false, reservation: null, sellerPopoverOpen: false });
+  const [editingReservation, setEditingReservation] = useState<EditReservationState>({ isOpen: false, reservation: null });
   const [addingReservation, setAddingReservation] = useState<AddReservationState>({ isOpen: false, tour: null });
 
 
@@ -269,7 +264,7 @@ export default function ReservationsPage() {
   }
 
   const handleDialogOpen = (tour: Tour, reservation: Reservation) => {
-    setEditingReservation({ isOpen: true, reservation, sellerPopoverOpen: false });
+    setEditingReservation({ isOpen: true, reservation });
     const unitList = getExpandedTransportList(tour);
     if (unitList.length > 0) {
       const firstUnit = unitList[0];
@@ -304,6 +299,12 @@ export default function ReservationsPage() {
     const unitList = getExpandedTransportList(tour);
     const reservationPassengers = passengers.filter(p => (reservation.passengerIds || []).includes(p.id));
 
+    const sellerOptions = sellers.map(s => ({
+        value: s.id,
+        label: s.name,
+        keywords: [s.dni]
+    }));
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Columna Izquierda: Edición de Datos */}
@@ -313,53 +314,12 @@ export default function ReservationsPage() {
             <CardContent>
                <div className="space-y-2">
                 <Label htmlFor="seller">Vendedor/a Asignado</Label>
-                 <Popover open={editingReservation.sellerPopoverOpen} onOpenChange={(isOpen) => setEditingReservation(prev => ({...prev, sellerPopoverOpen: isOpen}))}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            className="w-full justify-between"
-                        >
-                            {reservation.sellerId && reservation.sellerId !== 'unassigned'
-                                ? sellers.find((seller) => seller.id === reservation.sellerId)?.name
-                                : "Seleccionar vendedor..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                        <Command>
-                            <CommandInput placeholder="Buscar vendedor..." />
-                            <CommandList>
-                                <CommandEmpty>No se encontró ningún vendedor.</CommandEmpty>
-                                <CommandGroup>
-                                     <CommandItem
-                                        value="unassigned"
-                                        onSelect={() => {
-                                            setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, sellerId: 'unassigned'}, sellerPopoverOpen: false}));
-                                        }}
-                                    >
-                                        <Check className={cn("mr-2 h-4 w-4", reservation.sellerId === 'unassigned' ? "opacity-100" : "opacity-0")}/>
-                                        Sin asignar
-                                    </CommandItem>
-                                    {sellers.map((seller) => (
-                                        <CommandItem
-                                            value={seller.name}
-                                            key={seller.id}
-                                            onSelect={() => {
-                                               setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, sellerId: seller.id}, sellerPopoverOpen: false}));
-                                            }}
-                                        >
-                                            <Check
-                                                className={cn("mr-2 h-4 w-4", reservation.sellerId === seller.id ? "opacity-100" : "opacity-0")}
-                                            />
-                                            {seller.name}
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                <SearchableSelect
+                    options={sellerOptions}
+                    value={reservation.sellerId}
+                    onChange={(sellerId) => setEditingReservation(prev => ({ ...prev, reservation: { ...prev.reservation!, sellerId: sellerId } }))}
+                    placeholder="Buscar y seleccionar vendedor..."
+                />
                </div>
             </CardContent>
           </Card>

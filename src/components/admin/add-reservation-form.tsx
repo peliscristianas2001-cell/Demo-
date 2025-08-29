@@ -18,10 +18,8 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import type { Passenger, Seller, Reservation, PaymentStatus, Tour, BoardingPoint } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { SearchableSelect } from "@/components/searchable-select"
+import { PlusCircle } from "lucide-react"
 import { Checkbox } from "../ui/checkbox"
 import { AddPassengerSubForm } from "./add-passenger-subform"
 
@@ -50,8 +48,6 @@ const defaultReservation = {
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
-  const [passengerPopoverOpen, setPassengerPopoverOpen] = useState(false);
-  const [sellerPopoverOpen, setSellerPopoverOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +68,22 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
 
     return passengers.filter(p => !bookedPassengerIdsForThisTour.has(p.id));
   }, [passengers, allReservations, tour.id]);
+
+  const passengerOptions = useMemo(() => {
+    return availablePassengers.map(p => ({
+      value: p.id,
+      label: p.fullName,
+      keywords: [p.dni]
+    }));
+  }, [availablePassengers]);
+
+  const sellerOptions = useMemo(() => {
+    return sellers.map(s => ({
+      value: s.id,
+      label: s.name,
+      keywords: [s.dni]
+    }));
+  }, [sellers]);
 
 
   const selectedMainPassenger = useMemo(() => {
@@ -104,7 +116,6 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         paxCount: 1,
         boardingPointId: passenger.boardingPointId,
     }));
-    setPassengerPopoverOpen(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -180,49 +191,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         <div className="flex-1 overflow-y-auto pr-6 space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="passenger">Pasajero Principal</Label>
-                <Popover open={passengerPopoverOpen} onOpenChange={setPassengerPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={passengerPopoverOpen}
-                            className="w-full justify-between"
-                        >
-                            {selectedMainPassenger
-                                ? `${selectedMainPassenger.fullName} (DNI: ${selectedMainPassenger.dni})`
-                                : "Seleccionar pasajero..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                        <Command>
-                            <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
-                            <CommandList>
-                                <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
-                                <CommandGroup>
-                                    {availablePassengers.map((passenger) => (
-                                        <CommandItem
-                                            key={passenger.id}
-                                            value={`${passenger.fullName} ${passenger.dni}`}
-                                            onSelect={() => handleMainPassengerSelect(passenger.id)}
-                                        >
-                                            <Check
-                                                className={cn(
-                                                    "mr-2 h-4 w-4",
-                                                    formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0"
-                                                )}
-                                            />
-                                            <div>
-                                                <p>{passenger.fullName}</p>
-                                                <p className="text-xs text-muted-foreground">{passenger.dni}</p>
-                                            </div>
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                <SearchableSelect
+                    options={passengerOptions}
+                    value={formData.mainPassengerId}
+                    onChange={handleMainPassengerSelect}
+                    placeholder="Buscar pasajero por nombre o DNI..."
+                />
             </div>
             
             {selectedMainPassenger && (
@@ -280,56 +254,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="seller">Vendedor/a</Label>
-                            <Popover open={sellerPopoverOpen} onOpenChange={setSellerPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={sellerPopoverOpen}
-                                        className="w-full justify-between"
-                                    >
-                                        {formData.sellerId && formData.sellerId !== 'unassigned'
-                                            ? sellers.find((seller) => seller.id === formData.sellerId)?.name
-                                            : "Seleccionar vendedor..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Buscar vendedor..." />
-                                        <CommandList>
-                                            <CommandEmpty>No se encontró ningún vendedor.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandItem
-                                                    value="unassigned"
-                                                    onSelect={() => {
-                                                        handleFormChange('sellerId', 'unassigned');
-                                                        setSellerPopoverOpen(false);
-                                                    }}
-                                                >
-                                                     <Check className={cn("mr-2 h-4 w-4", formData.sellerId === 'unassigned' ? "opacity-100" : "opacity-0")}/>
-                                                     Sin asignar
-                                                </CommandItem>
-                                                {sellers.map((seller) => (
-                                                    <CommandItem
-                                                        value={seller.name}
-                                                        key={seller.id}
-                                                        onSelect={() => {
-                                                            handleFormChange('sellerId', seller.id);
-                                                            setSellerPopoverOpen(false);
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn("mr-2 h-4 w-4", formData.sellerId === seller.id ? "opacity-100" : "opacity-0")}
-                                                        />
-                                                        {seller.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                             <SearchableSelect
+                                options={sellerOptions}
+                                value={formData.sellerId}
+                                onChange={(value) => handleFormChange('sellerId', value)}
+                                placeholder="Buscar vendedor..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="paymentStatus">Estado de Pago</Label>
