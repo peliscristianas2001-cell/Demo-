@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, UserPlus, Pencil } from "lucide-react"
-import { mockPassengers } from "@/lib/mock-data"
-import type { Passenger } from "@/lib/types"
+import { mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
+import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { PassengerForm } from "@/components/admin/passenger-form"
 import {
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/accordion"
 import { useToast } from "@/hooks/use-toast"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 const calculateAge = (dob: Date | string) => {
     if (!dob) return null;
@@ -51,6 +52,7 @@ const calculateAge = (dob: Date | string) => {
 
 export default function PassengersPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([])
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
@@ -62,10 +64,14 @@ export default function PassengersPage() {
     setIsClient(true);
     const storedPassengers = localStorage.getItem("ytl_passengers");
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
+    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
      const handleStorageChange = () => {
         const newStoredPassengers = localStorage.getItem("ytl_passengers")
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
+        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -182,63 +188,75 @@ export default function PassengersPage() {
                 {Object.entries(passengersByFamily).map(([family, members]) => (
                     <AccordionItem value={family} key={family}>
                         <AccordionTrigger className="text-lg font-medium group hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <Input 
-                                    defaultValue={family} 
-                                    onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
-                                    disabled={family === 'Sin familia asignada'}
-                                />
+                           <div className={cn("flex items-center gap-2", family === 'Sin familia asignada' && "w-full")}>
+                                {family === 'Sin familia asignada' ? (
+                                    <span className="text-lg font-medium">{family}</span>
+                                ) : (
+                                    <Input 
+                                        defaultValue={family} 
+                                        onBlur={(e) => handleFamilyNameChange(family, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-lg font-medium border-0 shadow-none focus-visible:ring-1 focus-visible:ring-primary p-1 h-auto"
+                                    />
+                                )}
                                 {family !== 'Sin familia asignada' && <Pencil className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />}
                                 <span>({members.length})</span>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                              <div className="space-y-4">
-                                <div className="flex justify-end">
-                                    <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
-                                        <UserPlus className="mr-2 h-4 w-4"/>
-                                        Añadir Integrante
-                                    </Button>
-                                </div>
+                                {family !== 'Sin familia asignada' && (
+                                    <div className="flex justify-end">
+                                        <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
+                                            <UserPlus className="mr-2 h-4 w-4"/>
+                                            Añadir Integrante
+                                        </Button>
+                                    </div>
+                                )}
                                 <Table>
                                     <TableHeader>
                                     <TableRow>
                                         <TableHead>Nombre Completo</TableHead>
                                         <TableHead>DNI</TableHead>
+                                        <TableHead>F. Nacimiento</TableHead>
                                         <TableHead>Teléfono</TableHead>
+                                        <TableHead>Embarque</TableHead>
                                         <TableHead>Edad</TableHead>
                                         <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                    {members.map((p) => (
-                                        <TableRow key={p.id}>
-                                            <TableCell className="font-medium">{p.fullName}</TableCell>
-                                            <TableCell>{p.dni}</TableCell>
-                                            <TableCell>{p.phone || 'N/A'}</TableCell>
-                                            <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Abrir menú</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleEdit(p)}>
-                                                            <Edit className="mr-2 h-4 w-4" /> Editar
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {members.map((p) => {
+                                        const boardingPoint = boardingPoints.find(bp => bp.id === p.boardingPointId);
+                                        return (
+                                            <TableRow key={p.id}>
+                                                <TableCell className="font-medium">{p.fullName}</TableCell>
+                                                <TableCell>{p.dni}</TableCell>
+                                                <TableCell>{p.dob ? new Date(p.dob).toLocaleDateString('es-AR') : 'N/A'}</TableCell>
+                                                <TableCell>{p.phone || 'N/A'}</TableCell>
+                                                <TableCell>{boardingPoint?.name || 'N/A'}</TableCell>
+                                                <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Abrir menú</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => handleEdit(p)}>
+                                                                <Edit className="mr-2 h-4 w-4" /> Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                     </TableBody>
                                 </Table>
                              </div>

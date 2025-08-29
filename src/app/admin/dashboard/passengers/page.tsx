@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, UserPlus, Pencil } from "lucide-react"
-import { mockPassengers } from "@/lib/mock-data"
-import type { Passenger } from "@/lib/types"
+import { mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
+import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { PassengerForm } from "@/components/admin/passenger-form"
 import {
@@ -52,6 +52,7 @@ const calculateAge = (dob: Date | string) => {
 
 export default function PassengersPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([])
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
@@ -63,10 +64,14 @@ export default function PassengersPage() {
     setIsClient(true);
     const storedPassengers = localStorage.getItem("ytl_passengers");
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
+    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+    setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
      const handleStorageChange = () => {
         const newStoredPassengers = localStorage.getItem("ytl_passengers")
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
+        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -214,38 +219,45 @@ export default function PassengersPage() {
                                     <TableRow>
                                         <TableHead>Nombre Completo</TableHead>
                                         <TableHead>DNI</TableHead>
+                                        <TableHead>F. Nacimiento</TableHead>
                                         <TableHead>Teléfono</TableHead>
+                                        <TableHead>Embarque</TableHead>
                                         <TableHead>Edad</TableHead>
                                         <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                    {members.map((p) => (
-                                        <TableRow key={p.id}>
-                                            <TableCell className="font-medium">{p.fullName}</TableCell>
-                                            <TableCell>{p.dni}</TableCell>
-                                            <TableCell>{p.phone || 'N/A'}</TableCell>
-                                            <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Abrir menú</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleEdit(p)}>
-                                                            <Edit className="mr-2 h-4 w-4" /> Editar
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {members.map((p) => {
+                                        const boardingPoint = boardingPoints.find(bp => bp.id === p.boardingPointId);
+                                        return (
+                                            <TableRow key={p.id}>
+                                                <TableCell className="font-medium">{p.fullName}</TableCell>
+                                                <TableCell>{p.dni}</TableCell>
+                                                <TableCell>{p.dob ? new Date(p.dob).toLocaleDateString('es-AR') : 'N/A'}</TableCell>
+                                                <TableCell>{p.phone || 'N/A'}</TableCell>
+                                                <TableCell>{boardingPoint?.name || 'N/A'}</TableCell>
+                                                <TableCell>{p.dob ? calculateAge(p.dob) : 'N/A'}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Abrir menú</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => handleEdit(p)}>
+                                                                <Edit className="mr-2 h-4 w-4" /> Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                     </TableBody>
                                 </Table>
                              </div>
@@ -259,5 +271,3 @@ export default function PassengersPage() {
     </>
   )
 }
-
-    
