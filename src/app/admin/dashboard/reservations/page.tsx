@@ -36,8 +36,8 @@ import {
 
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
-import { mockTours, mockReservations, mockEmployees, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, TransportUnit, Pension } from "@/lib/types"
+import { mockTours, mockReservations, mockEmployees, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -75,6 +75,12 @@ const calculateAge = (dob: Date | string | undefined) => {
     return age;
 }
 
+const paymentMethodAbbreviations: Record<PaymentMethod, string> = {
+    'Tarjeta': 'TJ',
+    'Transferencia': 'TR',
+    'Efectivo': 'EF'
+};
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
@@ -104,7 +110,7 @@ export default function ReservationsPage() {
     setEmployees(storedEmployees ? JSON.parse(storedEmployees) : mockEmployees)
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints)
-    setPensions(storedPensions ? JSON.parse(storedPensions) : []);
+    setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
@@ -119,7 +125,7 @@ export default function ReservationsPage() {
        setEmployees(newStoredEmployees ? JSON.parse(newStoredEmployees) : mockEmployees)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints)
-       setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : []);
+       setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : mockPensions);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -279,6 +285,7 @@ export default function ReservationsPage() {
     const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
     const balance = reservation.finalPrice - paidAmount;
     const unitList = getExpandedTransportList(tour);
+    const reservationPassengers = passengers.filter(p => (reservation.passengerIds || []).includes(p.id));
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
@@ -314,22 +321,46 @@ export default function ReservationsPage() {
                   <Label>Detalle de Cuotas</Label>
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                     {installments.details.map((inst, index) => (
-                       <div key={index} className={cn(
-                        "flex items-center gap-2 p-2 rounded-md border",
-                        inst.isPaid && "bg-pink-100 border-pink-200"
-                       )}>
-                          <Label className="w-20">Cuota {index + 1}</Label>
-                          <Input type="number" value={inst.amount || ''} onChange={(e) => {
-                            const newDetails = [...installments.details];
-                            newDetails[index].amount = parseFloat(e.target.value) || 0;
-                            setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
-                          }}/>
-                          <Checkbox checked={inst.isPaid} onCheckedChange={(checked) => {
-                             const newDetails = [...installments.details];
-                             newDetails[index].isPaid = !!checked;
-                             setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
-                          }}/>
-                          <Label>Pagada</Label>
+                       <div key={index} className="space-y-2">
+                           <div className={cn(
+                            "flex items-center gap-2 p-2 rounded-md border",
+                            inst.isPaid && "bg-pink-100 border-pink-200"
+                           )}>
+                              <Label className="w-20">Cuota {index + 1}</Label>
+                              <Input type="number" value={inst.amount || ''} onChange={(e) => {
+                                const newDetails = [...installments.details];
+                                newDetails[index].amount = parseFloat(e.target.value) || 0;
+                                setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                              }}/>
+                              <Checkbox checked={inst.isPaid} onCheckedChange={(checked) => {
+                                 const newDetails = [...installments.details];
+                                 newDetails[index].isPaid = !!checked;
+                                 if (!checked) newDetails[index].paymentMethod = undefined; // Clear method if unpaid
+                                 setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                              }}/>
+                              <Label>Pagada</Label>
+                           </div>
+                            {inst.isPaid && (
+                                <div className="pl-8">
+                                    <Select 
+                                        value={inst.paymentMethod} 
+                                        onValueChange={(method: PaymentMethod) => {
+                                            const newDetails = [...installments.details];
+                                            newDetails[index].paymentMethod = method;
+                                            setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, installments: { ...installments, details: newDetails }}}))
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Método de pago..."/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                            <SelectItem value="Transferencia">Transferencia</SelectItem>
+                                            <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                        </div>
                     ))}
                   </div>
@@ -340,21 +371,9 @@ export default function ReservationsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-              <CardHeader><CardTitle>Detalles Adicionales</CardTitle></CardHeader>
+           <Card>
+              <CardHeader><CardTitle>Servicios Adicionales</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                    <Label htmlFor="boardingPointId">Punto de Embarque</Label>
-                    <Select
-                        value={reservation.boardingPointId}
-                        onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, boardingPointId: val}}))}
-                    >
-                        <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
-                        <SelectContent>
-                            {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
                  <div className="space-y-2">
                     <Label htmlFor="pensionId">Tipo de Pensión</Label>
                     <Select
@@ -367,6 +386,29 @@ export default function ReservationsPage() {
                             {pensions.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
+                </div>
+                 <div className="space-y-3 pt-2">
+                    <Label>Seguro Médico por Pasajero</Label>
+                    <div className="space-y-2 p-2 border rounded-md max-h-40 overflow-y-auto">
+                        {reservationPassengers.map(p => (
+                            <div key={p.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`insure-${p.id}`}
+                                    checked={(reservation.insuredPassengerIds || []).includes(p.id)}
+                                    onCheckedChange={(checked) => {
+                                        setEditingReservation(prev => {
+                                            const currentInsured = prev.reservation?.insuredPassengerIds || [];
+                                            const newInsured = checked 
+                                                ? [...currentInsured, p.id]
+                                                : currentInsured.filter(id => id !== p.id);
+                                            return {...prev, reservation: {...prev.reservation!, insuredPassengerIds: newInsured}}
+                                        });
+                                    }}
+                                />
+                                <Label htmlFor={`insure-${p.id}`} className="font-normal">{p.fullName}</Label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
               </CardContent>
           </Card>
@@ -581,7 +623,10 @@ export default function ReservationsPage() {
                                                                              {inst.isPaid ? <CheckCircle className="w-4 h-4 text-green-600"/> : <Clock className="w-4 h-4 text-muted-foreground"/>}
                                                                             <span>Cuota {index + 1}</span>
                                                                         </div>
-                                                                        <span className="font-mono">${(inst.amount || 0).toLocaleString('es-AR')}</span>
+                                                                        <div className="flex items-center gap-1 font-mono">
+                                                                            {inst.isPaid && inst.paymentMethod && <Badge variant="outline" className="text-[10px] p-0.5 px-1">{paymentMethodAbbreviations[inst.paymentMethod]}</Badge>}
+                                                                            <span>${(inst.amount || 0).toLocaleString('es-AR')}</span>
+                                                                        </div>
                                                                     </div>
                                                                   ))}
                                                               </div>
@@ -594,12 +639,12 @@ export default function ReservationsPage() {
                                                                 <CardTitle className="text-lg flex items-center gap-2">
                                                                     <Home className="w-5 h-5 text-primary"/>
                                                                     Detalles del Viaje
-                                                                </CardTitle>
+                                                                </Title>
                                                             </CardHeader>
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
                                                                 <InfoRow label="Pensión" value={pension?.name || 'No incluida'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
-                                                                <InfoRow label="Tipo de Habitación" value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
+                                                                <InfoRow label="Tipo de Hab." value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
                                                         </Card>
                                                     </div>
@@ -642,3 +687,4 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
+

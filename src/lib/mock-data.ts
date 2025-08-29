@@ -1,6 +1,12 @@
 
 
-import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings } from './types';
+import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings, Pension } from './types';
+
+export const mockPensions: Pension[] = [
+    { id: 'pension-media', name: 'Media Pensión', description: 'Incluye desayuno y cena.' },
+    { id: 'pension-completa', name: 'Pensión Completa', description: 'Incluye desayuno, almuerzo y cena.' },
+    { id: 'pension-desayuno', name: 'Solo Desayuno', description: 'Incluye desayuno.' },
+]
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -25,7 +31,6 @@ export const mockTours: Tour[] = [
         { id: 1, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Angela Rojas", coordinatorPhone: "341-504-0710" },
         { id: 2, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Marcos Gil", coordinatorPhone: "11-2233-4455" },
     ],
-    insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
     pricingTiers: [
       { id: 'T1_CHILD', name: 'Niño', price: 120000 },
       { id: 'T1_RETIREE', name: 'Jubilado', price: 135000 },
@@ -141,7 +146,6 @@ export const mockTours: Tour[] = [
     transportUnits: [
         { id: 1, category: 'cruises', type: 'gran_crucero', count: 1, coordinator: "Laura Fernández", coordinatorPhone: "11-2233-4455" },
     ],
-    insurance: { active: true, cost: 80000, coverage: "Cobertura de alta complejidad y evacuación", minAge: 18, maxAge: 70 },
   }
 ];
 
@@ -183,58 +187,58 @@ export const mockPassengers: Passenger[] = [
     { id: "P007", fullName: "Laura Perez", dni: "45123456", dob: new Date('2015-08-12'), phone: "1158963214", family: "Perez", nationality: "Argentina", tierId: "T1_CHILD" },
     { id: "P008", fullName: "Jose Luis Godoy", dni: "43580345", dob: new Date('2001-08-11'), phone: "", family: "Godoy", nationality: "Argentina", tierId: "adult", password: '@Vector2016' },
     { id: "P009", fullName: "Angela Rojas", dni: "99999999", dob: new Date('1990-01-01'), phone: "1111111111", family: "Rojas", nationality: "Argentina", tierId: "adult", password: 'AngelaRojasYTL' },
-    { id: "P29696897", fullName: "Marcela Alejandra Almada", dni: "29696897", dob: undefined, phone: undefined, family: "Almada", nationality: "Argentina", tierId: "adult" },
-    { id: "P4099656", fullName: "Justa Trinidad Alarcon", dni: "4099656", dob: undefined, phone: undefined, family: "Alarcon", nationality: "Argentina", tierId: "adult" },
-    { id: "P16574022", fullName: "Nelida Haydee Almada", dni: "16574022", dob: undefined, phone: undefined, family: "Almada", nationality: "Argentina", tierId: "adult" },
-    { id: "P17052181", fullName: "Delia Ester Almada", dni: "17052181", dob: undefined, phone: undefined, family: "Almada", nationality: "Argentina", tierId: "adult" },
-    { id: "P22050349", fullName: "Alejandra Aranda", dni: "22050349", dob: undefined, phone: undefined, family: "Aranda", nationality: "Argentina", tierId: "adult" },
-    { id: "P20603611", fullName: "Silvia Cortez", dni: "20603611", dob: undefined, phone: undefined, family: "Cortez", nationality: "Argentina", tierId: "adult" },
-    { id: "P18559909", fullName: "Claudia Ragonese", dni: "18559909", dob: undefined, phone: undefined, family: "Ragonese", nationality: "Argentina", tierId: "adult" },
-    { id: "P34175101", fullName: "Emiliano Espinosa", dni: "34175101", dob: undefined, phone: undefined, family: "Espinosa", nationality: "Argentina", tierId: "adult" },
-    { id: "P33845467", fullName: "Daniela Gracia", dni: "33845467", dob: undefined, phone: undefined, family: "Gracia", nationality: "Argentina", tierId: "adult" },
-    { id: "P13715320", fullName: "Adriana Silvia Rodriguez", dni: "13715320", dob: undefined, phone: undefined, family: "Rodriguez", nationality: "Argentina", tierId: "adult" },
-    { id: "P14110412", fullName: "Mirta Tordini", dni: "14110412", dob: undefined, phone: undefined, family: "Tordini", nationality: "Argentina", tierId: "adult" },
-    { id: "P12887938", fullName: "Lucrecia Ines Winkler", dni: "12887938", dob: undefined, phone: undefined, family: "Winkler", nationality: "Argentina", tierId: "adult" },
-    { id: "P22444356", fullName: "Liliana Noemi Almada", dni: "22444356", dob: undefined, phone: undefined, family: "Almada", nationality: "Argentina", tierId: "adult" },
-    { id: "P36369558", fullName: "Nadia Celeste Loza", dni: "36369558", dob: undefined, phone: undefined, family: "Loza", nationality: "Argentina", tierId: "adult" },
-    { id: "P36359274", fullName: "Lucas Armando Coronel", dni: "36359274", dob: undefined, phone: undefined, family: "Coronel", nationality: "Argentina", tierId: "adult" },
-    { id: "P11721289", fullName: "Susana Rosario Zucaro", dni: "11721289", dob: undefined, phone: undefined, family: "Zucaro", nationality: "Argentina", tierId: "adult" },
-    { id: "P22010024", fullName: "Silvina Rivas", dni: "22010024", dob: undefined, phone: undefined, family: "Rivas", nationality: "Argentina", tierId: "adult" },
-    { id: "P18201229", fullName: "Maria Elena Campo", dni: "18201229", dob: undefined, phone: undefined, family: "Campo", nationality: "Argentina", tierId: "adult" },
-    { id: "P6186220", fullName: "Juan Angel Glardon", dni: "6186220", dob: undefined, phone: undefined, family: "Glardon", nationality: "Argentina", tierId: "adult" },
-    { id: "P13077763", fullName: "Marta Sanchez", dni: "13077763", dob: undefined, phone: undefined, family: "Sanchez", nationality: "Argentina", tierId: "adult" },
-    { id: "P11573201", fullName: "Edgar Galloso", dni: "11573201", dob: undefined, phone: undefined, family: "Galloso", nationality: "Argentina", tierId: "adult" },
-    { id: "P14288220", fullName: "Ruben Luis Gomez", dni: "14288220", dob: undefined, phone: undefined, family: "Gomez", nationality: "Argentina", tierId: "adult" },
-    { id: "P14023050", fullName: "Laura Patricia Gutierrez", dni: "14023050", dob: undefined, phone: undefined, family: "Gutierrez", nationality: "Argentina", tierId: "adult" },
-    { id: "P25079134", fullName: "Lorena Ines Monoyo", dni: "25079134", dob: undefined, phone: undefined, family: "Monoyo", nationality: "Argentina", tierId: "adult" },
-    { id: "P26761045", fullName: "Diego Hernan Sire", dni: "26761045", dob: undefined, phone: undefined, family: "Sire", nationality: "Argentina", tierId: "adult" },
-    { id: "P11309159", fullName: "Jose Fernandez", dni: "11309159", dob: undefined, phone: undefined, family: "Fernandez", nationality: "Argentina", tierId: "adult" },
-    { id: "P12115246", fullName: "Lilian Catalina Reinaud", dni: "12115246", dob: undefined, phone: undefined, family: "Reinaud", nationality: "Argentina", tierId: "adult" },
-    { id: "P17934853", fullName: "Olga Lucrecia Arredondo", dni: "17934853", dob: undefined, phone: undefined, family: "Arredondo", nationality: "Argentina", tierId: "adult" },
-    { id: "P16387656", fullName: "Esther Badalotti", dni: "16387656", dob: undefined, phone: undefined, family: "Badalotti", nationality: "Argentina", tierId: "adult" },
-    { id: "P11899527", fullName: "Irma Tacca", dni: "11899527", dob: undefined, phone: undefined, family: "Tacca", nationality: "Argentina", tierId: "adult" },
-    { id: "P17301781", fullName: "Griselda De Angelis", dni: "17301781", dob: undefined, phone: undefined, family: "Angelis", nationality: "Argentina", tierId: "adult" },
-    { id: "P6380456", fullName: "Beatriz Ferraris", dni: "6380456", dob: undefined, phone: undefined, family: "Ferraris", nationality: "Argentina", tierId: "adult" },
-    { id: "P11173100", fullName: "Elsa Raquel Reigert", dni: "11173100", dob: undefined, phone: undefined, family: "Reigert", nationality: "Argentina", tierId: "adult" },
-    { id: "P11761617", fullName: "Luis Alberto Ferraris", dni: "11761617", dob: undefined, phone: undefined, family: "Ferraris", nationality: "Argentina", tierId: "adult" },
-    { id: "P13245400", fullName: "Ramona Ana Almada", dni: "13245400", dob: undefined, phone: undefined, family: "Almada", nationality: "Argentina", tierId: "adult" },
-    { id: "P33805670", fullName: "Marcos Gabriel Fernandez", dni: "33805670", dob: undefined, phone: undefined, family: "Fernandez", nationality: "Argentina", tierId: "adult" },
-    { id: "P37576815", fullName: "Claudia Veronica Magallanes", dni: "37576815", dob: undefined, phone: undefined, family: "Magallanes", nationality: "Argentina", tierId: "adult" },
-    { id: "P20144017", fullName: "Susana Beatriz Castaño", dni: "20144017", dob: undefined, phone: undefined, family: "Castaño", nationality: "Argentina", tierId: "adult" },
-    { id: "P16033675", fullName: "Liliana Mendez", dni: "16033675", dob: undefined, phone: undefined, family: "Mendez", nationality: "Argentina", tierId: "adult" },
-    { id: "P17413056", fullName: "Adrian Idalgo", dni: "17413056", dob: undefined, phone: undefined, family: "Idalgo", nationality: "Argentina", tierId: "adult" },
+    { id: "P29696897", fullName: "Marcela Alejandra Almada", dni: "29696897", family: "Almada", nationality: "Argentina", tierId: "adult" },
+    { id: "P4099656", fullName: "Justa Trinidad Alarcon", dni: "4099656", family: "Alarcon", nationality: "Argentina", tierId: "adult" },
+    { id: "P16574022", fullName: "Nelida Haydee Almada", dni: "16574022", family: "Almada", nationality: "Argentina", tierId: "adult" },
+    { id: "P17052181", fullName: "Delia Ester Almada", dni: "17052181", family: "Almada", nationality: "Argentina", tierId: "adult" },
+    { id: "P22050349", fullName: "Alejandra Aranda", dni: "22050349", family: "Aranda", nationality: "Argentina", tierId: "adult" },
+    { id: "P20603611", fullName: "Silvia Cortez", dni: "20603611", family: "Cortez", nationality: "Argentina", tierId: "adult" },
+    { id: "P18559909", fullName: "Claudia Ragonese", dni: "18559909", family: "Ragonese", nationality: "Argentina", tierId: "adult" },
+    { id: "P34175101", fullName: "Emiliano Espinosa", dni: "34175101", family: "Espinosa", nationality: "Argentina", tierId: "adult" },
+    { id: "P33845467", fullName: "Daniela Gracia", dni: "33845467", family: "Gracia", nationality: "Argentina", tierId: "adult" },
+    { id: "P13715320", fullName: "Adriana Silvia Rodriguez", dni: "13715320", family: "Rodriguez", nationality: "Argentina", tierId: "adult" },
+    { id: "P14110412", fullName: "Mirta Tordini", dni: "14110412", family: "Tordini", nationality: "Argentina", tierId: "adult" },
+    { id: "P12887938", fullName: "Lucrecia Ines Winkler", dni: "12887938", family: "Winkler", nationality: "Argentina", tierId: "adult" },
+    { id: "P22444356", fullName: "Liliana Noemi Almada", dni: "22444356", family: "Almada", nationality: "Argentina", tierId: "adult" },
+    { id: "P36369558", fullName: "Nadia Celeste Loza", dni: "36369558", family: "Loza", nationality: "Argentina", tierId: "adult" },
+    { id: "P36359274", fullName: "Lucas Armando Coronel", dni: "36359274", family: "Coronel", nationality: "Argentina", tierId: "adult" },
+    { id: "P11721289", fullName: "Susana Rosario Zucaro", dni: "11721289", family: "Zucaro", nationality: "Argentina", tierId: "adult" },
+    { id: "P22010024", fullName: "Silvina Rivas", dni: "22010024", family: "Rivas", nationality: "Argentina", tierId: "adult" },
+    { id: "P18201229", fullName: "Maria Elena Campo", dni: "18201229", family: "Campo", nationality: "Argentina", tierId: "adult" },
+    { id: "P6186220", fullName: "Juan Angel Glardon", dni: "6186220", family: "Glardon", nationality: "Argentina", tierId: "adult" },
+    { id: "P13077763", fullName: "Marta Sanchez", dni: "13077763", family: "Sanchez", nationality: "Argentina", tierId: "adult" },
+    { id: "P11573201", fullName: "Edgar Galloso", dni: "11573201", family: "Galloso", nationality: "Argentina", tierId: "adult" },
+    { id: "P14288220", fullName: "Ruben Luis Gomez", dni: "14288220", family: "Gomez", nationality: "Argentina", tierId: "adult" },
+    { id: "P14023050", fullName: "Laura Patricia Gutierrez", dni: "14023050", family: "Gutierrez", nationality: "Argentina", tierId: "adult" },
+    { id: "P25079134", fullName: "Lorena Ines Monoyo", dni: "25079134", family: "Monoyo", nationality: "Argentina", tierId: "adult" },
+    { id: "P26761045", fullName: "Diego Hernan Sire", dni: "26761045", family: "Sire", nationality: "Argentina", tierId: "adult" },
+    { id: "P11309159", fullName: "Jose Fernandez", dni: "11309159", family: "Fernandez", nationality: "Argentina", tierId: "adult" },
+    { id: "P12115246", fullName: "Lilian Catalina Reinaud", dni: "12115246", family: "Reinaud", nationality: "Argentina", tierId: "adult" },
+    { id: "P17934853", fullName: "Olga Lucrecia Arredondo", dni: "17934853", family: "Arredondo", nationality: "Argentina", tierId: "adult" },
+    { id: "P16387656", fullName: "Esther Badalotti", dni: "16387656", family: "Badalotti", nationality: "Argentina", tierId: "adult" },
+    { id: "P11899527", fullName: "Irma Tacca", dni: "11899527", family: "Tacca", nationality: "Argentina", tierId: "adult" },
+    { id: "P17301781", fullName: "Griselda De Angelis", dni: "17301781", family: "Angelis", nationality: "Argentina", tierId: "adult" },
+    { id: "P6380456", fullName: "Beatriz Ferraris", dni: "6380456", family: "Ferraris", nationality: "Argentina", tierId: "adult" },
+    { id: "P11173100", fullName: "Elsa Raquel Reigert", dni: "11173100", family: "Reigert", nationality: "Argentina", tierId: "adult" },
+    { id: "P11761617", fullName: "Luis Alberto Ferraris", dni: "11761617", family: "Ferraris", nationality: "Argentina", tierId: "adult" },
+    { id: "P13245400", fullName: "Ramona Ana Almada", dni: "13245400", family: "Almada", nationality: "Argentina", tierId: "adult" },
+    { id: "P33805670", fullName: "Marcos Gabriel Fernandez", dni: "33805670", family: "Fernandez", nationality: "Argentina", tierId: "adult" },
+    { id: "P37576815", fullName: "Claudia Veronica Magallanes", dni: "37576815", family: "Magallanes", nationality: "Argentina", tierId: "adult" },
+    { id: "P20144017", fullName: "Susana Beatriz Castaño", dni: "20144017", family: "Castaño", nationality: "Argentina", tierId: "adult" },
+    { id: "P16033675", fullName: "Liliana Mendez", dni: "16033675", family: "Mendez", nationality: "Argentina", tierId: "adult" },
+    { id: "P17413056", fullName: "Adrian Idalgo", dni: "17413056", family: "Idalgo", nationality: "Argentina", tierId: "adult" },
 ]
 
 
 export const mockReservations: Reservation[] = [
     { id: "R001", tripId: "1", passenger: "Juan Perez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "media", finalPrice: 310000, boardingPointId: 'BP02' },
-    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", pensionId: "completa", finalPrice: 155000 },
+    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", pensionId: "pension-completa", finalPrice: 155000 },
     { id: "R002", tripId: "2", passenger: "Maria Garcia", passengerIds: ["P002"], paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 125000 },
     { id: "R003", tripId: "1", passenger: "Carlos Lopez", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", pensionId: "media", finalPrice: 620000 },
     { id: "R004", tripId: "3", passenger: "Ana Martinez", passengerIds: ["P004"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 270000 },
     { id: "R005", tripId: "2", passenger: "Lucia Hernandez", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000, boardingPointId: 'BP01' },
     { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
-    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "completa", finalPrice: 1250000 },
+    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "pension-completa", finalPrice: 1250000 },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');

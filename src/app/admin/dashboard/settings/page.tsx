@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
-import { mockBoardingPoints } from "@/lib/mock-data"
+import { mockBoardingPoints, mockPensions } from "@/lib/mock-data"
 
 const MapSelector = dynamic(
   () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
@@ -34,6 +34,7 @@ export default function SettingsPage() {
     const [contactSettings, setContactSettings] = useState<ContactSettings>({});
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
+    const [pensions, setPensions] = useState<Pension[]>([]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
@@ -53,12 +54,17 @@ export default function SettingsPage() {
         const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
         setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
+        const storedPensions = localStorage.getItem("ytl_pensions");
+        setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
+
 
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
         const newBoardingPoints = localStorage.getItem("ytl_boarding_points");
         setBoardingPoints(newBoardingPoints ? JSON.parse(newBoardingPoints) : mockBoardingPoints);
+        const newPensions = localStorage.getItem("ytl_pensions");
+        setPensions(newPensions ? JSON.parse(newPensions) : mockPensions);
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
@@ -190,6 +196,26 @@ export default function SettingsPage() {
         localStorage.setItem("ytl_boarding_points", JSON.stringify(filteredPoints));
         setBoardingPoints(filteredPoints);
         toast({ title: "Puntos de embarque guardados." });
+        window.dispatchEvent(new Event('storage'));
+    }
+
+    const handleAddPension = () => {
+        setPensions(prev => [...prev, { id: `PENSION-${Date.now()}`, name: '', description: '' }]);
+    }
+
+    const handlePensionChange = (id: string, field: 'name' | 'description', value: string) => {
+        setPensions(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+    }
+
+    const handleRemovePension = (id: string) => {
+        setPensions(prev => prev.filter(p => p.id !== id));
+    }
+    
+    const handleSavePensions = () => {
+        const filteredPensions = pensions.filter(p => p.name.trim() !== "");
+        localStorage.setItem("ytl_pensions", JSON.stringify(filteredPensions));
+        setPensions(filteredPensions);
+        toast({ title: "Tipos de pensión guardados." });
         window.dispatchEvent(new Event('storage'));
     }
 
@@ -338,6 +364,42 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Utensils className="w-6 h-6"/> Tipos de Pensión</CardTitle>
+                    <CardDescription>Gestiona los tipos de pensiones que se pueden asignar a una reserva.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        {pensions.map((pension) => (
+                           <div key={pension.id} className="flex items-center gap-2">
+                               <Input 
+                                   value={pension.name}
+                                   onChange={(e) => handlePensionChange(pension.id, 'name', e.target.value)}
+                                   placeholder="Nombre de la pensión (Ej: Media Pensión)"
+                                />
+                                <Input 
+                                   value={pension.description}
+                                   onChange={(e) => handlePensionChange(pension.id, 'description', e.target.value)}
+                                   placeholder="Descripción (Ej: Desayuno y cena)"
+                                />
+                               <Button variant="ghost" size="icon" onClick={() => handleRemovePension(pension.id)}>
+                                    <Trash2 className="w-4 h-4 text-destructive"/>
+                               </Button>
+                           </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <Button variant="outline" onClick={handleAddPension}>
+                           <PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo de Pensión
+                        </Button>
+                         <Button onClick={handleSavePensions}>
+                           <Save className="mr-2 h-4 w-4"/> Guardar Pensiones
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             <div className="space-y-4 p-4 border rounded-lg">
                 <Label className="text-lg font-medium flex items-center gap-2"><MapPin className="w-5 h-5"/> Zona Geográfica</Label>
                 <p className="text-sm text-muted-foreground">Haz clic en el mapa para definir el centro y ajusta el radio de tu zona de servicio.</p>
@@ -398,3 +460,4 @@ export default function SettingsPage() {
     </>
   )
 }
+

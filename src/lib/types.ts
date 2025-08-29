@@ -10,14 +10,6 @@ export interface CustomLayoutConfig {
   layout: Layout;
 }
 
-export interface Insurance {
-  active: boolean;
-  coverage: string;
-  cost: number;
-  minAge: number;
-  maxAge: number;
-}
-
 export interface Pension {
   id: string;
   name: string;
@@ -93,7 +85,6 @@ export interface Tour {
   departureTime?: string;
   bus?: string;
 
-  insurance?: Insurance; // Kept for cost calculation, but now always 'active'
   pricingTiers?: PricingTier[];
   costs?: TourCosts;
   
@@ -106,12 +97,11 @@ export interface Tour {
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;
-  coordinator?: string;
-  coordinatorPhone?: string;
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";
 export type PaymentStatus = "Pagado" | "Parcial" | "Pendiente";
+export type PaymentMethod = "Tarjeta" | "Transferencia" | "Efectivo";
 
 export type AssignedSeat = { 
   seatId: string; 
@@ -126,6 +116,7 @@ export type AssignedCabin = {
 export interface Installment {
     amount: number;
     isPaid: boolean;
+    paymentMethod?: PaymentMethod;
 }
 
 export interface Passenger {
