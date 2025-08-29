@@ -155,36 +155,41 @@ body {
 /* --- New Print Rules --- */
 @page {
   size: A4 landscape;
-  margin: 0; /* Removes browser default header/footer */
+  margin: 0;
 }
 
 @media print {
   body * {
-    visibility: hidden; /* Hide everything by default */
+    visibility: hidden;
   }
-
+  
   .printable-area, .printable-area * {
-    visibility: visible; /* Show only the printable area and its children */
+    visibility: visible;
   }
-
+  
   .printable-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    padding: 1cm; /* Optional margin for the content itself */
+    padding: 1cm;
     box-sizing: border-box;
   }
   
+  .no-print {
+    display: none !important;
+  }
+  
   .printable-calendar .calendar-bubble {
-     -webkit-print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     background-color: var(--bubble-print-bg-color, #e0e7ff) !important;
     border: 1px solid var(--bubble-print-border-color, #a5b4fc) !important;
     color: #1e293b !important;
   }
-   .printable-calendar .calendar-bubble textarea {
+  
+  .printable-calendar .calendar-bubble textarea {
     color: #1e293b !important;
   }
 }
