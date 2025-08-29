@@ -28,8 +28,8 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
-import { mockSellers } from "@/lib/mock-data";
-import type { Seller } from "@/lib/types";
+import { mockEmployees } from "@/lib/mock-data";
+import type { Employee } from "@/lib/types";
 
 const navItems = [
   { href: "/employee/dashboard", label: "Inicio", icon: Home },
@@ -50,8 +50,8 @@ export default function EmployeeDashboardLayout({
 
   useEffect(() => {
     const employeeId = localStorage.getItem("ytl_employee_id");
-    const sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    const isEmployeeValid = sellers.some(s => s.id === employeeId);
+    const employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+    const isEmployeeValid = employees.some(s => s.id === employeeId && s.password);
 
     if (!employeeId || !isEmployeeValid) {
         localStorage.removeItem("ytl_employee_id"); // Clean up invalid ID
@@ -112,7 +112,7 @@ export default function EmployeeDashboardLayout({
         <SidebarInset>
             <header className="flex items-center justify-between h-16 px-6 border-b bg-card">
                  <SidebarTrigger className="md:hidden" />
-                 <h1 className="text-xl font-semibold">Panel de Vendedor</h1>
+                 <h1 className="text-xl font-semibold">Panel de Empleado</h1>
             </header>
           <main className="flex-1 p-6 overflow-auto">{children}</main>
         </SidebarInset>

@@ -16,16 +16,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { mockSellers } from "@/lib/mock-data";
-import type { Seller } from "@/lib/types";
+import { mockEmployees } from "@/lib/mock-data";
+import type { Employee } from "@/lib/types";
 
 export default function EmployeeRegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  const [sellers, setSellers] = useState<Seller[]>([]);
-  const [sellerId, setSellerId] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -35,19 +35,19 @@ export default function EmployeeRegisterPage() {
   useEffect(() => {
     // This effect ensures we only run logic that needs the window object on the client.
     setIsClient(true);
-    const id = searchParams.get('sellerId');
+    const id = searchParams.get('employeeId');
     if (id) {
-        setSellerId(id);
-        const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-        setSellers(storedSellers);
+        setEmployeeId(id);
+        const storedEmployees = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+        setEmployees(storedEmployees);
     }
   }, [searchParams]);
 
-  const seller = useMemo(() => sellers.find(s => s.id === sellerId), [sellers, sellerId]);
+  const employee = useMemo(() => employees.find(s => s.id === employeeId), [employees, employeeId]);
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!seller) {
+    if (!employee) {
         toast({ title: "Error", description: "Link de registro inválido o expirado.", variant: "destructive" });
         return;
     }
@@ -62,9 +62,9 @@ export default function EmployeeRegisterPage() {
 
     setIsLoading(true);
 
-    const updatedSeller = { ...seller, password };
-    const updatedSellers = sellers.map(s => s.id === sellerId ? updatedSeller : s);
-    localStorage.setItem("ytl_sellers", JSON.stringify(updatedSellers));
+    const updatedEmployee = { ...employee, password };
+    const updatedEmployees = employees.map(s => s.id === employeeId ? updatedEmployee : s);
+    localStorage.setItem("ytl_employees", JSON.stringify(updatedEmployees));
 
     toast({
         title: "¡Registro completado!",
@@ -90,19 +90,19 @@ export default function EmployeeRegisterPage() {
               <Logo />
             </div>
             <CardTitle className="text-2xl font-headline">
-                Completar Registro de Vendedor
+                Completar Registro de Empleado
             </CardTitle>
             <CardDescription>
-                {seller ? `¡Hola, ${seller.name}! Crea una contraseña para acceder a tu panel.` : "Verificando link de registro..."}
+                {employee ? `¡Hola, ${employee.name}! Crea una contraseña para acceder a tu panel.` : "Verificando link de registro..."}
             </CardDescription>
         </CardHeader>
         <CardContent>
-            {seller ? (
+            {employee ? (
                 <form onSubmit={handleRegister} className="space-y-6">
                     <div className="space-y-2">
                         <Label>Nombre (asignado por admin)</Label>
                         <Input 
-                            value={seller.name}
+                            value={employee.name}
                             readOnly 
                             disabled
                             className="h-11 bg-muted/50"
@@ -148,7 +148,7 @@ export default function EmployeeRegisterPage() {
                 </form>
             ) : (
                  <p className="text-center text-muted-foreground p-4">
-                    {sellerId ? "Verificando datos del vendedor..." : "Link inválido o no se encontró el ID del vendedor."}
+                    {employeeId ? "Verificando datos del empleado..." : "Link inválido o no se encontró el ID del empleado."}
                 </p>
             )}
         </CardContent>

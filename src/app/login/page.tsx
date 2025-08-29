@@ -25,11 +25,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { mockSellers, mockPassengers } from "@/lib/mock-data";
-import type { Seller, Passenger } from "@/lib/types";
+import { mockEmployees, mockPassengers } from "@/lib/mock-data";
+import type { Employee, Passenger } from "@/lib/types";
 import { DatePicker } from "@/components/ui/date-picker";
 
-function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'seller' | 'client') => void }) {
+function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'employee' | 'client') => void }) {
     return (
         <Dialog open={true}>
             <DialogContent onInteractOutside={(e) => e.preventDefault()} hideCloseButton>
@@ -47,10 +47,10 @@ function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'seller
                             <p className="font-normal text-sm text-muted-foreground">Acceso total al sistema.</p>
                         </div>
                     </Button>
-                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('seller')}>
+                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('employee')}>
                         <UserRound className="mr-4 w-6 h-6" />
                         <div>
-                             <p className="font-bold">Panel de Vendedor</p>
+                             <p className="font-bold">Panel de Empleado</p>
                              <p className="font-normal text-sm text-muted-foreground">Gestionar mis ventas.</p>
                         </div>
                     </Button>
@@ -75,32 +75,27 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const [matchedUser, setMatchedUser] = useState< (Seller | Passenger) & { isSeller?: boolean; isPassenger?: boolean; isAdmin?: boolean } | null>(null);
+  const [matchedUser, setMatchedUser] = useState< (Employee | Passenger) & { isEmployee?: boolean; isPassenger?: boolean; isAdmin?: boolean } | null>(null);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    let sellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+    let employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
     let passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
 
-    // --- ROBUSTNESS FIX ---
-    // Ensure the specific user's data is always present before attempting login,
-    // to counteract potential stale localStorage data.
     const GodoyDNI = "43580345";
-    const godoySeller = mockSellers.find(s => s.dni === GodoyDNI);
+    const godoyEmployee = mockEmployees.find(s => s.dni === GodoyDNI);
     const godoyPassenger = mockPassengers.find(p => p.dni === GodoyDNI);
     
-    if (godoySeller && !sellers.some(s => s.dni === GodoyDNI)) {
-        sellers.push(godoySeller);
+    if (godoyEmployee && !employees.some(s => s.dni === GodoyDNI)) {
+        employees.push(godoyEmployee);
     }
     if (godoyPassenger && !passengers.some(p => p.dni === GodoyDNI)) {
         passengers.push(godoyPassenger);
     }
-    // --- END FIX ---
 
-
-    const foundSeller = sellers.find(s => (s.dni === credential || s.name === credential) && s.password === password);
+    const foundEmployee = employees.find(s => (s.dni === credential || s.name === credential) && s.password === password);
     const foundPassenger = passengers.find(p => p.dni === credential && p.password === password);
     const isAdmin = (credential === "Angela Rojas" && password === "AngelaRojasYTL") || (credential === "99999999" && password === "AngelaRojasYTL");
 
@@ -108,7 +103,7 @@ function LoginForm() {
     localStorage.removeItem("ytl_user_id");
     
     let userRoles: any = {};
-    if (foundSeller) userRoles.isSeller = true;
+    if (foundEmployee) userRoles.isEmployee = true;
     if (foundPassenger) userRoles.isPassenger = true;
     if (isAdmin) userRoles.isAdmin = true;
 
@@ -116,10 +111,10 @@ function LoginForm() {
     
     const userObject = { 
         ...(foundPassenger || {}), 
-        ...(foundSeller || {}),
-        id: foundSeller?.id || foundPassenger?.id || '',
-        name: foundSeller?.name || (foundPassenger as any)?.fullName || '',
-        fullName: (foundPassenger as any)?.fullName || foundSeller?.name || ''
+        ...(foundEmployee || {}),
+        id: foundEmployee?.id || foundPassenger?.id || '',
+        name: foundEmployee?.name || (foundPassenger as any)?.fullName || '',
+        fullName: (foundPassenger as any)?.fullName || foundEmployee?.name || ''
     };
 
 
@@ -128,7 +123,7 @@ function LoginForm() {
         setShowRoleSelector(true);
     } else if (roleCount === 1) {
         if(userRoles.isAdmin) handleRoleSelection('admin', userObject);
-        else if (userRoles.isSeller) handleRoleSelection('seller', userObject);
+        else if (userRoles.isEmployee) handleRoleSelection('employee', userObject);
         else if (userRoles.isPassenger) handleRoleSelection('client', userObject);
     } else {
         toast({ title: "Error de autenticación", description: "Las credenciales son incorrectas.", variant: "destructive" });
@@ -137,7 +132,7 @@ function LoginForm() {
     setIsLoading(false);
   };
 
-  const handleRoleSelection = (role: 'admin' | 'seller' | 'client', userInfo?: any) => {
+  const handleRoleSelection = (role: 'admin' | 'employee' | 'client', userInfo?: any) => {
       setShowRoleSelector(false);
       const userToLogin = userInfo || matchedUser;
 
@@ -146,7 +141,7 @@ function LoginForm() {
               toast({ title: "¡Bienvenida, Angela!", description: "Has iniciado sesión como administradora." });
               router.push("/admin/dashboard");
               break;
-          case 'seller':
+          case 'employee':
               if (userToLogin) {
                 toast({ title: `¡Bienvenido/a, ${userToLogin.name || userToLogin.fullName}!`, description: "Has iniciado sesión en tu panel." });
                 localStorage.setItem("ytl_employee_id", userToLogin.id);

@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Settings as SettingsIcon, Save } from "lucide-react"
-import { mockSellers } from "@/lib/mock-data"
-import type { Seller } from "@/lib/types"
+import { mockEmployees } from "@/lib/mock-data"
+import type { Employee } from "@/lib/types"
 
 export default function EmployeeSettingsPage() {
     const { toast } = useToast()
     const [isClient, setIsClient] = useState(false);
     const [employeeId, setEmployeeId] = useState<string | null>(null);
-    const [sellers, setSellers] = useState<Seller[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [formData, setFormData] = useState({ name: '', dni: '', phone: '' });
 
     useEffect(() => {
@@ -23,15 +23,15 @@ export default function EmployeeSettingsPage() {
         const storedEmployeeId = localStorage.getItem("ytl_employee_id");
         setEmployeeId(storedEmployeeId);
 
-        const storedSellers = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-        setSellers(storedSellers);
+        const storedEmployees = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+        setEmployees(storedEmployees);
         
-        const currentSeller = storedSellers.find((s: Seller) => s.id === storedEmployeeId);
-        if (currentSeller) {
+        const currentEmployee = storedEmployees.find((s: Employee) => s.id === storedEmployeeId);
+        if (currentEmployee) {
             setFormData({
-                name: currentSeller.name || '',
-                dni: currentSeller.dni || '',
-                phone: currentSeller.phone || ''
+                name: currentEmployee.name || '',
+                dni: currentEmployee.dni || '',
+                phone: currentEmployee.phone || ''
             });
         }
     }, []);
@@ -52,15 +52,15 @@ export default function EmployeeSettingsPage() {
             return;
         }
 
-        const updatedSellers = sellers.map(s => {
+        const updatedEmployees = employees.map(s => {
             if (s.id === employeeId) {
                 return { ...s, ...formData };
             }
             return s;
         });
 
-        setSellers(updatedSellers);
-        localStorage.setItem("ytl_sellers", JSON.stringify(updatedSellers));
+        setEmployees(updatedEmployees);
+        localStorage.setItem("ytl_employees", JSON.stringify(updatedEmployees));
 
         toast({
             title: "¡Datos guardados!",

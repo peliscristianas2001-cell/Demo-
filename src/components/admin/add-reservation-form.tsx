@@ -192,7 +192,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                 <CommandItem
                                     key={passenger.id}
                                     value={`${passenger.fullName} ${passenger.dni}`}
-                                    onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                    onSelect={(currentValue) => {
+                                        const selected = availablePassengers.find(p => `${p.fullName} ${p.dni}` === currentValue)
+                                        if (selected) {
+                                            handleMainPassengerSelect(selected.id)
+                                        }
+                                    }}
                                 >
                                     <div>
                                         <p>{passenger.fullName}</p>

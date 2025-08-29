@@ -298,7 +298,7 @@ export default function ReservationsPage() {
     const reservationPassengers = passengers.filter(p => (reservation.passengerIds || []).includes(p.id));
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Columna Izquierda: Edición de Datos */}
         <div className="space-y-4">
           <Card>
@@ -508,7 +508,7 @@ export default function ReservationsPage() {
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto pr-2 flex-1">
+        <div className="flex-1 overflow-y-auto pr-2">
           {renderDialogContent()}
         </div>
         <DialogFooter className="mt-auto pt-4 border-t">
@@ -707,7 +707,3 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
-
-
-
-
