@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/accordion"
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
-import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
-import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint } from "@/lib/types"
+import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
+import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 
 export default function TicketsAdminPage() {
@@ -34,6 +34,7 @@ export default function TicketsAdminPage() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
+  const [pensions, setPensions] = useState<Pension[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
@@ -46,12 +47,14 @@ export default function TicketsAdminPage() {
     const storedSellers = localStorage.getItem("ytl_sellers");
     const storedPassengers = localStorage.getItem("ytl_passengers");
     const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+    const storedPensions = localStorage.getItem("ytl_pensions");
 
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
     setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers);
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
+    setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
 
     // Add storage event listeners to update state on changes from other tabs
     const handleStorageChange = () => {
@@ -60,11 +63,13 @@ export default function TicketsAdminPage() {
         const newStoredSellers = localStorage.getItem("ytl_sellers");
         const newStoredPassengers = localStorage.getItem("ytl_passengers");
         const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        const newStoredPensions = localStorage.getItem("ytl_pensions");
         setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
         setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
         setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
+        setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : mockPensions);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -224,6 +229,7 @@ export default function TicketsAdminPage() {
                                 {tripTickets.map((ticket) => {
                                     const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
+                                    const pension = pensions.find(p => p.id === ticket.reservation.pensionId);
                                     return (
                                         <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
                                             <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
@@ -238,7 +244,7 @@ export default function TicketsAdminPage() {
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
                                                     <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
-                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint}/>
+                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
                                                     <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>

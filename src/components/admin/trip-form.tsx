@@ -55,7 +55,6 @@ const defaultCosts: TourCosts = { transport: 0, hotel: 0, extras: [] };
 const defaultTourData: Omit<Tour, 'id' | 'destination' | 'date' | 'price' | 'flyerUrl' | 'transportUnits'> = {
     origin: "",
     nights: 0,
-    roomType: "",
     departurePoint: "",
     platform: "",
     presentationTime: "",
@@ -104,7 +103,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               price: tour.price || 0,
               origin: tour.origin || "",
               nights: tour.nights || 0,
-              roomType: tour.roomType || "",
               departurePoint: tour.departurePoint || "",
               platform: tour.platform || "",
               presentationTime: tour.presentationTime || "",
@@ -251,7 +249,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-2"><Label>Origen</Label><Input value={formData.origin} onChange={(e) => handleFormChange('origin', e.target.value)} /></div>
                                   <div className="space-y-2"><Label>Noches</Label><Input type="number" value={formData.nights} onChange={(e) => handleFormChange('nights', parseInt(e.target.value) || 0)} /></div>
-                                  <div className="space-y-2"><Label>Tipo Habitación</Label><Input value={formData.roomType} onChange={(e) => handleFormChange('roomType', e.target.value)} /></div>
                                   <div className="space-y-2"><Label>Empresa de Transporte</Label><Input value={formData.bus} onChange={(e) => handleFormChange('bus', e.target.value)} /></div>
                                   <div className="space-y-2"><Label>Punto de Embarque</Label><Input value={formData.departurePoint} onChange={(e) => handleFormChange('departurePoint', e.target.value)} /></div>
                                   <div className="space-y-2"><Label>Plataforma</Label><Input value={formData.platform} onChange={(e) => handleFormChange('platform', e.target.value)} /></div>

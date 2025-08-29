@@ -101,7 +101,6 @@ export interface Tour {
   
   origin?: string;
   nights?: number;
-  roomType?: string;
   departurePoint?: string;
   platform?: string;
   presentationTime?: string;
@@ -170,6 +169,7 @@ export type Reservation = {
     pensionId?: string;
     finalPrice: number;
     boardingPointId?: string;
+    roomType?: string;
     installments?: {
         count: number;
         details: Installment[];

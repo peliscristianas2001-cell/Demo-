@@ -5,7 +5,7 @@
 import React from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import type { Ticket as TicketType, Tour, Seller, BoardingPoint } from "@/lib/types"
+import type { Ticket as TicketType, Tour, Seller, BoardingPoint, Pension } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 import { 
@@ -18,6 +18,7 @@ interface TravelTicketProps {
   tour: Tour;
   seller?: Seller;
   boardingPoint?: BoardingPoint;
+  pension?: Pension;
 }
 
 const InfoSection = ({ title, icon: Icon, children, className, titleClassName, contentClassName }: { title: string, icon?: React.ElementType, children: React.ReactNode, className?: string, titleClassName?: string, contentClassName?: string }) => (
@@ -40,7 +41,7 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
 )
 
 
-export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint }, ref) => {
+export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint, pension }, ref) => {
   const reservation = ticket.reservation;
   const passengerNameDisplay = `${reservation.passenger} (x${reservation.paxCount})`;
 
@@ -50,7 +51,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   ].join(', ') || "Asignada por coordinador";
 
   const nightsAndRoom = tour.nights && tour.nights > 0 
-    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${tour.roomType || 'No especificada'}`
+    ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${reservation.roomType || 'No especificada'}`
     : "Solo ida";
 
   return (
@@ -84,7 +85,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                  </div>
                   <InfoSection title="Alojamiento y Comidas" icon={BedDouble}>
                     <InfoRow label="Noches / Habitación" value={nightsAndRoom} />
-                    <InfoRow label="Régimen de Comidas" value={tour.pension?.active ? tour.pension.type : 'Sin pensión'} />
+                    <InfoRow label="Régimen de Comidas" value={pension?.name || 'Sin pensión'} />
                  </InfoSection>
                  <InfoSection title="Datos del Transporte" icon={Bus}>
                     <InfoRow label="Empresa" value={tour.bus} />

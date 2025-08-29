@@ -42,7 +42,8 @@ const defaultReservation = {
     finalPrice: 0,
     paymentStatus: "Pendiente" as PaymentStatus,
     selectedPassengerIds: [] as string[],
-    boardingPointId: undefined
+    boardingPointId: undefined,
+    roomType: ""
 }
 
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints }: AddReservationFormProps) {
@@ -174,6 +175,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         sellerId: formData.sellerId,
         finalPrice: formData.finalPrice,
         boardingPointId: formData.boardingPointId,
+        roomType: formData.roomType,
     }
 
     onSave(reservationToSave);
@@ -276,7 +278,10 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                             </Select>
                         </div>
                     </div>
-
+                     <div className="space-y-2">
+                        <Label htmlFor="roomType">Tipo de Habitación</Label>
+                        <Input id="roomType" value={formData.roomType} onChange={(e) => handleFormChange('roomType', e.target.value)} placeholder="Doble, Triple, etc."/>
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="boardingPointId">Punto de Embarque</Label>
                         <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>

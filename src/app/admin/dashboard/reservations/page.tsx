@@ -419,6 +419,15 @@ export default function ReservationsPage() {
                         </SelectContent>
                     </Select>
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="roomType">Tipo de Habitación</Label>
+                    <Input
+                      id="roomType"
+                      value={reservation.roomType || ''}
+                      onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, roomType: e.target.value}}))}
+                      placeholder="Doble, Triple, etc."
+                    />
+                </div>
                  <div className="space-y-3 pt-2">
                     <Label>Seguro Médico por Pasajero</Label>
                     <div className="space-y-2 p-2 border rounded-md max-h-40 overflow-y-auto">
@@ -530,7 +539,7 @@ export default function ReservationsPage() {
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="overflow-y-auto pr-2 flex-1">
           {renderDialogContent()}
         </div>
         <DialogFooter className="mt-auto pt-4 border-t">
@@ -686,7 +695,7 @@ export default function ReservationsPage() {
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
                                                                 <InfoRow label="Pensión" value={pension?.name || 'No incluida'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
-                                                                <InfoRow label="Tipo de Hab." value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
+                                                                <InfoRow label="Tipo de Hab." value={res.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
                                                         </Card>
                                                     </div>
@@ -729,3 +738,4 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
+
