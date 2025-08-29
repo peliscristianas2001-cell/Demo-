@@ -37,7 +37,7 @@ import {
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
 import { mockTours, mockReservations, mockEmployees, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod } from "@/lib/types"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -266,7 +266,7 @@ export default function ReservationsPage() {
     vehicles: Bus,
     airplanes: Plane,
     cruises: Ship,
-  }
+  };
 
 
   if (!isClient) {
@@ -324,7 +324,7 @@ export default function ReservationsPage() {
                        <div key={index} className="space-y-2">
                            <div className={cn(
                             "flex items-center gap-2 p-2 rounded-md border",
-                            inst.isPaid && "bg-pink-100 border-pink-200"
+                            inst.isPaid && "bg-green-100 border-green-200"
                            )}>
                               <Label className="w-20">Cuota {index + 1}</Label>
                               <Input type="number" value={inst.amount || ''} onChange={(e) => {
@@ -639,7 +639,7 @@ export default function ReservationsPage() {
                                                                 <CardTitle className="text-lg flex items-center gap-2">
                                                                     <Home className="w-5 h-5 text-primary"/>
                                                                     Detalles del Viaje
-                                                                </Title>
+                                                                </CardTitle>
                                                             </CardHeader>
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
