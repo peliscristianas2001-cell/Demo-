@@ -133,26 +133,12 @@ body {
   user-select: none; /* Prevent text selection while dragging */
 }
 
-/* === PRINTING STYLES === */
 .printable-calendar {
   width: 100%;
   aspect-ratio: 297 / 210; /* A4 Landscape aspect ratio */
-  display: flex;
-  flex-direction: column;
 }
 
-.printable-calendar .calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: auto repeat(6, 1fr); /* Header row + 6 weeks */
-  flex-grow: 1;
-}
-
-.printable-calendar .calendar-day-cell {
-  border: 1px solid hsl(var(--border));
-}
-
-/* --- New Print Rules --- */
+/* === PRINTING STYLES === */
 @page {
   size: A4 landscape;
   margin: 0;
@@ -177,6 +163,24 @@ body {
     box-sizing: border-box;
   }
   
+  .printable-calendar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .printable-calendar .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: auto repeat(6, 1fr); /* Header row + 6 weeks */
+    flex-grow: 1; /* This will make the grid fill the container */
+  }
+
+  .printable-calendar .calendar-day-cell {
+    border: 1px solid hsl(var(--border));
+  }
+
   .no-print {
     display: none !important;
   }
