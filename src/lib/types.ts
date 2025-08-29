@@ -218,4 +218,3 @@ export interface CommissionRule {
 export interface CommissionSettings {
     rules: CommissionRule[];
 }
-

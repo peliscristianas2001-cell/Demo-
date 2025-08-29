@@ -35,9 +35,9 @@ import {
 } from "@/components/ui/select"
 
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
-import { mockTours, mockReservations, mockEmployees, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit } from "@/lib/types"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare } from "lucide-react"
+import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -51,7 +51,6 @@ type ActiveTransportUnitInfo = {
   category: LayoutCategory;
   type: LayoutItemType;
 } | null;
-
 
 type EditReservationState = {
   isOpen: boolean;
@@ -84,7 +83,7 @@ const paymentMethodAbbreviations: Record<PaymentMethod, string> = {
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const [pensions, setPensions] = useState<Pension[]>([]);
@@ -100,14 +99,14 @@ export default function ReservationsPage() {
     // Load data from localStorage or fall back to mock data
     const storedReservations = localStorage.getItem("ytl_reservations")
     const storedTours = localStorage.getItem("ytl_tours")
-    const storedEmployees = localStorage.getItem("ytl_employees")
+    const storedSellers = localStorage.getItem("ytl_sellers")
     const storedPassengers = localStorage.getItem("ytl_passengers")
     const storedBoardingPoints = localStorage.getItem("ytl_boarding_points")
     const storedPensions = localStorage.getItem("ytl_pensions")
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
-    setEmployees(storedEmployees ? JSON.parse(storedEmployees) : mockEmployees)
+    setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints)
     setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
@@ -116,13 +115,13 @@ export default function ReservationsPage() {
       setLayoutConfig(getLayoutConfig(true));
        const newStoredReservations = localStorage.getItem("ytl_reservations")
        const newStoredTours = localStorage.getItem("ytl_tours")
-       const newStoredEmployees = localStorage.getItem("ytl_employees")
+       const newStoredSellers = localStorage.getItem("ytl_sellers")
        const newStoredPassengers = localStorage.getItem("ytl_passengers")
        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points")
        const newStoredPensions = localStorage.getItem("ytl_pensions")
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
-       setEmployees(newStoredEmployees ? JSON.parse(newStoredEmployees) : mockEmployees)
+       setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints)
        setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : mockPensions);
@@ -164,10 +163,21 @@ export default function ReservationsPage() {
   const getExpandedTransportList = (tour: Tour): TransportUnit[] => {
     return tour.transportUnits || [];
   }
+  
+  const getTourCapacity = (tour: Tour) => {
+    if (!tour.transportUnits) return 0;
+    return tour.transportUnits.reduce((total, unit) => {
+      const config = layoutConfig[unit.category]?.[unit.type];
+      return total + (config?.capacity || 0);
+    }, 0);
+  };
 
-  const getTransportCount = (tour: Tour) => {
-    return (tour.transportUnits || []).reduce((sum, unit) => sum + unit.count, 0);
+  const getOccupiedCount = (tourId: string) => {
+    return reservations
+        .filter(r => r.tripId === tourId)
+        .reduce((acc, r) => acc + ((r.assignedSeats?.length || 0) + (r.assignedCabins?.length || 0)) , 0);
   }
+
   
   const handleAddReservation = (newReservation: Reservation) => {
     setReservations(prev => [...prev, newReservation]);
@@ -485,20 +495,22 @@ export default function ReservationsPage() {
             passengers={passengers}
             allReservations={reservations}
             onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
-            employees={employees}
+            sellers={sellers}
             boardingPoints={boardingPoints}
         />
     )}
 
     <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-w-4xl flex flex-col max-h-[90vh] flex-1">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-w-4xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        {renderDialogContent()}
+        <div className="overflow-y-auto pr-2 flex-1">
+          {renderDialogContent()}
+        </div>
         <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="destructive" className="mr-auto" onClick={() => {
               if (editingReservation.reservation) handleDelete(editingReservation.reservation.id);
@@ -529,10 +541,18 @@ export default function ReservationsPage() {
             ) : (
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={Object.keys(reservationsByTrip)}>
                     {Object.values(reservationsByTrip).map(({ tour, reservations: tripReservations }) => {
+                       const occupiedCount = getOccupiedCount(tour.id);
+                       const totalCapacity = getTourCapacity(tour);
+                       const availableSeats = totalCapacity - occupiedCount;
                        return (
                        <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
                            <AccordionTrigger className="text-lg font-medium hover:no-underline bg-muted/50 px-4 rounded-t-lg">
-                               {tour.destination} ({tripReservations.length} reservas)
+                               <div className="flex justify-between items-center w-full">
+                                  <span>{tour.destination} ({tripReservations.length} reservas)</span>
+                                  <Badge variant={availableSeats > 0 ? "secondary" : "destructive"} className="mr-4">
+                                      {availableSeats} disponibles
+                                  </Badge>
+                               </div>
                             </AccordionTrigger>
                            <AccordionContent className="p-0">
                                 <div className="flex justify-end p-4 border-x border-b rounded-b-lg">
@@ -546,10 +566,10 @@ export default function ReservationsPage() {
                                 {tripReservations.map((res) => {
                                     const resPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
                                     const mainPassenger = resPassengers[0];
-                                    const employee = employees.find(s => s.id === res.sellerId);
+                                    const seller = sellers.find(s => s.id === res.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
                                     const assignedLocations = [
-                                        ...(res.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
+                                        ...(res.assignedSeats || []).map(s => s.seatId),
                                         ...(res.assignedCabins || []).map(c => c.cabinId)
                                     ].join(', ');
                                     const installments = res.installments || { count: 1, details: [{ amount: res.finalPrice || 0, isPaid: false }] };
@@ -599,7 +619,7 @@ export default function ReservationsPage() {
                                                                 <InfoRow label="Cantidad" value={`${res.paxCount} pasajero(s)`}/>
                                                                 <InfoRow label="Embarque" value={boardingPoint?.name}/>
                                                                 <InfoRow label="Ubicación" value={assignedLocations}/>
-                                                                <InfoRow label="Empleado/a" value={employee?.name}/>
+                                                                <InfoRow label="Vendedor/a" value={seller?.name} icon={<PercentSquare className="w-4 h-4 text-purple-600"/>}/>
                                                             </CardContent>
                                                         </Card>
 
@@ -687,6 +707,7 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
+
 
 
 

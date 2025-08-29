@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation, LayoutItemType, LayoutCategory } from "@/lib/types"
+import type { Tour, Reservation, LayoutItemType, LayoutCategory, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { TripForm } from "@/components/admin/trip-form"
 
@@ -86,30 +86,30 @@ export default function TripsPage() {
   }
 
   const getTourCapacity = (tour: Tour) => {
-    let totalCapacity = 0;
-    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
-    for (const category of categories) {
-        if (tour[category]) {
-            totalCapacity += Object.entries(tour[category]!).reduce((total, [type, count]) => {
-                const itemConfig = layoutConfig[category]?.[type as LayoutItemType];
-                if (!itemConfig) return total;
-                return total + (itemConfig.capacity * (count || 0));
-            }, 0);
-        }
-    }
-    return totalCapacity;
-  }
+    if (!tour.transportUnits) return 0;
+    return tour.transportUnits.reduce((total, unit) => {
+      const config = layoutConfig[unit.category]?.[unit.type];
+      return total + (config?.capacity || 0);
+    }, 0);
+  };
 
-  const getTransportCount = (tour: Tour) => {
-    let totalCount = 0;
-    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
-    for (const category of categories) {
-        if (tour[category]) {
-            totalCount += Object.values(tour[category]!).reduce((total, count) => total + (count || 0), 0);
-        }
-    }
-    return totalCount;
-  }
+  const getTransportUnitsByType = (tour: Tour): Partial<Record<LayoutCategory, number>> => {
+    if (!tour.transportUnits) return {};
+    return tour.transportUnits.reduce((acc, unit) => {
+      acc[unit.category] = (acc[unit.category] || 0) + 1;
+      return acc;
+    }, {} as Partial<Record<LayoutCategory, number>>);
+  };
+
+  const activeTransportTypes = useMemo(() => {
+    const types = new Set<LayoutCategory>();
+    activeTours.forEach(tour => {
+      if (tour.transportUnits) {
+        tour.transportUnits.forEach(unit => types.add(unit.category));
+      }
+    });
+    return Array.from(types);
+  }, [activeTours]);
 
   const handleCreate = () => {
     setSelectedTour(null)
@@ -167,22 +167,27 @@ export default function TripsPage() {
                 <TableHead>Destino</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Precio</TableHead>
-                <TableHead>Capacidad</TableHead>
-                <TableHead>Unidades</TableHead>
+                <TableHead>Asientos Totales</TableHead>
+                <TableHead>Asientos Ocupados</TableHead>
+                <TableHead>Asientos Disponibles</TableHead>
+                {activeTransportTypes.includes('vehicles') && <TableHead>Vehículos</TableHead>}
+                {activeTransportTypes.includes('airplanes') && <TableHead>Aviones</TableHead>}
+                {activeTransportTypes.includes('cruises') && <TableHead>Cruceros</TableHead>}
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {activeTours.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={10} className="h-24 text-center">
                     No hay viajes activos.
                   </TableCell>
                 </TableRow>
               ) : activeTours.map((tour) => {
                 const occupiedCount = getOccupiedCount(tour.id);
                 const totalCapacity = getTourCapacity(tour);
-                const transportCount = getTransportCount(tour);
+                const availableSeats = totalCapacity - occupiedCount;
+                const unitsByType = getTransportUnitsByType(tour);
 
                 return (
                   <TableRow key={tour.id}>
@@ -196,13 +201,17 @@ export default function TripsPage() {
                     </TableCell>
                     <TableCell>${tour.price.toLocaleString("es-AR")}</TableCell>
                     <TableCell>
-                      <Badge variant={totalCapacity > 0 && occupiedCount / totalCapacity > 0.8 ? "destructive" : "secondary"}>
-                        {occupiedCount} / {totalCapacity}
-                      </Badge>
+                      <Badge variant="outline">{totalCapacity}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{transportCount}</Badge>
+                       <Badge variant={occupiedCount > 0 ? "secondary" : "outline"}>{occupiedCount}</Badge>
                     </TableCell>
+                    <TableCell>
+                       <Badge variant={availableSeats > 0 ? "default" : "destructive"}>{availableSeats}</Badge>
+                    </TableCell>
+                    {activeTransportTypes.includes('vehicles') && <TableCell>{unitsByType.vehicles || 0}</TableCell>}
+                    {activeTransportTypes.includes('airplanes') && <TableCell>{unitsByType.airplanes || 0}</TableCell>}
+                    {activeTransportTypes.includes('cruises') && <TableCell>{unitsByType.cruises || 0}</TableCell>}
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
