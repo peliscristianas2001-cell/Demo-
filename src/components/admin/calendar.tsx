@@ -108,7 +108,7 @@ export function Calendar() {
 
     return (
       <div
-        key={bubble.id}
+        key={bubble.id + '-' + dayKey}
         className={cn("calendar-bubble relative group z-10", bubble.color)}
         style={{
           height: `${bubble.height || 28}px`,
@@ -158,7 +158,7 @@ export function Calendar() {
 
 
   return (
-    <div className="printable-container bg-card p-4 rounded-lg shadow-sm">
+    <div className="bg-card p-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-4 no-print">
         <div className="flex items-center gap-4">
            <Select value={String(currentDate.getMonth())} onValueChange={handleMonthChange}>
