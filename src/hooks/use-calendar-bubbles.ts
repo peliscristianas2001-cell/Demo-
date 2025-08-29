@@ -19,6 +19,8 @@ export const useCalendarBubbles = () => {
   const mouseDownRef = useRef(false);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [multiSelectedDays, setMultiSelectedDays] = useState<string[]>([]);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const savedBubbles = localStorage.getItem("calendarBubbles");
@@ -187,5 +189,6 @@ export const useCalendarBubbles = () => {
     setMultiSelectMode,
     handleMultiSelectDayClick,
     createBubbleFromMultiSelect,
+    calendarRef,
   };
 };

@@ -24,6 +24,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import type { Bubble } from "@/hooks/use-calendar-bubbles";
+import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
 
 const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
 
@@ -55,10 +57,34 @@ export function Calendar() {
     setMultiSelectMode,
     handleMultiSelectDayClick,
     createBubbleFromMultiSelect,
+    calendarRef,
   } = useCalendarBubbles();
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (!calendarRef.current) return;
+
+    try {
+      const dataUrl = await toPng(calendarRef.current, { 
+          quality: 1.0, 
+          pixelRatio: 3, // Higher pixel ratio for better print quality
+      });
+      
+      const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "mm",
+          format: "a4"
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      pdf.autoPrint();
+      window.open(pdf.output('bloburl'), '_blank');
+
+    } catch (error) {
+      console.error('oops, something went wrong!', error);
+    }
   };
 
   const handleExport = () => {
@@ -82,70 +108,93 @@ export function Calendar() {
 
   const colors = Object.keys(tailwindToHex);
 
-  const renderBubble = (bubble: Bubble, dayKey: string, isStartOfWeek: boolean) => {
-    let colSpan = 1;
+  const renderBubble = (bubble: Bubble, dayKey: string) => {
+      const date = new Date(dayKey + 'T00:00:00');
+      const dayOfWeek = date.getDay();
 
-    if (!isStartOfWeek) {
-        return null;
-    }
-    
-    let currentDate = new Date(dayKey + "T00:00:00");
-    while (currentDate.getDay() < 6) { // While it's not Saturday
-      currentDate.setDate(currentDate.getDate() + 1);
-      const nextDayKey = currentDate.toISOString().split('T')[0];
-      if (bubble.dates.includes(nextDayKey)) {
-        colSpan++;
-      } else {
-        break; 
+      // Find all segments of this bubble in the current week
+      const weekStartDate = new Date(date);
+      weekStartDate.setDate(date.getDate() - dayOfWeek);
+
+      const segments = [];
+      let currentSegment: string[] = [];
+
+      for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStartDate);
+          d.setDate(weekStartDate.getDate() + i);
+          const dStr = d.toISOString().split('T')[0];
+
+          if (bubble.dates.includes(dStr)) {
+              currentSegment.push(dStr);
+          } else {
+              if (currentSegment.length > 0) {
+                  segments.push(currentSegment);
+                  currentSegment = [];
+              }
+          }
       }
-    }
-    
-    const printColors = tailwindToHex[bubble.color || colors[0]];
+      if (currentSegment.length > 0) {
+          segments.push(currentSegment);
+      }
 
-    return (
-      <div
-        key={bubble.id + '-' + dayKey}
-        className={cn("calendar-bubble relative group z-10", bubble.color)}
-        style={{
-          height: `${bubble.height || 28}px`,
-          gridColumn: `span ${colSpan}`,
-          '--bubble-print-bg-color': printColors.bg,
-          '--bubble-print-border-color': printColors.border,
-        } as React.CSSProperties}
-        onMouseDown={(e) => e.stopPropagation()} 
-      >
-        <textarea
-          value={bubble.text}
-          onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
-          className="text-black"
-          placeholder="Escribe aquí..."
-        />
-        <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
-                <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-              <div className="flex gap-1">
-                {colors.map(color => (
-                  <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
-                    <div className={cn("w-4 h-4 rounded-full", color)}></div>
-                  </Button>
-                ))}
+      return segments.map((segment, index) => {
+          const firstDayOfSegment = new Date(segment[0] + 'T00:00:00').getDay();
+          const isStartOfBubble = segment[0] === bubble.dates[0];
+
+          // Only render the segment if its first day is the current dayKey
+          if (segment[0] !== dayKey) return null;
+          
+          const printColors = tailwindToHex[bubble.color || colors[0]];
+
+          return (
+              <div
+                  key={`${bubble.id}-${dayKey}-${index}`}
+                  className={cn("calendar-bubble relative group z-10", bubble.color)}
+                  style={{
+                      height: `${bubble.height || 28}px`,
+                      gridColumn: `span ${segment.length}`,
+                      '--bubble-print-bg-color': printColors.bg,
+                      '--bubble-print-border-color': printColors.border,
+                  } as React.CSSProperties}
+                  onMouseDown={(e) => e.stopPropagation()}
+              >
+                  {isStartOfBubble && (
+                    <>
+                      <textarea
+                          value={bubble.text}
+                          onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
+                          className="text-black"
+                          placeholder="Escribe aquí..."
+                      />
+                      <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
+                          <Popover>
+                              <PopoverTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
+                                      <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
+                                  </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-2">
+                                  <div className="flex gap-1">
+                                      {colors.map(color => (
+                                          <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
+                                              <div className={cn("w-4 h-4 rounded-full", color)}></div>
+                                          </Button>
+                                      ))}
+                                  </div>
+                              </PopoverContent>
+                          </Popover>
+                          <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
+                              <Expand className="w-3 h-3" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
+                              <Trash2 className="w-3 h-3" />
+                          </Button>
+                      </div>
+                    </>
+                  )}
               </div>
-            </PopoverContent>
-          </Popover>
-          <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
-            <Expand className="w-3 h-3"/>
-          </Button>
-          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
-            <Trash2 className="w-3 h-3"/>
-          </Button>
-        </div>
-      </div>
-    );
+          );
+      });
   };
 
   return (
@@ -198,7 +247,7 @@ export function Calendar() {
         </div>
       </div>
 
-      <div className="printable-calendar">
+      <div className="printable-calendar" ref={calendarRef}>
          <div className="calendar-header-month text-center font-bold">
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </div>
@@ -212,7 +261,6 @@ export function Calendar() {
         <div className="calendar-grid">
             {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
                 const dayKey = date.toISOString().split("T")[0];
-                const dayOfWeek = date.getDay();
                 const isSelectedForMulti = selectionInfo?.isMultiSelecting;
                 
                 return (
@@ -245,8 +293,7 @@ export function Calendar() {
                     <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
                         {dayBubbles.map((bubble) => {
                             if (!bubble.dates.includes(dayKey)) return null;
-                            const isStartOfBubbleInWeek = dayOfWeek === 0 || !bubble.dates.includes(new Date(date.getTime() - 86400000).toISOString().split('T')[0]);
-                            return renderBubble(bubble, dayKey, isStartOfBubbleInWeek);
+                            return renderBubble(bubble, dayKey);
                         })}
                     </div>
                 </div>
