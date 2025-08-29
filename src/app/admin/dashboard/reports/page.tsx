@@ -33,12 +33,13 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
-import type { Tour, Reservation, Seller, CustomExpense } from "@/lib/types"
+import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome } from "@/lib/types"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 type CommissionDetail = {
     sellerId: string;
@@ -56,15 +57,20 @@ type ReportData = {
     reservationCount: number;
 }
 
+type ModalType = 'expenses' | 'commissions' | 'excursions' | 'netIncome' | 'commissionsPaid' | null;
+
+
 export default function ReportsPage() {
     const [tours, setTours] = useState<Tour[]>([])
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [sellers, setSellers] = useState<Seller[]>([])
     const [customExpenses, setCustomExpenses] = useState<CustomExpense[]>([])
+    const [externalCommissions, setExternalCommissions] = useState<ExternalCommission[]>([]);
+    const [excursionIncomes, setExcursionIncomes] = useState<ExcursionIncome[]>([]);
     const [isClient, setIsClient] = useState(false)
+    const [activeModal, setActiveModal] = useState<ModalType>(null);
     const [commissionModalData, setCommissionModalData] = useState<{ tour: Tour, details: CommissionDetail[] } | null>(null);
-    const [monthlyExpenseModalOpen, setMonthlyExpenseModalOpen] = useState(false);
-    const [newCustomExpense, setNewCustomExpense] = useState({ description: "", amount: "" });
+    const [newItem, setNewItem] = useState({ description: "", amount: "" });
     const { toast } = useToast();
 
     useEffect(() => {
@@ -73,18 +79,24 @@ export default function ReportsPage() {
         const storedReservations = localStorage.getItem("ytl_reservations")
         const storedSellers = localStorage.getItem("ytl_sellers")
         const storedCustomExpenses = localStorage.getItem("ytl_custom_expenses")
+        const storedExternalCommissions = localStorage.getItem("ytl_external_commissions");
+        const storedExcursionIncomes = localStorage.getItem("ytl_excursion_incomes");
         
         setTours(storedTours ? JSON.parse(storedTours) : mockTours)
         setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
         setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
         setCustomExpenses(storedCustomExpenses ? JSON.parse(storedCustomExpenses) : [])
+        setExternalCommissions(storedExternalCommissions ? JSON.parse(storedExternalCommissions) : []);
+        setExcursionIncomes(storedExcursionIncomes ? JSON.parse(storedExcursionIncomes) : []);
     }, [])
     
      useEffect(() => {
         if (isClient) {
             localStorage.setItem("ytl_custom_expenses", JSON.stringify(customExpenses));
+            localStorage.setItem("ytl_external_commissions", JSON.stringify(externalCommissions));
+            localStorage.setItem("ytl_excursion_incomes", JSON.stringify(excursionIncomes));
         }
-    }, [customExpenses, isClient]);
+    }, [customExpenses, externalCommissions, excursionIncomes, isClient]);
 
     const reportData = useMemo((): ReportData[] => {
         const activeTours = tours.filter(t => new Date(t.date) >= new Date());
@@ -97,7 +109,7 @@ export default function ReportsPage() {
             const commissionData = tripReservations.reduce((acc, res) => {
                 const seller = sellers.find(s => s.id === res.sellerId);
                 if (seller) {
-                    const commissionAmount = res.finalPrice * (seller.fixedCommissionRate || 0 / 100);
+                    const commissionAmount = res.finalPrice * ((seller.fixedCommissionRate || 0) / 100);
                     if (!acc.details[seller.id]) {
                         acc.details[seller.id] = { sellerId: seller.id, sellerName: seller.name, totalCommission: 0 };
                     }
@@ -136,7 +148,6 @@ export default function ReportsPage() {
             const tourDate = new Date(t.date);
             return tourDate.getMonth() === currentMonth && tourDate.getFullYear() === currentYear;
         });
-
         const monthlyTripIds = new Set(monthlyTours.map(t => t.id));
         const monthlyReservations = reservations.filter(r => monthlyTripIds.has(r.tripId) && r.status === 'Confirmado');
 
@@ -156,37 +167,57 @@ export default function ReportsPage() {
             const expenseDate = new Date(e.date);
             return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
         });
+        
+        const externalCommissionIncomes = externalCommissions.filter(e => {
+            const incomeDate = new Date(e.date);
+            return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+        });
+
+        const excursionIncomesFiltered = excursionIncomes.filter(e => {
+            const incomeDate = new Date(e.date);
+            return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
+        });
 
         const totalManualExpenses = manualExpenses.reduce((sum, e) => sum + e.amount, 0);
         const totalNetExpense = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + (commissionCosts > 0 ? commissionCosts : 0) + totalManualExpenses;
+        const totalCommissionIncome = externalCommissionIncomes.reduce((sum, e) => sum + e.amount, 0);
+        const totalExcursionIncome = excursionIncomesFiltered.reduce((sum, e) => sum + e.amount, 0);
+        const totalTripIncome = monthlyReservations.reduce((sum, r) => sum + r.finalPrice, 0);
+        
+        const totalNetIncome = totalTripIncome + totalCommissionIncome + totalExcursionIncome - totalNetExpense;
         
         return {
-            transportCosts,
-            hotelCosts,
-            extraCosts,
-            commissionCosts,
-            manualExpenses,
-            totalNetExpense
+            transportCosts, hotelCosts, extraCosts, commissionCosts,
+            manualExpenses, totalNetExpense,
+            externalCommissionIncomes, totalCommissionIncome,
+            excursionIncomes: excursionIncomesFiltered, totalExcursionIncome,
+            monthlyTours, totalNetIncome, totalTripIncome
         };
-    }, [tours, reservations, sellers, customExpenses]);
+    }, [tours, reservations, sellers, customExpenses, externalCommissions, excursionIncomes]);
     
-    const handleAddCustomExpense = () => {
-        if (!newCustomExpense.description || !newCustomExpense.amount) {
+    const handleAddItem = (type: 'expense' | 'commission' | 'excursion') => {
+        if (!newItem.description || !newItem.amount) {
             toast({ title: "Datos incompletos", description: "Por favor, añade descripción y monto.", variant: "destructive" });
             return;
         }
-        const expenseToAdd: CustomExpense = {
-            id: `CE-${Date.now()}`,
-            description: newCustomExpense.description,
-            amount: parseFloat(newCustomExpense.amount),
+        const itemToAdd = {
+            id: `ITEM-${Date.now()}`,
+            description: newItem.description,
+            amount: parseFloat(newItem.amount),
             date: new Date()
         };
-        setCustomExpenses(prev => [...prev, expenseToAdd]);
-        setNewCustomExpense({ description: "", amount: "" });
+
+        if(type === 'expense') setCustomExpenses(prev => [...prev, itemToAdd]);
+        else if (type === 'commission') setExternalCommissions(prev => [...prev, itemToAdd]);
+        else if (type === 'excursion') setExcursionIncomes(prev => [...prev, itemToAdd]);
+        
+        setNewItem({ description: "", amount: "" });
     }
 
-    const handleDeleteCustomExpense = (id: string) => {
-        setCustomExpenses(prev => prev.filter(e => e.id !== id));
+    const handleDeleteItem = (id: string, type: 'expense' | 'commission' | 'excursion') => {
+        if(type === 'expense') setCustomExpenses(prev => prev.filter(e => e.id !== id));
+        else if (type === 'commission') setExternalCommissions(prev => prev.filter(e => e.id !== id));
+        else if (type === 'excursion') setExcursionIncomes(prev => prev.filter(e => e.id !== id));
     }
 
     const formatCurrency = (amount: number) => {
@@ -194,6 +225,7 @@ export default function ReportsPage() {
     }
     
     const handleOpenCommissionModal = (tour: Tour, details: CommissionDetail[]) => {
+        setActiveModal('commissionsPaid');
         setCommissionModalData({ tour, details });
     }
 
@@ -203,164 +235,123 @@ export default function ReportsPage() {
 
     return (
         <>
-        <Dialog open={!!commissionModalData} onOpenChange={(isOpen) => !isOpen && setCommissionModalData(null)}>
+         {/* -- MODALS -- */}
+        <Dialog open={activeModal === 'commissionsPaid'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
              <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Detalle de Comisiones Pagadas</DialogTitle>
-                    <DialogDescription>
-                        Desglose de comisiones para el viaje a {commissionModalData?.tour.destination}.
-                    </DialogDescription>
+                    <DialogDescription>Desglose de comisiones para el viaje a {commissionModalData?.tour.destination}.</DialogDescription>
                 </DialogHeader>
                  <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Vendedor/a</TableHead>
-                            <TableHead className="text-right">Comisión a Pagar</TableHead>
-                        </TableRow>
-                    </TableHeader>
+                    <TableHeader><TableRow><TableHead>Vendedor/a</TableHead><TableHead className="text-right">Comisión a Pagar</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {commissionModalData?.details.map(detail => (
-                            <TableRow key={detail.sellerId}>
-                                <TableCell className="font-medium">{detail.sellerName}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(detail.totalCommission)}</TableCell>
-                            </TableRow>
+                            <TableRow key={detail.sellerId}><TableCell className="font-medium">{detail.sellerName}</TableCell><TableCell className="text-right">{formatCurrency(detail.totalCommission)}</TableCell></TableRow>
                         ))}
                     </TableBody>
                 </Table>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setCommissionModalData(null)}>Cerrar</Button>
-                </DialogFooter>
+                <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
              </DialogContent>
         </Dialog>
         
-        <Dialog open={monthlyExpenseModalOpen} onOpenChange={setMonthlyExpenseModalOpen}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Desglose de Gastos del Mes</DialogTitle>
-                    <DialogDescription>Aquí se detallan todos los gastos registrados en el mes actual.</DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Costos de Viajes</CardTitle></CardHeader>
+        <Dialog open={activeModal === 'expenses'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Desglose de Gastos del Mes</DialogTitle><DialogDescription>Aquí se detallan todos los gastos registrados en el mes actual.</DialogDescription></DialogHeader>
+                <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
+                    <Card><CardHeader><CardTitle className="text-base">Costos de Viajes</CardTitle></CardHeader>
                         <CardContent className="space-y-2">
                            <InfoRow label="Comisiones Pagadas" value={formatCurrency(monthlyReport.commissionCosts)} />
                            <InfoRow label="Transporte" value={formatCurrency(monthlyReport.transportCosts)} />
                            <InfoRow label="Hotel" value={formatCurrency(monthlyReport.hotelCosts)} />
-                           <Accordion type="single" collapsible>
-                             <AccordionItem value="extras">
-                               <AccordionTrigger className="text-sm">Gastos Extras ({monthlyReport.extraCosts.length})</AccordionTrigger>
-                               <AccordionContent>
-                                {monthlyReport.extraCosts.map(e => <InfoRow key={e.id} label={e.description} value={formatCurrency(e.amount)}/>)}
-                               </AccordionContent>
-                             </AccordionItem>
-                           </Accordion>
+                           <Accordion type="single" collapsible><AccordionItem value="extras"><AccordionTrigger className="text-sm">Gastos Extras ({monthlyReport.extraCosts.length})</AccordionTrigger><AccordionContent>{monthlyReport.extraCosts.map(e => <InfoRow key={e.id} label={e.description} value={formatCurrency(e.amount)}/>)}</AccordionContent></AccordionItem></Accordion>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Gastos Manuales</CardTitle></CardHeader>
+                    <Card><CardHeader><CardTitle className="text-base">Gastos Manuales</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="space-y-2 mb-4">
-                                {monthlyReport.manualExpenses.map(e => (
-                                    <div key={e.id} className="flex items-center gap-2">
-                                        <div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div>
-                                        <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteCustomExpense(e.id)}>
-                                            <Trash2 className="w-4 h-4"/>
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                             <div className="p-4 border rounded-lg space-y-2">
-                                <Label>Añadir Nuevo Gasto Manual</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input placeholder="Descripción..." value={newCustomExpense.description} onChange={e => setNewCustomExpense({...newCustomExpense, description: e.target.value})}/>
-                                    <Input type="number" placeholder="Monto" className="w-32" value={newCustomExpense.amount} onChange={e => setNewCustomExpense({...newCustomExpense, amount: e.target.value})}/>
-                                    <Button onClick={handleAddCustomExpense} size="icon" className="flex-shrink-0">
-                                        <PlusCircle className="w-4 h-4"/>
-                                    </Button>
-                                </div>
-                            </div>
+                            <div className="space-y-2 mb-4">{monthlyReport.manualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                             <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nuevo Gasto Manual</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('expense')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
                         </CardContent>
                     </Card>
-                </div>
-                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setMonthlyExpenseModalOpen(false)}>Cerrar</Button>
-                </DialogFooter>
+                </div></ScrollArea>
+                 <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        <Dialog open={activeModal === 'commissions'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingresos por Comisión (Externos)</DialogTitle><DialogDescription>Registra aquí las comisiones ganadas por ventas de servicios de terceros.</DialogDescription></DialogHeader>
+                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
+                     <Card><CardContent className="pt-6">
+                        <div className="space-y-2 mb-4">{monthlyReport.externalCommissionIncomes.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'commission')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                        <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nueva Comisión Ganada</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('commission')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
+                    </CardContent></Card>
+                 </div></ScrollArea>
+                 <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        <Dialog open={activeModal === 'excursions'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingresos por Excursión</DialogTitle><DialogDescription>Registra aquí los ingresos generados por excursiones adicionales.</DialogDescription></DialogHeader>
+                <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
+                    <Card><CardContent className="pt-6">
+                        <div className="space-y-2 mb-4">{monthlyReport.excursionIncomes.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'excursion')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                        <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nuevo Ingreso por Excursión</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('excursion')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
+                    </CardContent></Card>
+                </div></ScrollArea>
+                <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        <Dialog open={activeModal === 'netIncome'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingreso Neto Mensual</DialogTitle><DialogDescription>Desglose de todos los ingresos del mes en curso.</DialogDescription></DialogHeader>
+                <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
+                    {monthlyReport.monthlyTours.map(tour => {
+                        const netProfit = reportData.find(rd => rd.tour.id === tour.id)?.netProfit || 0;
+                        return (<InfoRow key={tour.id} label={`Ganancia Neta - ${tour.destination}`} value={formatCurrency(netProfit)} />)
+                    })}
+                    <InfoRow label="Total Comisiones Externas" value={formatCurrency(monthlyReport.totalCommissionIncome)} />
+                    <InfoRow label="Total Ingresos Excursiones" value={formatCurrency(monthlyReport.totalExcursionIncome)} />
+                </div></ScrollArea>
+                <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
             </DialogContent>
         </Dialog>
 
+
         <div className="space-y-6">
-             <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold">Reportes Financieros</h2>
-                    <p className="text-muted-foreground">
-                        Analiza los ingresos, gastos y ganancias de cada viaje activo.
-                    </p>
-                </div>
-                <Button variant="outline" onClick={() => setMonthlyExpenseModalOpen(true)}>
-                    <div className="flex flex-col items-end">
-                       <span className="font-bold">Gasto Neto Mensual</span>
-                       <span className="text-destructive">{formatCurrency(monthlyReport.totalNetExpense)}</span>
-                    </div>
+            <div className="flex justify-between items-center">
+                <div><h2 className="text-2xl font-bold">Reportes Financieros</h2><p className="text-muted-foreground">Analiza los ingresos, gastos y ganancias de cada viaje activo.</p></div>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                 <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('expenses')}>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><TrendingDown className="w-4 h-4 text-destructive"/><span className="font-bold">Gasto Neto Mensual</span></div><span className="text-destructive text-lg">{formatCurrency(monthlyReport.totalNetExpense)}</span></div>
+                </Button>
+                 <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('commissions')}>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><HandCoins className="w-4 h-4 text-green-600"/><span className="font-bold">Ingresos Por Comisión</span></div><span className="text-green-600 text-lg">{formatCurrency(monthlyReport.totalCommissionIncome)}</span></div>
+                </Button>
+                 <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('excursions')}>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><MountainSnow className="w-4 h-4 text-cyan-600"/><span className="font-bold">Ingresos Por Excursión</span></div><span className="text-cyan-600 text-lg">{formatCurrency(monthlyReport.totalExcursionIncome)}</span></div>
+                </Button>
+                 <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('netIncome')}>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary"/><span className="font-bold">Ingreso Neto Mensual</span></div><span className="text-primary text-lg">{formatCurrency(monthlyReport.totalNetIncome)}</span></div>
                 </Button>
             </div>
              {reportData.length === 0 ? (
-                <Card>
-                    <CardContent className="p-12 text-center flex flex-col items-center gap-4">
-                        <BarChart3 className="w-16 h-16 text-muted-foreground/50"/>
-                        <p className="text-muted-foreground">
-                            No hay datos financieros para mostrar de los viajes activos.
-                        </p>
-                    </CardContent>
-                </Card>
+                <Card><CardContent className="p-12 text-center flex flex-col items-center gap-4"><BarChart3 className="w-16 h-16 text-muted-foreground/50"/><p className="text-muted-foreground">No hay datos financieros para mostrar de los viajes activos.</p></CardContent></Card>
             ) : (
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={reportData.map(r=>r.tour.id)}>
                     {reportData.map(({ tour, totalIncome, totalCommission, commissionDetails, totalFixedCosts, netProfit, reservationCount }) => (
                         <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
                             <Card className="overflow-hidden">
                                 <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 text-left">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-2 rounded-full bg-primary/10 text-primary">
-                                            <Plane className="w-5 h-5"/>
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">{tour.destination}</p>
-                                            <p className="text-sm text-muted-foreground">{reservationCount} reservas confirmadas</p>
-                                        </div>
-                                    </div>
+                                    <div className="flex items-center gap-4"><div className="p-2 rounded-full bg-primary/10 text-primary"><Plane className="w-5 h-5"/></div><div><p className="font-semibold">{tour.destination}</p><p className="text-sm text-muted-foreground">{reservationCount} reservas confirmadas</p></div></div>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="bg-secondary/20 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                       <InfoCard 
-                                            title="Ingresos Totales" 
-                                            value={formatCurrency(totalIncome)} 
-                                            icon={TrendingUp} 
-                                            color="text-green-600"
-                                            description="Suma de todos los pagos recibidos."
-                                       />
+                                       <InfoCard title="Ingresos Totales" value={formatCurrency(totalIncome)} icon={TrendingUp} color="text-green-600" description="Suma de todos los pagos recibidos."/>
                                        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => totalCommission > 0 && handleOpenCommissionModal(tour, commissionDetails)}>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Comisiones Pagadas</CardTitle>
-                                                <Users className="h-5 w-5 text-red-600" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{formatCurrency(totalCommission)}</div>
-                                                <p className="text-xs text-muted-foreground">{totalCommission > 0 ? "Clic para ver detalle por vendedora." : "Sin comisiones para este viaje."}</p>
-                                            </CardContent>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Comisiones Pagadas</CardTitle><Users className="h-5 w-5 text-red-600" /></CardHeader>
+                                            <CardContent><div className="text-2xl font-bold">{formatCurrency(totalCommission)}</div><p className="text-xs text-muted-foreground">{totalCommission > 0 ? "Clic para ver detalle por vendedora." : "Sin comisiones para este viaje."}</p></CardContent>
                                         </Card>
-                                       <InfoCard 
-                                            title="Gastos Fijos" 
-                                            value={formatCurrency(totalFixedCosts)} 
-                                            icon={Package} 
-                                            color="text-orange-600"
-                                            description="Transporte, hotel y extras."
-                                       />
-                                       <InfoCard 
-                                            title="Ganancia Neta" 
-                                            value={formatCurrency(netProfit)} 
-                                            icon={Banknote} 
-                                            color="text-primary"
-                                            description="Ingresos menos gastos y comisiones."
-                                        />
+                                       <InfoCard title="Gastos Fijos" value={formatCurrency(totalFixedCosts)} icon={Package} color="text-orange-600" description="Transporte, hotel y extras."/>
+                                       <InfoCard title="Ganancia Neta" value={formatCurrency(netProfit)} icon={Banknote} color="text-primary" description="Ingresos menos gastos y comisiones."/>
                                     </div>
                                 </AccordionContent>
                             </Card>
@@ -383,21 +374,13 @@ interface InfoCardProps {
 
 const InfoCard = ({ title, value, icon: Icon, color, description }: InfoCardProps) => (
     <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className={`h-5 w-5 ${color}`} />
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </CardContent>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{title}</CardTitle><Icon className={`h-5 w-5 ${color}`} /></CardHeader>
+        <CardContent><div className="text-2xl font-bold">{value}</div><p className="text-xs text-muted-foreground">{description}</p></CardContent>
     </Card>
 );
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex justify-between items-center text-sm">
-    <p className="text-muted-foreground">{label}</p>
-    <p className="font-semibold">{value}</p>
-  </div>
+  <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
+

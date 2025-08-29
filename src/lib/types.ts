@@ -1,4 +1,5 @@
 
+
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -30,6 +31,20 @@ export interface ExtraCost {
 }
 
 export interface CustomExpense {
+    id: string;
+    description: string;
+    amount: number;
+    date: Date;
+}
+
+export interface ExternalCommission {
+    id: string;
+    description: string;
+    amount: number;
+    date: Date;
+}
+
+export interface ExcursionIncome {
     id: string;
     description: string;
     amount: number;
