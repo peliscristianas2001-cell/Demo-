@@ -78,7 +78,7 @@ export const useCalendarBubbles = () => {
     if (multiSelectMode) return;
     const target = e.target as HTMLElement;
     const isBubble = target.closest('.calendar-bubble');
-    if (isBubble) return; // Don't start selection if clicking on a bubble
+    if (isBubble) return;
 
     const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
     if (dateStr) {
@@ -99,7 +99,7 @@ export const useCalendarBubbles = () => {
     }
   }, [isSelecting, selection.start, multiSelectMode]);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseUp = useCallback(() => {
     if (multiSelectMode || !mouseDownRef.current) return;
     
     mouseDownRef.current = false;

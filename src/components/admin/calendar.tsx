@@ -66,7 +66,7 @@ export function Calendar() {
     try {
       const dataUrl = await toPng(calendarRef.current, { 
           quality: 1.0, 
-          pixelRatio: 3, // Higher pixel ratio for better print quality
+          pixelRatio: 3,
       });
       
       const pdf = new jsPDF({
@@ -112,7 +112,6 @@ export function Calendar() {
       const date = new Date(dayKey + 'T00:00:00');
       const dayOfWeek = date.getDay();
 
-      // Find all segments of this bubble in the current week
       const weekStartDate = new Date(date);
       weekStartDate.setDate(date.getDate() - dayOfWeek);
 
@@ -138,13 +137,9 @@ export function Calendar() {
       }
 
       return segments.map((segment, index) => {
-          const firstDayOfSegment = new Date(segment[0] + 'T00:00:00').getDay();
-          const isStartOfBubble = segment[0] === bubble.dates[0];
-
-          // Only render the segment if its first day is the current dayKey
           if (segment[0] !== dayKey) return null;
           
-          const printColors = tailwindToHex[bubble.color || colors[0]];
+          const isStartOfBubble = segment[0] === bubble.dates[0];
 
           return (
               <div
@@ -153,8 +148,6 @@ export function Calendar() {
                   style={{
                       height: `${bubble.height || 28}px`,
                       gridColumn: `span ${segment.length}`,
-                      '--bubble-print-bg-color': printColors.bg,
-                      '--bubble-print-border-color': printColors.border,
                   } as React.CSSProperties}
                   onMouseDown={(e) => e.stopPropagation()}
               >
