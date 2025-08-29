@@ -152,62 +152,39 @@ body {
   border: 1px solid hsl(var(--border));
 }
 
+/* --- New Print Rules --- */
 @page {
   size: A4 landscape;
-  margin: 1cm;
+  margin: 0; /* Removes browser default header/footer */
 }
 
 @media print {
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .no-print, .no-print * {
-    display: none !important;
+  body * {
+    visibility: hidden; /* Hide everything by default */
   }
 
-  main > *:not(.printable-container),
-  .printable-container > *:not(.printable-calendar) {
-     display: none !important;
+  .printable-area, .printable-area * {
+    visibility: visible; /* Show only the printable area and its children */
   }
 
-  .printable-container {
-     display: block !important;
-     position: absolute !important;
-     top: 0 !important;
-     left: 0 !important;
-     width: 100% !important;
-     height: 100% !important;
-     margin: 0 !important;
-     padding: 0 !important;
-     box-shadow: none !important;
-     border: none !important;
-     background: white !important;
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1cm; /* Optional margin for the content itself */
+    box-sizing: border-box;
   }
-
-  .printable-calendar {
-    width: 100% !important;
-    height: 100% !important;
-    aspect-ratio: auto !important; /* Remove aspect ratio for printing */
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  .printable-calendar .calendar-day-cell {
-    border: 1px solid #ccc !important;
-    background-color: white !important;
-  }
+  
   .printable-calendar .calendar-bubble {
-    -webkit-print-color-adjust: exact !important;
+     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     background-color: var(--bubble-print-bg-color, #e0e7ff) !important;
     border: 1px solid var(--bubble-print-border-color, #a5b4fc) !important;
     color: #1e293b !important;
   }
-  .printable-calendar .calendar-bubble textarea {
+   .printable-calendar .calendar-bubble textarea {
     color: #1e293b !important;
   }
 }

@@ -102,9 +102,9 @@ export default function DashboardLayout({
               </SidebarMenuItem>
           </SidebarFooter>
         </Sidebar>
-        <div className="printable-container flex-1">
+        <div className="flex-1">
           <SidebarInset>
-              <header className="flex items-center justify-between h-16 px-6 border-b bg-card no-print">
+              <header className="flex items-center justify-between h-16 px-6 border-b bg-card">
                    <SidebarTrigger className="md:hidden" />
                    <h1 className="text-xl font-semibold">Panel de Administración</h1>
               </header>
