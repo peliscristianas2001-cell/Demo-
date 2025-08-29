@@ -42,14 +42,12 @@ export function Calendar() {
     setCurrentDate,
     days,
     weekdays,
-    handleDayClick,
+    bubbles,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     isSelecting,
-    bubbles,
     handleBubbleChange,
-    handleBubbleClick,
     handleExpandBubble,
     handleDeleteBubble,
     handleColorChange,
@@ -85,7 +83,6 @@ export function Calendar() {
   const colors = Object.keys(tailwindToHex);
 
   const renderBubble = (bubble: Bubble, dayKey: string, isStartOfWeek: boolean) => {
-    const dayOfWeek = new Date(dayKey + "T00:00:00").getDay();
     let colSpan = 1;
 
     // Only render the bubble starting from the first day it appears in the week.
@@ -97,7 +94,7 @@ export function Calendar() {
     while (currentDate.getDay() < 6) { // While it's not Saturday
       currentDate.setDate(currentDate.getDate() + 1);
       const nextDayKey = currentDate.toISOString().split('T')[0];
-      if (bubble.multiSelectDates?.includes(nextDayKey)) {
+      if (bubble.dates.includes(nextDayKey)) {
         colSpan++;
       } else {
         break; // The consecutive block ends
@@ -116,15 +113,11 @@ export function Calendar() {
           '--bubble-print-bg-color': printColors.bg,
           '--bubble-print-border-color': printColors.border,
         } as React.CSSProperties}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleBubbleClick(bubble.id);
-        }}
+        onMouseDown={(e) => e.stopPropagation()} // Prevent day click from firing when interacting with bubble
       >
         <textarea
           value={bubble.text}
           onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
-          onClick={(e) => e.stopPropagation()}
           className="text-black"
           placeholder="Escribe aquí..."
         />
@@ -224,10 +217,10 @@ export function Calendar() {
                 <div
                     key={dayKey}
                     data-date={dayKey}
-                    onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
-                    onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
-                    onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
-                    onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={isSelecting ? handleMouseUp : undefined}
                     onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
                     className={cn(
                     "calendar-day-cell",
@@ -249,8 +242,8 @@ export function Calendar() {
                     </div>
                     <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
                         {dayBubbles.map((bubble) => {
-                            if (!bubble.multiSelectDates?.includes(dayKey)) return null;
-                            const isStartOfBubbleInWeek = dayOfWeek === 0 || !bubble.multiSelectDates.includes(new Date(date.getTime() - 86400000).toISOString().split('T')[0]);
+                            if (!bubble.dates.includes(dayKey)) return null;
+                            const isStartOfBubbleInWeek = dayOfWeek === 0 || !bubble.dates.includes(new Date(date.getTime() - 86400000).toISOString().split('T')[0]);
                             return renderBubble(bubble, dayKey, isStartOfBubbleInWeek);
                         })}
                     </div>
