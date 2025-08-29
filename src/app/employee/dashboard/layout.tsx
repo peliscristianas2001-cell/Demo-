@@ -33,6 +33,7 @@ import type { Employee } from "@/lib/types";
 
 const navItems = [
   { href: "/employee/dashboard", label: "Inicio", icon: Home },
+  { href: "/employee/dashboard/trips", label: "Viajes", icon: Plane },
   { href: "/employee/dashboard/reservations", label: "Reservas", icon: Ticket },
   { href: "/employee/dashboard/passengers", label: "Pasajeros", icon: Users },
   { href: "/employee/dashboard/flyers", label: "Flyers", icon: ImageIcon },
