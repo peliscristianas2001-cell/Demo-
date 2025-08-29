@@ -99,3 +99,62 @@ body {
 .animate-fade-in-up {
   animation: keyframes-up 0.6s ease-out forwards;
 }
+
+
+/* Calendar Bubble Styles */
+.calendar-bubble {
+  @apply bg-primary/20 border border-primary/50 text-primary-foreground rounded-md p-1 text-xs cursor-pointer overflow-hidden text-center relative;
+  transition: all 0.2s ease-in-out;
+}
+.calendar-bubble:hover {
+  @apply bg-primary/30 border-primary;
+}
+.calendar-bubble textarea {
+  @apply bg-transparent border-0 w-full h-full p-0 m-0 resize-none text-center outline-none focus:ring-0;
+}
+.calendar-day-cell {
+  position: relative;
+  min-height: 120px; /* Ensure enough space for bubbles */
+}
+.calendar-bubbles-container {
+  position: absolute;
+  top: 1.75rem; /* Position below the day number */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+}
+.calendar-grid {
+  user-select: none; /* Prevent text selection while dragging */
+}
+
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable-calendar {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background: white;
+  }
+  .printable-calendar .calendar-day-cell {
+    border: 1px solid #ccc;
+  }
+  .printable-calendar .calendar-bubble {
+    background-color: #e0e7ff !important; /* Example color */
+    border: 1px solid #a5b4fc !important;
+    color: #1e293b !important;
+  }
+}
