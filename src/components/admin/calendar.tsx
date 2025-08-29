@@ -83,38 +83,29 @@ export function Calendar() {
   ];
 
   const renderBubble = (bubble: Bubble, dayKey: string) => {
-    let showBubble = false;
+    const dayOfWeek = new Date(dayKey + "T00:00:00").getDay();
+    // A bubble should only be rendered on the first day it appears in a week.
+    if (dayOfWeek > 0) {
+        const prevDay = new Date(dayKey + "T00:00:00");
+        prevDay.setDate(prevDay.getDate() - 1);
+        const prevDayKey = prevDay.toISOString().split('T')[0];
+        if (bubble.multiSelectDates?.includes(prevDayKey)) {
+            return null; // It was rendered on a previous day of this week.
+        }
+    }
+    
+    // Calculate how many consecutive days this bubble spans in the current week.
     let colSpan = 1;
-
-    if (bubble.isMultiSelect) {
-      if (!bubble.multiSelectDates?.includes(dayKey)) return null;
-      
-      const dayIndexInWeek = new Date(dayKey).getDay();
-      if (dayIndexInWeek === 0 || !bubble.multiSelectDates.includes(days.find(d => d.date.toISOString().split('T')[0] === dayKey)!.date.toISOString().split('T')[0])) {
-         // It's the start of a week or the first day in selection for this week
-         showBubble = true;
-         let currentDay = new Date(dayKey);
-         while(currentDay.getDay() < 6) {
-            currentDay.setDate(currentDay.getDate() + 1);
-            const nextDayKey = currentDay.toISOString().split('T')[0];
-            if (bubble.multiSelectDates.includes(nextDayKey)) {
-                colSpan++;
-            } else {
-                break;
-            }
-         }
-      }
-    } else { // Drag-select bubble
-      const bubbleStartDate = new Date(bubble.startDate + "T00:00:00");
-      const dayDate = new Date(dayKey + "T00:00:00");
-      if (dayDate.getTime() === bubbleStartDate.getTime()) {
-          showBubble = true;
-          const bubbleEndDate = new Date(bubble.endDate + "T00:00:00");
-          colSpan = (bubbleEndDate.getTime() - bubbleStartDate.getTime()) / (1000 * 3600 * 24) + 1;
+    let currentDay = new Date(dayKey + "T00:00:00");
+    while (currentDay.getDay() < 6) {
+      currentDay.setDate(currentDay.getDate() + 1);
+      const nextDayKey = currentDay.toISOString().split('T')[0];
+      if (bubble.multiSelectDates?.includes(nextDayKey)) {
+        colSpan++;
+      } else {
+        break;
       }
     }
-
-    if (!showBubble) return null;
 
     return (
       <div
@@ -253,7 +244,12 @@ export function Calendar() {
                   {date.getDate()}
                 </span>
                 <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
-                   {dayBubbles.map((bubble) => renderBubble(bubble, dayKey))}
+                   {dayBubbles.map((bubble) => {
+                       if (bubble.multiSelectDates?.includes(dayKey)) {
+                           return renderBubble(bubble, dayKey);
+                       }
+                       return null;
+                   })}
                 </div>
               </div>
             );

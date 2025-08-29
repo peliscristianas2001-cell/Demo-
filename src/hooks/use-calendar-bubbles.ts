@@ -10,7 +10,6 @@ export interface Bubble {
   text: string;
   height?: number;
   color?: string;
-  isMultiSelect?: boolean;
   multiSelectDates?: string[]; // All dates covered by this bubble
 }
 
@@ -38,6 +37,13 @@ export const useCalendarBubbles = () => {
     localStorage.setItem("calendarBubbles", JSON.stringify(bubbles));
   }, [bubbles]);
 
+  // Reset multi-select when mode is turned off
+  useEffect(() => {
+    if (!multiSelectMode) {
+        setMultiSelectedDays([]);
+    }
+  }, [multiSelectMode]);
+
   const weekdays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   
   const year = currentDate.getFullYear();
@@ -56,17 +62,13 @@ export const useCalendarBubbles = () => {
         if (dates.length > 0) {
             return dates.includes(dateStr);
         }
-        // Fallback for older drag-select bubbles
-        const bubbleStart = new Date(bubble.startDate + "T00:00:00");
-        const bubbleEnd = new Date(bubble.endDate + "T00:00:00");
-        const currentDay = new Date(dateStr + "T00:00:00");
-        return currentDay >= bubbleStart && currentDay <= bubbleEnd;
+        return false;
     });
 
     const isDateInSelection = () => {
         if (!isSelecting || !selection.start || !selection.end) return false;
         const start = selection.start < selection.end ? selection.start : selection.end;
-        const end = selection.start > selection.end ? selection.start : selection.end;
+        const end = selection.start > selection.end ? selection.end : selection.start;
         const currentDay = new Date(dateStr + "T00:00:00");
         return currentDay >= start && currentDay <= end;
     };
@@ -87,9 +89,10 @@ export const useCalendarBubbles = () => {
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.calendar-bubble')) {
-      e.stopPropagation();
-      return;
+    const bubbleElement = target.closest('.calendar-bubble');
+    if (bubbleElement) {
+        e.stopPropagation();
+        return;
     }
     const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
     if (dateStr) {
@@ -140,7 +143,6 @@ export const useCalendarBubbles = () => {
         text: "",
         height: 28,
         color: "bg-blue-200 border-blue-400",
-        isMultiSelect: false,
         multiSelectDates: selectedDates,
       };
       setBubbles((prev) => [...prev, newBubble]);
@@ -200,7 +202,6 @@ export const useCalendarBubbles = () => {
         text: "",
         height: 28,
         color: "bg-green-200 border-green-400",
-        isMultiSelect: true,
         multiSelectDates: sortedDates,
     };
 
