@@ -5,8 +5,13 @@ import { useCalendarBubbles } from "@/hooks/use-calendar-bubbles";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  ChevronLeft,
-  ChevronRight,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Printer,
   FileDown,
   Expand,
@@ -16,13 +21,14 @@ import { exportToExcel } from "@/lib/excel-export";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Input } from "../ui/input";
 
+const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
+
 export function Calendar() {
   const {
     currentDate,
     setCurrentDate,
     days,
     weekdays,
-    bubbles,
     handleDayClick,
     handleMouseDown,
     handleMouseMove,
@@ -42,6 +48,21 @@ export function Calendar() {
   const handleExport = () => {
     exportToExcel(currentDate, bubbles);
   };
+  
+  const handleMonthChange = (monthIndex: string) => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(parseInt(monthIndex));
+    setCurrentDate(newDate);
+  }
+
+  const handleYearChange = (year: string) => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(parseInt(year));
+    setCurrentDate(newDate);
+  }
+
+  const currentYear = currentDate.getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
   const colors = [
     "bg-blue-200 border-blue-400",
@@ -52,38 +73,32 @@ export function Calendar() {
     "bg-pink-200 border-pink-400",
   ];
 
+  const bubbles = useCalendarBubbles().bubbles;
+
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm printable-calendar">
       <div className="flex justify-between items-center mb-4 no-print">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() =>
-              setCurrentDate(
-                new Date(currentDate.setMonth(currentDate.getMonth() - 1))
-              )
-            }
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-xl font-bold text-center w-48">
-            {currentDate.toLocaleString("es-ES", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h2>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() =>
-              setCurrentDate(
-                new Date(currentDate.setMonth(currentDate.getMonth() + 1))
-              )
-            }
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-2">
+           <Select value={String(currentDate.getMonth())} onValueChange={handleMonthChange}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthNames.map((name, index) => (
+                  <SelectItem key={name} value={String(index)}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+             <Select value={String(currentYear)} onValueChange={handleYearChange}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(year => (
+                  <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handlePrint}>
@@ -121,7 +136,6 @@ export function Calendar() {
                   !isCurrentMonth && "bg-muted/50 text-muted-foreground",
                   selectionInfo?.isSelecting && "bg-primary/20"
                 )}
-                onClick={() => handleDayClick(date)}
               >
                 <span
                   className={cn(
@@ -132,21 +146,25 @@ export function Calendar() {
                   {date.getDate()}
                 </span>
                 <div className="calendar-bubbles-container">
-                  {dayBubbles.map((bubble) => {
-                    const bubbleStyle = selectionInfo?.bubbleId === bubble.id
-                        ? {
-                            gridColumn: `span ${selectionInfo.colSpan}`,
-                            height: `${bubble.height || 28}px`,
-                          }
-                        : { height: `${bubble.height || 28}px` };
+                  {(dayBubbles || []).map((bubble) => {
+                     const isMultiDayStart = bubble.startDate !== bubble.endDate && bubble.startDate === dayKey;
+                     
+                     if (bubble.startDate !== bubble.endDate && !isMultiDayStart) {
+                        return null; // Don't render bubble text on subsequent days
+                     }
+
+                     const colSpan = isMultiDayStart ? (new Date(bubble.endDate).getTime() - new Date(bubble.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1 : 1;
 
                     return (
                       <div
                         key={bubble.id}
-                        className={cn("calendar-bubble relative group", bubble.color)}
-                        style={bubbleStyle}
+                        className={cn("calendar-bubble relative group z-10", bubble.color)}
+                         style={{ 
+                            height: `${bubble.height || 28}px`,
+                            width: isMultiDayStart ? `calc(${colSpan * 100}% + ${(colSpan - 1)}px)` : '100%',
+                         }}
                         onClick={(e) => {
-                           e.stopPropagation(); // Prevent day click
+                           e.stopPropagation(); 
                            handleBubbleClick(bubble.id);
                         }}
                       >
@@ -159,7 +177,7 @@ export function Calendar() {
                           className="text-black"
                           placeholder="Escribe aquí..."
                         />
-                         <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                         <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
                            <Popover>
                               <PopoverTrigger asChild>
                                   <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>

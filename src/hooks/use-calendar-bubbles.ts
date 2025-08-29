@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export interface Bubble {
   id: string;
@@ -20,6 +20,7 @@ export const useCalendarBubbles = () => {
     end: Date | null;
   }>({ start: null, end: null });
   const [isSelecting, setIsSelecting] = useState(false);
+  const mouseDownRef = useRef(false);
 
   useEffect(() => {
     const savedBubbles = localStorage.getItem("calendarBubbles");
@@ -37,7 +38,6 @@ export const useCalendarBubbles = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
   const startDate = new Date(firstDayOfMonth);
   startDate.setDate(startDate.getDate() - startDate.getDay());
 
@@ -46,64 +46,40 @@ export const useCalendarBubbles = () => {
 
   while (days.length < 42) {
     const dateStr = currentDatePointer.toISOString().split("T")[0];
-    const dayBubbles = bubbles
-      .filter(b => {
-          const bubbleStart = new Date(b.startDate);
-          const bubbleEnd = new Date(b.endDate);
-          bubbleStart.setHours(0,0,0,0);
-          bubbleEnd.setHours(0,0,0,0);
-          currentDatePointer.setHours(0,0,0,0);
-          return currentDatePointer >= bubbleStart && currentDatePointer <= bubbleEnd;
-      });
+    const dayBubbles = bubbles.filter(b => {
+      const bubbleStart = new Date(b.startDate);
+      const bubbleEnd = new Date(b.endDate);
+      bubbleStart.setHours(0, 0, 0, 0);
+      bubbleEnd.setHours(0, 0, 0, 0);
+      const currentDay = new Date(dateStr + "T00:00:00");
+      return currentDay >= bubbleStart && currentDay <= bubbleEnd;
+    });
 
-    const singleDayBubbles = dayBubbles.filter(b => b.startDate === b.endDate && b.startDate === dateStr);
-    
-    const multiDayBubbleInfo = dayBubbles
-      .filter(b => b.startDate !== b.endDate)
-      .map(b => {
-          const bubbleStart = new Date(b.startDate);
-          const bubbleEnd = new Date(b.endDate);
-          const currentDay = new Date(dateStr);
-          const isStart = bubbleStart.toISOString().split('T')[0] === dateStr;
-          
-          if (!isStart) return null;
+    const isDateInSelection = () => {
+        if (!isSelecting || !selection.start || !selection.end) return false;
+        const start = selection.start < selection.end ? selection.start : selection.end;
+        const end = selection.start > selection.end ? selection.start : selection.end;
+        const currentDay = new Date(dateStr + "T00:00:00");
+        return currentDay >= start && currentDay <= end;
+    };
 
-          const diffTime = Math.abs(bubbleEnd.getTime() - bubbleStart.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-          
-          return { bubbleId: b.id, colSpan: diffDays };
-      }).find(info => info !== null);
-      
 
     days.push({
       date: new Date(currentDatePointer),
       isCurrentMonth: currentDatePointer.getMonth() === month,
       isToday: currentDatePointer.toDateString() === new Date().toDateString(),
-      bubbles: singleDayBubbles,
-      selectionInfo: multiDayBubbleInfo
+      bubbles: dayBubbles,
+      selectionInfo: { isSelecting: isDateInSelection() },
     });
 
     currentDatePointer.setDate(currentDatePointer.getDate() + 1);
   }
 
-  const handleDayClick = useCallback((date: Date) => {
-    if (isSelecting) return;
-    const dateStr = date.toISOString().split("T")[0];
-    const newBubble: Bubble = {
-      id: `bubble-${Date.now()}`,
-      startDate: dateStr,
-      endDate: dateStr,
-      text: "",
-      height: 28,
-      color: "bg-blue-200 border-blue-400"
-    };
-    setBubbles((prev) => [...prev, newBubble]);
-  }, [isSelecting]);
-
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
     if (dateStr) {
+      mouseDownRef.current = true;
       setIsSelecting(true);
       const clickedDate = new Date(dateStr + "T00:00:00");
       setSelection({ start: clickedDate, end: clickedDate });
@@ -111,7 +87,7 @@ export const useCalendarBubbles = () => {
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isSelecting || !selection.start) return;
+      if (!isSelecting || !selection.start || !mouseDownRef.current) return;
       const target = e.target as HTMLElement;
       const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
       if (dateStr) {
@@ -120,7 +96,9 @@ export const useCalendarBubbles = () => {
       }
     }, [isSelecting, selection.start]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mouseDownRef.current) return;
+    
     if (isSelecting && selection.start && selection.end) {
       const start = selection.start < selection.end ? selection.start : selection.end;
       const end = selection.start < selection.end ? selection.end : selection.start;
@@ -128,21 +106,23 @@ export const useCalendarBubbles = () => {
       const startStr = start.toISOString().split("T")[0];
       const endStr = end.toISOString().split("T")[0];
       
-      if(startStr !== endStr) {
-        const newBubble: Bubble = {
-          id: `bubble-${Date.now()}`,
-          startDate: startStr,
-          endDate: endStr,
-          text: "",
-          height: 28,
-          color: "bg-blue-200 border-blue-400"
-        };
-        setBubbles((prev) => [...prev, newBubble]);
-      }
+      const newBubble: Bubble = {
+        id: `bubble-${Date.now()}`,
+        startDate: startStr,
+        endDate: endStr,
+        text: "",
+        height: 28,
+        color: "bg-blue-200 border-blue-400"
+      };
+      setBubbles((prev) => [...prev, newBubble]);
     }
+    
     setIsSelecting(false);
     setSelection({ start: null, end: null });
+    mouseDownRef.current = false;
   }, [isSelecting, selection]);
+
+  const handleDayClick = useCallback(() => {}, []); // Placeholder, logic is now in mouse up/down
 
   const handleBubbleChange = useCallback((id: string, text: string) => {
     setBubbles((prev) =>
