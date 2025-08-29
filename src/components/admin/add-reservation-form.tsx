@@ -107,7 +107,10 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
 
   const handleMainPassengerSelect = (passengerId: string) => {
     const passenger = passengers.find(p => p.id === passengerId);
-    if (!passenger) return;
+    if (!passenger) {
+        setFormData(prev => ({ ...prev, mainPassengerId: '', selectedPassengerIds: [] }));
+        return;
+    }
 
     setFormData(prev => ({
         ...prev,

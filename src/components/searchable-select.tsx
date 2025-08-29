@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 interface SearchableSelectOption {
     value: string;
@@ -40,14 +41,44 @@ export function SearchableSelect({ options, value, onChange, placeholder }: Sear
         setIsOpen(false);
     };
 
+    const handleClear = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onChange('');
+        setSearchTerm('');
+        setIsOpen(true);
+    };
+
+    const handleFocus = () => {
+        setIsOpen(true);
+        if (selectedOption) {
+            setSearchTerm(''); // Clear search term to show all options
+        }
+    }
+
     return (
-        <div className="relative" onBlur={() => setTimeout(() => setIsOpen(false), 150)}>
-            <Input
-                placeholder={placeholder}
-                value={isOpen ? searchTerm : (selectedOption?.label || '')}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setIsOpen(true)}
-            />
+        <div className="relative">
+            <div className="relative">
+                <Input
+                    placeholder={placeholder}
+                    value={isOpen ? searchTerm : (selectedOption?.label || '')}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        if (!isOpen) setIsOpen(true);
+                    }}
+                    onFocus={handleFocus}
+                    onBlur={() => setTimeout(() => setIsOpen(false), 200)} // Delay to allow click
+                />
+                {selectedOption && !isOpen && (
+                    <button
+                        onClick={handleClear}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                        aria-label="Clear selection"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+
             {isOpen && (
                 <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
                     <ScrollArea className="max-h-60">
@@ -59,7 +90,7 @@ export function SearchableSelect({ options, value, onChange, placeholder }: Sear
                                         "px-3 py-2 cursor-pointer hover:bg-accent",
                                         value === option.value && "bg-accent"
                                     )}
-                                    onMouseDown={(e) => { // Use onMouseDown to fire before onBlur
+                                    onMouseDown={(e) => { 
                                         e.preventDefault();
                                         handleSelect(option.value);
                                     }}
