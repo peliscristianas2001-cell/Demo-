@@ -16,10 +16,13 @@ import {
   FileDown,
   Expand,
   Trash2,
+  ListPlus,
+  PlusCircle,
 } from "lucide-react";
 import { exportToExcel } from "@/lib/excel-export";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Input } from "../ui/input";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 
 const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
 
@@ -34,11 +37,16 @@ export function Calendar() {
     handleMouseMove,
     handleMouseUp,
     isSelecting,
+    bubbles,
     handleBubbleChange,
     handleBubbleClick,
     handleExpandBubble,
     handleDeleteBubble,
     handleColorChange,
+    multiSelectMode,
+    setMultiSelectMode,
+    handleMultiSelectDayClick,
+    createBubbleFromMultiSelect,
   } = useCalendarBubbles();
 
   const handlePrint = () => {
@@ -73,12 +81,10 @@ export function Calendar() {
     "bg-pink-200 border-pink-400",
   ];
 
-  const bubbles = useCalendarBubbles().bubbles;
-
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm printable-calendar">
       <div className="flex justify-between items-center mb-4 no-print">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
            <Select value={String(currentDate.getMonth())} onValueChange={handleMonthChange}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Mes" />
@@ -99,6 +105,19 @@ export function Calendar() {
                 ))}
               </SelectContent>
             </Select>
+             <div className="flex items-center space-x-2">
+                <Switch
+                    id="multi-select-mode"
+                    checked={multiSelectMode}
+                    onCheckedChange={setMultiSelectMode}
+                />
+                <Label htmlFor="multi-select-mode" className="flex items-center gap-2"><ListPlus className="w-4 h-4" /> Selección Múltiple</Label>
+            </div>
+            {multiSelectMode && (
+                <Button onClick={createBubbleFromMultiSelect}>
+                    <PlusCircle className="w-4 h-4 mr-2" /> Crear Burbuja
+                </Button>
+            )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handlePrint}>
@@ -114,10 +133,10 @@ export function Calendar() {
 
       <div
         className="grid grid-cols-7 gap-px bg-border calendar-grid"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={isSelecting ? handleMouseUp : undefined}
+        onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
+        onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
+        onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
+        onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
       >
         {weekdays.map((day) => (
           <div key={day} className="text-center font-bold py-2 bg-muted">
@@ -127,14 +146,18 @@ export function Calendar() {
 
         {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
             const dayKey = date.toISOString().split("T")[0];
+            const isSelectedForMulti = selectionInfo?.isMultiSelecting;
             return (
               <div
                 key={dayKey}
                 data-date={dayKey}
+                onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
                 className={cn(
                   "calendar-day-cell bg-card p-1",
                   !isCurrentMonth && "bg-muted/50 text-muted-foreground",
-                  selectionInfo?.isSelecting && "bg-primary/20"
+                  selectionInfo?.isSelecting && !multiSelectMode && "bg-primary/20",
+                  isSelectedForMulti && multiSelectMode && "bg-primary/30 ring-2 ring-primary inset-0",
+                   multiSelectMode && "cursor-pointer"
                 )}
               >
                 <span
@@ -148,61 +171,68 @@ export function Calendar() {
                 <div className="calendar-bubbles-container">
                   {(dayBubbles || []).map((bubble) => {
                      const isMultiDayStart = bubble.startDate !== bubble.endDate && bubble.startDate === dayKey;
-                     
-                     if (bubble.startDate !== bubble.endDate && !isMultiDayStart) {
-                        return null; // Don't render bubble text on subsequent days
-                     }
+                     const isSingleDayInMulti = bubble.isMultiSelect && bubble.multiSelectDates?.includes(dayKey);
 
-                     const colSpan = isMultiDayStart ? (new Date(bubble.endDate).getTime() - new Date(bubble.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1 : 1;
-
-                    return (
-                      <div
-                        key={bubble.id}
-                        className={cn("calendar-bubble relative group z-10", bubble.color)}
-                         style={{ 
-                            height: `${bubble.height || 28}px`,
-                            width: isMultiDayStart ? `calc(${colSpan * 100}% + ${(colSpan - 1)}px)` : '100%',
-                         }}
-                        onClick={(e) => {
-                           e.stopPropagation(); 
-                           handleBubbleClick(bubble.id);
-                        }}
-                      >
-                        <textarea
-                          value={bubble.text}
-                          onChange={(e) =>
-                            handleBubbleChange(bubble.id, e.target.value)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-black"
-                          placeholder="Escribe aquí..."
-                        />
-                         <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
-                           <Popover>
-                              <PopoverTrigger asChild>
-                                  <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
-                                      <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
-                                  </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-2">
-                                <div className="flex gap-1">
-                                  {colors.map(color => (
-                                    <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
-                                        <div className={cn("w-4 h-4 rounded-full", color)}></div>
+                     // Render logic for bubbles
+                     if (isMultiDayStart || (isSingleDayInMulti && bubble.multiSelectDates?.[0] === dayKey) || (!bubble.isMultiSelect && !isMultiDayStart)) {
+                         const colSpan = isMultiDayStart && !bubble.isMultiSelect ? (new Date(bubble.endDate).getTime() - new Date(bubble.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1 : 1;
+                        
+                        return (
+                            <div
+                                key={bubble.id}
+                                className={cn("calendar-bubble relative group z-10", bubble.color)}
+                                style={{
+                                    height: `${bubble.height || 28}px`,
+                                    width: !bubble.isMultiSelect && isMultiDayStart ? `calc(${colSpan * 100}% + ${(colSpan - 1)}px)` : '100%',
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleBubbleClick(bubble.id);
+                                }}
+                            >
+                                <textarea
+                                value={bubble.text}
+                                onChange={(e) =>
+                                    handleBubbleChange(bubble.id, e.target.value)
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-black"
+                                placeholder="Escribe aquí..."
+                                />
+                                <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
+                                            <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-2">
+                                        <div className="flex gap-1">
+                                        {colors.map(color => (
+                                            <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
+                                                <div className={cn("w-4 h-4 rounded-full", color)}></div>
+                                            </Button>
+                                        ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
+                                        <Expand className="w-3 h-3"/>
                                     </Button>
-                                  ))}
+                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
+                                        <Trash2 className="w-3 h-3"/>
+                                    </Button>
                                 </div>
-                              </PopoverContent>
-                           </Popover>
-                            <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
-                                <Expand className="w-3 h-3"/>
-                            </Button>
-                             <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
-                                <Trash2 className="w-3 h-3"/>
-                            </Button>
-                         </div>
-                      </div>
-                    );
+                            </div>
+                        );
+                     } else if (isSingleDayInMulti) { // Render subsequent days of a multi-select bubble
+                         return (
+                            <div key={`${bubble.id}-${dayKey}`} className={cn("calendar-bubble h-full", bubble.color)}>
+                                {/* Visual continuation without text/controls */}
+                            </div>
+                         )
+                     }
+                     return null;
                   })}
                 </div>
               </div>
