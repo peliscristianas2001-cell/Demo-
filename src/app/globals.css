@@ -132,6 +132,24 @@ body {
   user-select: none; /* Prevent text selection while dragging */
 }
 
+.printable-calendar {
+  width: 100%;
+  aspect-ratio: 297 / 210; /* A4 Landscape aspect ratio */
+  display: flex;
+  flex-direction: column;
+}
+
+.printable-calendar .calendar-grid {
+  display: grid;
+  flex-grow: 1;
+  grid-template-rows: auto repeat(6, 1fr); /* Header row + 6 weeks */
+}
+
+.printable-calendar .calendar-day-cell {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid hsl(var(--border));
+}
 
 @page {
   size: A4 landscape;
@@ -142,25 +160,24 @@ body {
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    background-color: white !important;
+    background: white !important;
+    margin: 0;
+    padding: 0;
   }
-  .no-print, body > div:not(.printable-calendar):not(:has(.printable-calendar)) {
+  .no-print, body > *:not(#__next), #__next > *:not(.printable-container) {
     display: none !important;
   }
 
-  .printable-calendar {
+  .printable-container, .printable-calendar {
     display: block !important;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    border: none;
-    background: white;
-  }
-  
-  .printable-calendar .calendar-grid {
-    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    aspect-ratio: auto !important; /* Remove aspect ratio for printing */
   }
 
   .printable-calendar .calendar-day-cell {

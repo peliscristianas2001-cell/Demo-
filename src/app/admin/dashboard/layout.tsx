@@ -102,13 +102,15 @@ export default function DashboardLayout({
               </SidebarMenuItem>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
-            <header className="flex items-center justify-between h-16 px-6 border-b bg-card">
-                 <SidebarTrigger className="md:hidden" />
-                 <h1 className="text-xl font-semibold">Panel de Administración</h1>
-            </header>
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
-        </SidebarInset>
+        <div className="printable-container flex-1">
+          <SidebarInset>
+              <header className="flex items-center justify-between h-16 px-6 border-b bg-card no-print">
+                   <SidebarTrigger className="md:hidden" />
+                   <h1 className="text-xl font-semibold">Panel de Administración</h1>
+              </header>
+            <main className="flex-1 p-6 overflow-auto">{children}</main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -157,7 +157,7 @@ export function Calendar() {
 
 
   return (
-    <div className="bg-card p-4 rounded-lg shadow-sm printable-calendar">
+    <div className="bg-card p-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-4 no-print">
         <div className="flex items-center gap-4">
            <Select value={String(currentDate.getMonth())} onValueChange={handleMonthChange}>
@@ -206,54 +206,54 @@ export function Calendar() {
         </div>
       </div>
 
-      <div
-        className="grid grid-cols-7 gap-px bg-border calendar-grid"
-      >
-        {weekdays.map((day) => (
-          <div key={day} className="text-center font-bold py-2 bg-muted">
-            {day}
-          </div>
-        ))}
+      <div className="printable-calendar">
+        <div className="grid grid-cols-7 calendar-grid">
+            {weekdays.map((day) => (
+            <div key={day} className="text-center font-bold py-2 bg-muted">
+                {day}
+            </div>
+            ))}
 
-        {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
-            const dayKey = date.toISOString().split("T")[0];
-            const isSelectedForMulti = selectionInfo?.isMultiSelecting;
-            return (
-              <div
-                key={dayKey}
-                data-date={dayKey}
-                onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
-                onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
-                onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
-                onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
-                onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
-                className={cn(
-                  "calendar-day-cell bg-card p-1",
-                  !isCurrentMonth && "bg-muted/50 text-muted-foreground",
-                  selectionInfo?.isSelecting && !multiSelectMode && "bg-primary/20",
-                  isSelectedForMulti && multiSelectMode && "bg-primary/30 ring-2 ring-primary inset-0",
-                   multiSelectMode && "cursor-pointer"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded-full",
-                    isToday && "bg-primary text-primary-foreground"
-                  )}
+            {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
+                const dayKey = date.toISOString().split("T")[0];
+                const isSelectedForMulti = selectionInfo?.isMultiSelecting;
+                return (
+                <div
+                    key={dayKey}
+                    data-date={dayKey}
+                    onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
+                    onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
+                    onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
+                    onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
+                    onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
+                    className={cn(
+                    "calendar-day-cell bg-card",
+                    !isCurrentMonth && "bg-muted/50 text-muted-foreground",
+                    selectionInfo?.isSelecting && !multiSelectMode && "bg-primary/20",
+                    isSelectedForMulti && multiSelectMode && "bg-primary/30 ring-2 ring-primary inset-0",
+                    multiSelectMode && "cursor-pointer"
+                    )}
                 >
-                  {date.getDate()}
-                </span>
-                <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
-                   {dayBubbles.map((bubble) => {
-                       if (bubble.multiSelectDates?.includes(dayKey)) {
-                           return renderBubble(bubble, dayKey);
-                       }
-                       return null;
-                   })}
+                    <span
+                    className={cn(
+                        "flex items-center justify-center w-6 h-6 rounded-full",
+                        isToday && "bg-primary text-primary-foreground"
+                    )}
+                    >
+                    {date.getDate()}
+                    </span>
+                    <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
+                    {dayBubbles.map((bubble) => {
+                        if (bubble.multiSelectDates?.includes(dayKey)) {
+                            return renderBubble(bubble, dayKey);
+                        }
+                        return null;
+                    })}
+                    </div>
                 </div>
-              </div>
-            );
-        })}
+                );
+            })}
+        </div>
       </div>
     </div>
   );
