@@ -224,6 +224,7 @@ export function Calendar() {
                     onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
                     className={cn(
                     "calendar-day-cell",
+                    "h-24", // Restore fixed height for web view
                     !isCurrentMonth && "bg-muted/50 text-muted-foreground",
                     selectionInfo?.isSelecting && !multiSelectMode && "bg-primary/20",
                     isSelectedForMulti && multiSelectMode && "bg-primary/30 ring-2 ring-primary inset-0",

@@ -115,12 +115,12 @@ body {
 }
 .calendar-day-cell {
   position: relative;
-  display: flex; /* Use flexbox for vertical alignment */
-  flex-direction: column; /* Stack day number and bubbles vertically */
+  display: flex;
+  flex-direction: column; 
 }
 .calendar-bubbles-container {
   position: absolute;
-  top: 1.75rem; /* Position below the day number */
+  top: 1.75rem; 
   left: 0;
   right: 0;
   bottom: 0;
@@ -130,13 +130,25 @@ body {
   padding: 2px;
 }
 .calendar-grid {
-  user-select: none; /* Prevent text selection while dragging */
+  user-select: none;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
-.printable-calendar {
-  width: 100%;
-  aspect-ratio: 297 / 210; /* A4 Landscape aspect ratio */
+.calendar-day-cell {
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
 }
+.calendar-day-cell:nth-child(7n) {
+  border-right: 0;
+}
+.calendar-day-cell:nth-child(n+36) {
+  border-bottom: 0;
+}
+
 
 /* === PRINTING STYLES === */
 @page {
@@ -173,8 +185,8 @@ body {
   .printable-calendar .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: auto repeat(6, 1fr); /* Header row + 6 weeks */
-    flex-grow: 1; /* This will make the grid fill the container */
+    grid-template-rows: auto repeat(6, 1fr);
+    flex-grow: 1; 
   }
 
   .printable-calendar .calendar-day-cell {
