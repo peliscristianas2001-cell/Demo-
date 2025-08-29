@@ -18,6 +18,11 @@ export interface Pension {
   description: string;
 }
 
+export interface RoomType {
+  id: string;
+  name: string;
+}
+
 export interface PricingTier {
   id: string;
   name: string;
@@ -169,7 +174,7 @@ export type Reservation = {
     pensionId?: string;
     finalPrice: number;
     boardingPointId?: string;
-    roomType?: string;
+    roomTypeId?: string;
     installments?: {
         count: number;
         details: Installment[];

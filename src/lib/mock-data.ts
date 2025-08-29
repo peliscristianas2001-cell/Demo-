@@ -1,11 +1,18 @@
 
 
-import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings, Pension } from './types';
+import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings, Pension, RoomType } from './types';
 
 export const mockPensions: Pension[] = [
     { id: 'pension-media', name: 'Media Pensión', description: 'Incluye desayuno y cena.' },
     { id: 'pension-completa', name: 'Pensión Completa', description: 'Incluye desayuno, almuerzo y cena.' },
     { id: 'pension-desayuno', name: 'Solo Desayuno', description: 'Incluye desayuno.' },
+]
+
+export const mockRoomTypes: RoomType[] = [
+    { id: 'RT01', name: 'Doble Matrimonial' },
+    { id: 'RT02', name: 'Doble Twin' },
+    { id: 'RT03', name: 'Triple' },
+    { id: 'RT04', name: 'Cuádruple' },
 ]
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
@@ -228,14 +235,14 @@ export const mockPassengers: Passenger[] = [
 
 
 export const mockReservations: Reservation[] = [
-    { id: "R001", tripId: "1", passenger: "Juan Perez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "pension-media", finalPrice: 310000, boardingPointId: 'BP02', roomType: "Doble" },
-    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", pensionId: "pension-completa", finalPrice: 155000, roomType: "Single" },
-    { id: "R002", tripId: "2", passenger: "Maria Garcia", passengerIds: ["P002"], paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 125000, roomType: "Doble" },
-    { id: "R003", tripId: "1", passenger: "Carlos Lopez", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", pensionId: "media", finalPrice: 620000, roomType: "Doble Matrimonial" },
+    { id: "R001", tripId: "1", passenger: "Juan Perez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "pension-media", finalPrice: 310000, boardingPointId: 'BP02', roomTypeId: "RT01" },
+    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", pensionId: "pension-completa", finalPrice: 155000, roomTypeId: "RT01" },
+    { id: "R002", tripId: "2", passenger: "Maria Garcia", passengerIds: ["P002"], paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 125000, roomTypeId: "RT02" },
+    { id: "R003", tripId: "1", passenger: "Carlos Lopez", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", pensionId: "pension-media", finalPrice: 620000, roomTypeId: "RT01" },
     { id: "R004", tripId: "3", passenger: "Ana Martinez", passengerIds: ["P004"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 270000 },
-    { id: "R005", tripId: "2", passenger: "Lucia Hernandez", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000, boardingPointId: 'BP01', roomType: "Triple" },
+    { id: "R005", tripId: "2", passenger: "Lucia Hernandez", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000, boardingPointId: 'BP01', roomTypeId: "RT03" },
     { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
-    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "pension-completa", finalPrice: 1250000, roomType: "Camarote con balcón" },
+    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "pension-completa", finalPrice: 1250000, roomTypeId: "RT01" },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');

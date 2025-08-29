@@ -38,8 +38,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SearchableSelect } from "@/components/searchable-select"
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown } from "lucide-react"
-import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit } from "@/lib/types"
+import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions, mockRoomTypes } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit, RoomType } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -89,6 +89,7 @@ export default function ReservationsPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const [pensions, setPensions] = useState<Pension[]>([]);
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
@@ -105,6 +106,7 @@ export default function ReservationsPage() {
     const storedPassengers = localStorage.getItem("ytl_passengers")
     const storedBoardingPoints = localStorage.getItem("ytl_boarding_points")
     const storedPensions = localStorage.getItem("ytl_pensions")
+    const storedRoomTypes = localStorage.getItem("ytl_room_types");
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
@@ -112,6 +114,7 @@ export default function ReservationsPage() {
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints)
     setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
+    setRoomTypes(storedRoomTypes ? JSON.parse(storedRoomTypes) : mockRoomTypes);
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
@@ -121,12 +124,14 @@ export default function ReservationsPage() {
        const newStoredPassengers = localStorage.getItem("ytl_passengers")
        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points")
        const newStoredPensions = localStorage.getItem("ytl_pensions")
+       const newStoredRoomTypes = localStorage.getItem("ytl_room_types");
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints)
        setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : mockPensions);
+       setRoomTypes(newStoredRoomTypes ? JSON.parse(newStoredRoomTypes) : mockRoomTypes);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -420,13 +425,17 @@ export default function ReservationsPage() {
                     </Select>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="roomType">Tipo de Habitación</Label>
-                    <Input
-                      id="roomType"
-                      value={reservation.roomType || ''}
-                      onChange={(e) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, roomType: e.target.value}}))}
-                      placeholder="Doble, Triple, etc."
-                    />
+                    <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
+                     <Select
+                        value={reservation.roomTypeId}
+                        onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, roomTypeId: val}}))}
+                    >
+                        <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="none">Sin Habitación Asignada</SelectItem>
+                            {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="space-y-3 pt-2">
                     <Label>Seguro Médico por Pasajero</Label>
@@ -528,6 +537,7 @@ export default function ReservationsPage() {
             onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
             sellers={sellers}
             boardingPoints={boardingPoints}
+            roomTypes={roomTypes}
         />
     )}
 
@@ -539,7 +549,7 @@ export default function ReservationsPage() {
             Modificar detalles de la reserva para {editingReservation.reservation?.passenger} en el viaje a {tours.find(t => t.id === editingReservation.reservation?.tripId)?.destination}.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto pr-2 flex-1">
+        <div className="flex-1 overflow-y-auto pr-2">
           {renderDialogContent()}
         </div>
         <DialogFooter className="mt-auto pt-4 border-t">
@@ -608,6 +618,7 @@ export default function ReservationsPage() {
                                     const finalPrice = res.finalPrice || 0;
                                     const balance = finalPrice - paidAmount;
                                     const pension = pensions.find(p => p.id === res.pensionId);
+                                    const roomType = roomTypes.find(rt => rt.id === res.roomTypeId);
 
 
                                     return (
@@ -695,7 +706,7 @@ export default function ReservationsPage() {
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
                                                                 <InfoRow label="Pensión" value={pension?.name || 'No incluida'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
-                                                                <InfoRow label="Tipo de Hab." value={res.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
+                                                                <InfoRow label="Tipo de Hab." value={roomType?.name} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
                                                         </Card>
                                                     </div>

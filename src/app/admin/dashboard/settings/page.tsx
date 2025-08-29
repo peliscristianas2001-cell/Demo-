@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
-import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension } from "@/lib/types"
+import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
-import { mockBoardingPoints, mockPensions } from "@/lib/mock-data"
+import { mockBoardingPoints, mockPensions, mockRoomTypes } from "@/lib/mock-data"
 
 const MapSelector = dynamic(
   () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
@@ -35,6 +35,7 @@ export default function SettingsPage() {
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
     const [pensions, setPensions] = useState<Pension[]>([]);
+    const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
 
@@ -57,6 +58,9 @@ export default function SettingsPage() {
         const storedPensions = localStorage.getItem("ytl_pensions");
         setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
 
+        const storedRoomTypes = localStorage.getItem("ytl_room_types");
+        setRoomTypes(storedRoomTypes ? JSON.parse(storedRoomTypes) : mockRoomTypes);
+
 
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
@@ -65,6 +69,8 @@ export default function SettingsPage() {
         setBoardingPoints(newBoardingPoints ? JSON.parse(newBoardingPoints) : mockBoardingPoints);
         const newPensions = localStorage.getItem("ytl_pensions");
         setPensions(newPensions ? JSON.parse(newPensions) : mockPensions);
+        const newRoomTypes = localStorage.getItem("ytl_room_types");
+        setRoomTypes(newRoomTypes ? JSON.parse(newRoomTypes) : mockRoomTypes);
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
@@ -216,6 +222,26 @@ export default function SettingsPage() {
         localStorage.setItem("ytl_pensions", JSON.stringify(filteredPensions));
         setPensions(filteredPensions);
         toast({ title: "Tipos de pensión guardados." });
+        window.dispatchEvent(new Event('storage'));
+    }
+
+    const handleAddRoomType = () => {
+        setRoomTypes(prev => [...prev, { id: `RT-${Date.now()}`, name: '' }]);
+    }
+
+    const handleRoomTypeChange = (id: string, name: string) => {
+        setRoomTypes(prev => prev.map(rt => rt.id === id ? { ...rt, name } : rt));
+    }
+
+    const handleRemoveRoomType = (id: string) => {
+        setRoomTypes(prev => prev.filter(rt => rt.id !== id));
+    }
+    
+    const handleSaveRoomTypes = () => {
+        const filteredRoomTypes = roomTypes.filter(rt => rt.name.trim() !== "");
+        localStorage.setItem("ytl_room_types", JSON.stringify(filteredRoomTypes));
+        setRoomTypes(filteredRoomTypes);
+        toast({ title: "Tipos de habitación guardados." });
         window.dispatchEvent(new Event('storage'));
     }
 
@@ -395,6 +421,37 @@ export default function SettingsPage() {
                         </Button>
                          <Button onClick={handleSavePensions}>
                            <Save className="mr-2 h-4 w-4"/> Guardar Pensiones
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><BedDouble className="w-6 h-6"/> Tipos de Habitación</CardTitle>
+                    <CardDescription>Añade y gestiona los tipos de habitaciones disponibles.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        {roomTypes.map((rt) => (
+                           <div key={rt.id} className="flex items-center gap-2">
+                               <Input 
+                                   value={rt.name}
+                                   onChange={(e) => handleRoomTypeChange(rt.id, e.target.value)}
+                                   placeholder="Nombre de la habitación (Ej: Doble Matrimonial)"
+                                />
+                               <Button variant="ghost" size="icon" onClick={() => handleRemoveRoomType(rt.id)}>
+                                    <Trash2 className="w-4 h-4 text-destructive"/>
+                               </Button>
+                           </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <Button variant="outline" onClick={handleAddRoomType}>
+                           <PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo de Habitación
+                        </Button>
+                         <Button onClick={handleSaveRoomTypes}>
+                           <Save className="mr-2 h-4 w-4"/> Guardar Habitaciones
                         </Button>
                     </div>
                 </CardContent>

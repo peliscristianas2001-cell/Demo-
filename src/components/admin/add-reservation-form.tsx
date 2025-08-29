@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import type { Passenger, Seller, Reservation, PaymentStatus, Tour, BoardingPoint } from "@/lib/types"
+import type { Passenger, Seller, Reservation, PaymentStatus, Tour, BoardingPoint, RoomType } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/searchable-select"
 import { PlusCircle } from "lucide-react"
@@ -33,6 +33,7 @@ interface AddReservationFormProps {
   onPassengerCreated: (passenger: Passenger) => void
   sellers: Seller[]
   boardingPoints: BoardingPoint[]
+  roomTypes: RoomType[]
 }
 
 const defaultReservation = {
@@ -43,10 +44,10 @@ const defaultReservation = {
     paymentStatus: "Pendiente" as PaymentStatus,
     selectedPassengerIds: [] as string[],
     boardingPointId: undefined,
-    roomType: ""
+    roomTypeId: undefined
 }
 
-export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints }: AddReservationFormProps) {
+export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints, roomTypes }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const { toast } = useToast();
@@ -175,7 +176,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         sellerId: formData.sellerId,
         finalPrice: formData.finalPrice,
         boardingPointId: formData.boardingPointId,
-        roomType: formData.roomType,
+        roomTypeId: formData.roomTypeId,
     }
 
     onSave(reservationToSave);
@@ -279,8 +280,13 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         </div>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="roomType">Tipo de Habitación</Label>
-                        <Input id="roomType" value={formData.roomType} onChange={(e) => handleFormChange('roomType', e.target.value)} placeholder="Doble, Triple, etc."/>
+                        <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
+                        <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
+                            <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
+                            <SelectContent>
+                                {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="boardingPointId">Punto de Embarque</Label>
