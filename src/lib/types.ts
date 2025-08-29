@@ -19,8 +19,8 @@ export interface Insurance {
 }
 
 export interface Pension {
-  active: boolean;
-  type: 'Media' | 'Completa' | 'Desayuno';
+  id: string;
+  name: string;
   description: string;
 }
 
@@ -67,6 +67,15 @@ export interface BoardingPoint {
     name: string;
 }
 
+export interface TransportUnit {
+    id: number;
+    category: LayoutCategory;
+    type: LayoutItemType;
+    count: number;
+    coordinator?: string;
+    coordinatorPhone?: string;
+}
+
 export interface Tour {
   id: string;
   destination: string;
@@ -84,19 +93,21 @@ export interface Tour {
   departureTime?: string;
   bus?: string;
 
-  insurance?: Insurance;
-  pension?: Pension;
+  insurance?: Insurance; // Kept for cost calculation, but now always 'active'
   pricingTiers?: PricingTier[];
   costs?: TourCosts;
   
   observations?: string;
   cancellationPolicy?: string;
-  coordinator?: string;
-  coordinatorPhone?: string;
+  
+  transportUnits?: TransportUnit[];
 
+  // Deprecated fields, kept for potential data migration but should not be used for new logic
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;
+  coordinator?: string;
+  coordinatorPhone?: string;
 }
 
 export type ReservationStatus = "Confirmado" | "Pendiente";
@@ -142,6 +153,7 @@ export type Reservation = {
     status: ReservationStatus;
     paymentStatus: PaymentStatus;
     sellerId: string;
+    pensionId?: string;
     finalPrice: number;
     boardingPointId?: string;
     installments?: {
@@ -159,4 +171,36 @@ export type Ticket = {
   qrCodeUrl: string;
   reservation: Reservation; // Include full reservation for ticket details
   boardingPointId?: string;
+}
+
+
+// --- New Employee and Seller Types ---
+
+export interface Employee {
+  id: string;
+  name: string;
+  dni: string;
+  phone: string;
+  password?: string;
+  fixedSalary?: number;
+}
+
+export interface Seller {
+  id: string;
+  name: string;
+  dni: string;
+  phone: string;
+  useFixedCommission: boolean;
+  fixedCommissionRate?: number;
+}
+
+export interface CommissionRule {
+    id: string;
+    from: number;
+    to: number | 'infinite';
+    rate: number;
+}
+
+export interface CommissionSettings {
+    rules: CommissionRule[];
 }

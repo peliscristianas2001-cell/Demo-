@@ -1,6 +1,6 @@
 
 
-import type { Tour, Reservation, Ticket, AssignedSeat, Seller, Passenger, AssignedCabin, BoardingPoint } from './types';
+import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings } from './types';
 
 // Let's assume current date is late 2024, setting dates for 2025/2026
 export const mockTours: Tour[] = [
@@ -21,11 +21,11 @@ export const mockTours: Tour[] = [
     bus: "Via Bariloche",
     observations: "Llevar ropa de abrigo. No incluye entrada a parques nacionales.",
     cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
-    coordinator: "Angela Rojas",
-    coordinatorPhone: "341-504-0710",
-    vehicles: { 'doble_piso': 2 }, 
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Angela Rojas", coordinatorPhone: "341-504-0710" },
+        { id: 2, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Marcos Gil", coordinatorPhone: "11-2233-4455" },
+    ],
     insurance: { active: true, cost: 5000, coverage: "Cobertura médica básica", minAge: 0, maxAge: 75 },
-    pension: { active: true, type: 'Media', description: "Desayuno y cena incluidos."},
     pricingTiers: [
       { id: 'T1_CHILD', name: 'Niño', price: 120000 },
       { id: 'T1_RETIREE', name: 'Jubilado', price: 135000 },
@@ -56,9 +56,9 @@ export const mockTours: Tour[] = [
     bus: "Flecha Bus",
     observations: "No olvidar repelente de insectos y protector solar.",
     cancellationPolicy: "En caso de no abordar el micro el día y hora establecida, se perderá el 100% del servicio contratado. En caso de suspender el viaje se deberá dar aviso 72 horas ANTES hábiles, caso contrario no se procederá a la reprogramación.",
-    coordinator: "Marcos Gil",
-    coordinatorPhone: "11-2233-4455",
-    vehicles: { 'micro_largo': 1 },
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'micro_largo', count: 1, coordinator: "Marcos Gil", coordinatorPhone: "11-2233-4455" },
+    ],
     pricingTiers: [
       { id: 'T2_CHILD', name: 'Menor', price: 100000 },
     ],
@@ -77,8 +77,9 @@ export const mockTours: Tour[] = [
     origin: "Córdoba",
     nights: 4,
     bus: 'Andesmar',
-    vehicles: { 'micro_bajo': 1 },
-    pension: { active: true, type: 'Desayuno', description: "Desayuno buffet."}
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'micro_bajo', count: 1, coordinator: "Coordinador a definir" },
+    ]
   },
   {
     id: '4',
@@ -89,7 +90,10 @@ export const mockTours: Tour[] = [
     flyerType: 'image',
     origin: "Salta",
     nights: 6,
-    vehicles: { 'micro_bajo': 1, 'combi': 1 },
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'micro_bajo', count: 1 },
+        { id: 2, category: 'vehicles', type: 'combi', count: 1 },
+    ],
   },
   {
     id: '5',
@@ -100,7 +104,9 @@ export const mockTours: Tour[] = [
     flyerType: 'image',
     origin: "Buenos Aires",
     nights: 7,
-    vehicles: { 'doble_piso': 1 },
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'doble_piso', count: 1 },
+    ],
   },
   {
     id: '6',
@@ -111,7 +117,9 @@ export const mockTours: Tour[] = [
     flyerType: 'image',
     origin: "La Plata",
     nights: 3,
-    vehicles: { 'combi': 3 },
+    transportUnits: [
+        { id: 1, category: 'vehicles', type: 'combi', count: 3 },
+    ],
   },
   {
     id: '7',
@@ -130,21 +138,32 @@ export const mockTours: Tour[] = [
     bus: "N/A",
     observations: "Requiere pasaporte. Ropa de muy alto abrigo es indispensable.",
     cancellationPolicy: "Cancelaciones con menos de 90 días de antelación pierden el 100% del valor.",
-    coordinator: "Laura Fernández",
-    coordinatorPhone: "11-2233-4455",
-    cruises: { 'gran_crucero': 1 },
+    transportUnits: [
+        { id: 1, category: 'cruises', type: 'gran_crucero', count: 1, coordinator: "Laura Fernández", coordinatorPhone: "11-2233-4455" },
+    ],
     insurance: { active: true, cost: 80000, coverage: "Cobertura de alta complejidad y evacuación", minAge: 18, maxAge: 70 },
-    pension: { active: true, type: 'Completa', description: "Todas las comidas incluidas."},
   }
 ];
 
-export const mockSellers: Seller[] = [
-    { id: 'S001', name: 'Laura Fernandez', dni: '28123456', phone: '1122334455', commission: 10 },
-    { id: 'S002', name: 'Marcos Gil', dni: '30654987', phone: '1166778899', commission: 12 },
-    { id: 'S003', name: 'Sofia Acosta', dni: '35789123', phone: '1133445566', commission: 10 },
-    { id: 'S004', name: 'Jose Luis Godoy', dni: '43580345', phone: '', commission: 10, password: '@Vector2016' },
-    { id: 'S000', name: 'Angela Rojas', dni: '99999999', phone: '1111111111', commission: 15, password: 'AngelaRojasYTL' }
+export const mockEmployees: Employee[] = [
+    { id: 'E001', name: 'Laura Fernandez', dni: '28123456', phone: '1122334455', fixedSalary: 150000 },
+    { id: 'E002', name: 'Marcos Gil', dni: '30654987', phone: '1166778899', fixedSalary: 150000 },
+    { id: 'E003', name: 'Sofia Acosta', dni: '35789123', phone: '1133445566', fixedSalary: 140000 },
+    { id: 'E004', name: 'Jose Luis Godoy', dni: '43580345', phone: '', password: '@Vector2016' },
+    { id: 'E000', name: 'Angela Rojas', dni: '99999999', phone: '1111111111', password: 'AngelaRojasYTL' }
 ]
+
+export const mockSellers: Seller[] = [
+    { id: 'S001', name: 'Agencia Viaja+', dni: '30111222', phone: '1122334455', useFixedCommission: false },
+    { id: 'S002', name: 'Turismo Veloz', dni: '30333444', phone: '1166778899', useFixedCommission: true, fixedCommissionRate: 15 },
+]
+
+export const mockCommissionSettings: CommissionSettings = {
+    rules: [
+        { id: 'C01', from: 1, to: 4, rate: 5 },
+        { id: 'C02', from: 5, to: 'infinite', rate: 10 }
+    ]
+}
 
 export const mockBoardingPoints: BoardingPoint[] = [
     { id: 'BP01', name: 'Terminal de Omnibus Rosario' },
@@ -208,14 +227,14 @@ export const mockPassengers: Passenger[] = [
 
 
 export const mockReservations: Reservation[] = [
-    { id: "R001", tripId: "1", passenger: "Juan Perez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 310000, boardingPointId: 'BP02' },
-    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", finalPrice: 155000 },
+    { id: "R001", tripId: "1", passenger: "Juan Perez", passengerIds: ["P001", "P007"], paxCount: 2, assignedSeats: [{seatId: "50", unit: 1}, {seatId: "51", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "media", finalPrice: 310000, boardingPointId: 'BP02' },
+    { id: "R001B", tripId: "1", passenger: "Pedro Gonzalez", passengerIds: ["P001"], paxCount: 1, assignedSeats: [{seatId: "10", unit: 2}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "S002", pensionId: "completa", finalPrice: 155000 },
     { id: "R002", tripId: "2", passenger: "Maria Garcia", passengerIds: ["P002"], paxCount: 1, assignedSeats: [{seatId: "7", unit: 1}], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 125000 },
-    { id: "R003", tripId: "1", passenger: "Carlos Lopez", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 620000 },
+    { id: "R003", tripId: "1", passenger: "Carlos Lopez", passengerIds: ["P003", "P004"], paxCount: 2, assignedSeats: [{seatId: "52", unit: 1}, {seatId: "53", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", pensionId: "media", finalPrice: 620000 },
     { id: "R004", tripId: "3", passenger: "Ana Martinez", passengerIds: ["P004"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 270000 },
     { id: "R005", tripId: "2", passenger: "Lucia Hernandez", passengerIds: ["P005"], paxCount: 3, assignedSeats: [{seatId: "30", unit: 1}, {seatId: "31", unit: 1}, {seatId: "32", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 375000, boardingPointId: 'BP01' },
     { id: "R006", tripId: "6", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 2, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S003", finalPrice: 170000 },
-    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", finalPrice: 1250000 },
+    { id: "R007", tripId: "7", passenger: "Jorge Rodriguez", passengerIds: ["P006"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "S001", pensionId: "completa", finalPrice: 1250000 },
 ];
 
 const confirmedReservations = mockReservations.filter(r => r.status === 'Confirmado');

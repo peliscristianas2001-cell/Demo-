@@ -36,8 +36,8 @@ import {
 
 import { SeatSelector } from "@/components/booking/seat-selector"
 import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble } from "lucide-react"
-import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
-import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint } from "@/lib/types"
+import { mockTours, mockReservations, mockEmployees, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
+import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Employee, PaymentStatus, Passenger, BoardingPoint, TransportUnit, Pension } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -52,13 +52,6 @@ type ActiveTransportUnitInfo = {
   type: LayoutItemType;
 } | null;
 
-type ExpandedTransportUnit = {
-    category: LayoutCategory;
-    type: LayoutItemType;
-    typeName: string;
-    instanceNum: number;
-    globalUnitNum: number;
-};
 
 type EditReservationState = {
   isOpen: boolean;
@@ -85,9 +78,10 @@ const calculateAge = (dob: Date | string | undefined) => {
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tours, setTours] = useState<Tour[]>([]);
-  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
+  const [pensions, setPensions] = useState<Pension[]>([]);
   const [activeUnit, setActiveUnit] = useState<ActiveTransportUnitInfo>(null);
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
@@ -100,28 +94,32 @@ export default function ReservationsPage() {
     // Load data from localStorage or fall back to mock data
     const storedReservations = localStorage.getItem("ytl_reservations")
     const storedTours = localStorage.getItem("ytl_tours")
-    const storedSellers = localStorage.getItem("ytl_sellers")
+    const storedEmployees = localStorage.getItem("ytl_employees")
     const storedPassengers = localStorage.getItem("ytl_passengers")
     const storedBoardingPoints = localStorage.getItem("ytl_boarding_points")
+    const storedPensions = localStorage.getItem("ytl_pensions")
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
-    setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
+    setEmployees(storedEmployees ? JSON.parse(storedEmployees) : mockEmployees)
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers)
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints)
+    setPensions(storedPensions ? JSON.parse(storedPensions) : []);
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
        const newStoredReservations = localStorage.getItem("ytl_reservations")
        const newStoredTours = localStorage.getItem("ytl_tours")
-       const newStoredSellers = localStorage.getItem("ytl_sellers")
+       const newStoredEmployees = localStorage.getItem("ytl_employees")
        const newStoredPassengers = localStorage.getItem("ytl_passengers")
        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points")
+       const newStoredPensions = localStorage.getItem("ytl_pensions")
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
-       setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
+       setEmployees(newStoredEmployees ? JSON.parse(newStoredEmployees) : mockEmployees)
        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
        setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints)
+       setPensions(newStoredPensions ? JSON.parse(newStoredPensions) : []);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -157,41 +155,12 @@ export default function ReservationsPage() {
     }, {} as Record<string, { tour: Tour, reservations: Reservation[] }>);
   }, [reservations, tours]);
 
-  const getExpandedTransportList = (tour: Tour): ExpandedTransportUnit[] => {
-    const transportList: ExpandedTransportUnit[] = [];
-    let globalUnitCounter = 1;
-    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
-
-    for (const category of categories) {
-        if (tour[category]) {
-            for (const [type, count] of Object.entries(tour[category]!)) {
-                if (count && count > 0) {
-                    for (let i = 1; i <= count; i++) {
-                        transportList.push({
-                            category: category,
-                            type: type as LayoutItemType,
-                            typeName: layoutConfig[category]?.[type as LayoutItemType]?.name || 'Unidad',
-                            instanceNum: i,
-                            globalUnitNum: globalUnitCounter
-                        });
-                        globalUnitCounter++;
-                    }
-                }
-            }
-        }
-    }
-    return transportList;
+  const getExpandedTransportList = (tour: Tour): TransportUnit[] => {
+    return tour.transportUnits || [];
   }
 
   const getTransportCount = (tour: Tour) => {
-    let totalCount = 0;
-    const categories: LayoutCategory[] = ['vehicles', 'airplanes', 'cruises'];
-    for (const category of categories) {
-        if (tour[category]) {
-            totalCount += Object.values(tour[category]!).reduce((total, count) => total + (count || 0), 0);
-        }
-    }
-    return totalCount;
+    return (tour.transportUnits || []).reduce((sum, unit) => sum + unit.count, 0);
   }
   
   const handleAddReservation = (newReservation: Reservation) => {
@@ -272,8 +241,8 @@ export default function ReservationsPage() {
     return { occupiedSeats, occupiedCabins };
   };
   
-  const getTransportIdentifier = (unit: ExpandedTransportUnit) => {
-    return `${unit.category}_${unit.type}_${unit.globalUnitNum}`;
+  const getTransportIdentifier = (unit: TransportUnit) => {
+    return `${unit.category}_${unit.type}_${unit.id}`;
   }
 
   const handleDialogOpen = (tour: Tour, reservation: Reservation) => {
@@ -281,7 +250,7 @@ export default function ReservationsPage() {
     const unitList = getExpandedTransportList(tour);
     if (unitList.length > 0) {
       const firstUnit = unitList[0];
-      setActiveUnit({ unitNumber: firstUnit.globalUnitNum, category: firstUnit.category, type: firstUnit.type });
+      setActiveUnit({ unitNumber: firstUnit.id, category: firstUnit.category, type: firstUnit.type });
     } else {
       setActiveUnit(null);
     }
@@ -386,6 +355,19 @@ export default function ReservationsPage() {
                         </SelectContent>
                     </Select>
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="pensionId">Tipo de Pensión</Label>
+                    <Select
+                        value={reservation.pensionId}
+                        onValueChange={(val) => setEditingReservation(prev => ({...prev, reservation: {...prev.reservation!, pensionId: val}}))}
+                    >
+                        <SelectTrigger id="pensionId"><SelectValue placeholder="Seleccionar pensión..."/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin Pensión Asignada</SelectItem>
+                            {pensions.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
               </CardContent>
           </Card>
         </div>
@@ -400,11 +382,11 @@ export default function ReservationsPage() {
                  <div className="flex items-center gap-2 pt-2">
                       <Bus className="w-5 h-5 text-muted-foreground"/>
                       <Select
-                          value={activeUnit ? getTransportIdentifier(unitList.find(b => b.globalUnitNum === activeUnit.unitNumber)!) : ''}
+                          value={activeUnit ? getTransportIdentifier(unitList.find(b => b.id === activeUnit.unitNumber)!) : ''}
                           onValueChange={(val) => {
                               const selectedUnit = unitList.find(b => getTransportIdentifier(b) === val);
                               if (selectedUnit) {
-                                  setActiveUnit({ unitNumber: selectedUnit.globalUnitNum, category: selectedUnit.category, type: selectedUnit.type });
+                                  setActiveUnit({ unitNumber: selectedUnit.id, category: selectedUnit.category, type: selectedUnit.type });
                               }
                           }}
                       >
@@ -414,11 +396,12 @@ export default function ReservationsPage() {
                           <SelectContent>
                               {unitList.map(unit => {
                                   const Icon = categoryIcons[unit.category];
+                                  const layout = layoutConfig[unit.category][unit.type];
                                   return (
-                                      <SelectItem key={unit.globalUnitNum} value={getTransportIdentifier(unit)}>
+                                      <SelectItem key={unit.id} value={getTransportIdentifier(unit)}>
                                           <div className="flex items-center gap-2">
                                               <Icon className="w-4 h-4 text-muted-foreground"/>
-                                              <span>{unit.typeName} {getTransportCount(tour) > 1 ? unit.instanceNum : ''}</span>
+                                              <span>{layout?.name || unit.type} (Unidad {unit.id})</span>
                                           </div>
                                       </SelectItem>
                                   )
@@ -460,7 +443,7 @@ export default function ReservationsPage() {
             passengers={passengers}
             allReservations={reservations}
             onPassengerCreated={(newPassenger) => setPassengers(prev => [...prev, newPassenger])}
-            sellers={sellers}
+            employees={employees}
             boardingPoints={boardingPoints}
         />
     )}
@@ -521,7 +504,7 @@ export default function ReservationsPage() {
                                 {tripReservations.map((res) => {
                                     const resPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
                                     const mainPassenger = resPassengers[0];
-                                    const seller = sellers.find(s => s.id === res.sellerId);
+                                    const employee = employees.find(s => s.id === res.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === res.boardingPointId);
                                     const assignedLocations = [
                                         ...(res.assignedSeats || []).map(s => `Asiento ${s.seatId}`),
@@ -531,6 +514,7 @@ export default function ReservationsPage() {
                                     const paidAmount = installments.details.reduce((sum, inst) => inst.isPaid ? sum + inst.amount : sum, 0);
                                     const finalPrice = res.finalPrice || 0;
                                     const balance = finalPrice - paidAmount;
+                                    const pension = pensions.find(p => p.id === res.pensionId);
 
 
                                     return (
@@ -573,7 +557,7 @@ export default function ReservationsPage() {
                                                                 <InfoRow label="Cantidad" value={`${res.paxCount} pasajero(s)`}/>
                                                                 <InfoRow label="Embarque" value={boardingPoint?.name}/>
                                                                 <InfoRow label="Ubicación" value={assignedLocations}/>
-                                                                <InfoRow label="Vendedor/a" value={seller?.name}/>
+                                                                <InfoRow label="Empleado/a" value={employee?.name}/>
                                                             </CardContent>
                                                         </Card>
 
@@ -613,8 +597,8 @@ export default function ReservationsPage() {
                                                                 </CardTitle>
                                                             </CardHeader>
                                                             <CardContent className="space-y-3 text-sm">
-                                                                <InfoRow label="Seguro" value={tour.insurance?.active ? 'Sí' : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
-                                                                <InfoRow label="Pensión" value={tour.pension?.active ? tour.pension.type : 'No'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
+                                                                <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
+                                                                <InfoRow label="Pensión" value={pension?.name || 'No incluida'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
                                                                 <InfoRow label="Tipo de Habitación" value={tour.roomType} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
                                                         </Card>
@@ -657,18 +641,4 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
         <p className="font-semibold text-right truncate">{value || 'N/A'}</p>
     </div>
 )
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
     

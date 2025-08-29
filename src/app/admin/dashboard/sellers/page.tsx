@@ -32,48 +32,40 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog"
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Clipboard, UserPlus, Redo } from "lucide-react"
-import { mockSellers } from "@/lib/mock-data"
-import type { Seller } from "@/lib/types"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, InfinityIcon, Percent, Save, Settings } from "lucide-react"
+import { mockSellers, mockCommissionSettings } from "@/lib/mock-data"
+import type { Seller, CommissionRule, CommissionSettings } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 type FormData = Omit<Seller, 'id'>;
 
 export default function SellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
-  const [exSellers, setExSellers] = useState<Seller[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isCommissionSettingsOpen, setIsCommissionSettingsOpen] = useState(false)
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
   const [isClient, setIsClient] = useState(false)
-  const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', commission: 0, password: '' });
+  const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', useFixedCommission: false, fixedCommissionRate: 0 });
+  const [commissionSettings, setCommissionSettings] = useState<CommissionSettings>(mockCommissionSettings)
   const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true)
     const storedSellers = localStorage.getItem("ytl_sellers")
-    const storedExSellers = localStorage.getItem("ytl_ex_sellers")
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
-    setExSellers(storedExSellers ? JSON.parse(storedExSellers) : [])
-
-    const handleStorageChange = () => {
-      const newStoredSellers = localStorage.getItem("ytl_sellers")
-      const newStoredExSellers = localStorage.getItem("ytl_ex_sellers")
-      setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
-      setExSellers(newStoredExSellers ? JSON.parse(newStoredExSellers) : [])
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    const storedCommissionSettings = localStorage.getItem("ytl_commission_settings")
+    setCommissionSettings(storedCommissionSettings ? JSON.parse(storedCommissionSettings) : mockCommissionSettings)
   }, [])
   
   useEffect(() => {
     if (isClient) {
       localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
-      localStorage.setItem("ytl_ex_sellers", JSON.stringify(exSellers));
+      localStorage.setItem("ytl_commission_settings", JSON.stringify(commissionSettings));
     }
-  }, [sellers, exSellers, isClient])
+  }, [sellers, commissionSettings, isClient])
   
   useEffect(() => {
     if (selectedSeller) {
@@ -81,29 +73,13 @@ export default function SellersPage() {
             name: selectedSeller.name,
             dni: selectedSeller.dni,
             phone: selectedSeller.phone,
-            commission: selectedSeller.commission,
-            password: selectedSeller.password || ''
+            useFixedCommission: selectedSeller.useFixedCommission,
+            fixedCommissionRate: selectedSeller.fixedCommissionRate || 0,
         });
     } else {
-        setFormData({ name: '', dni: '', phone: '', commission: 0, password: '' });
+        setFormData({ name: '', dni: '', phone: '', useFixedCommission: false, fixedCommissionRate: 0 });
     }
   }, [selectedSeller, isFormOpen]);
-
-  const getRegistrationLink = (sellerId: string) => {
-    if (isClient) {
-      return `${window.location.origin}/employee/register?sellerId=${sellerId}`;
-    }
-    return "";
-  }
-
-  const handleCopyLink = (sellerId: string) => {
-    const link = getRegistrationLink(sellerId);
-    if (link) {
-      navigator.clipboard.writeText(link).then(() => {
-        toast({ title: "¡Copiado!", description: "El link de registro se ha copiado al portapapeles." });
-      });
-    }
-  }
 
   const handleCreate = () => {
     setSelectedSeller(null)
@@ -115,26 +91,14 @@ export default function SellersPage() {
     setIsFormOpen(true)
   }
 
-  const handleRehireSelect = (sellerId: string) => {
-      const sellerToRehire = exSellers.find(s => s.id === sellerId);
-      if (sellerToRehire) {
-          setSelectedSeller({ ...sellerToRehire, password: '' }); // Clear password for re-registration
-          setIsFormOpen(true);
-      }
-  }
-  
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({
-        ...prev,
-        [id]: id === 'commission' ? parseFloat(value) || 0 : value
-    }));
+  const handleFormChange = (id: keyof FormData, value: any) => {
+    setFormData(prev => ({ ...prev, [id]: value }));
   }
 
   const handleSave = () => {
-    const { name, commission } = formData;
-    if (!name || commission === null || commission < 0) {
-        toast({ title: "Datos incompletos", description: "El nombre y una comisión válida son obligatorios.", variant: "destructive" });
+    const { name } = formData;
+    if (!name) {
+        toast({ title: "Datos incompletos", description: "El nombre es obligatorio.", variant: "destructive" });
         return;
     }
 
@@ -144,14 +108,7 @@ export default function SellersPage() {
     }
 
     if (selectedSeller) {
-      // Check if it's a re-hire
-      const isRehiring = exSellers.some(s => s.id === sellerData.id);
-      if (isRehiring) {
-        setExSellers(prev => prev.filter(s => s.id !== sellerData.id));
-        setSellers(prev => [...prev, sellerData]);
-      } else {
-        setSellers(sellers.map(s => s.id === sellerData.id ? sellerData : s))
-      }
+      setSellers(sellers.map(s => s.id === sellerData.id ? sellerData : s))
     } else {
       setSellers([...sellers, sellerData])
     }
@@ -162,10 +119,40 @@ export default function SellersPage() {
   }
 
   const handleDelete = (sellerToDelete: Seller) => {
-    const sellerWithoutPassword = { ...sellerToDelete, password: '' };
     setSellers(prev => prev.filter(s => s.id !== sellerToDelete.id));
-    setExSellers(prev => [...prev, sellerWithoutPassword]);
-    toast({ title: "Vendedor/a archivado/a", description: "El vendedor/a ha sido movido/a a ex-vendedores." });
+    toast({ title: "Vendedor/a eliminado/a", description: "El vendedor/a ha sido borrado del sistema." });
+  }
+  
+  const handleCommissionRuleChange = (id: string, field: keyof CommissionRule, value: any) => {
+    setCommissionSettings(prev => ({
+      ...prev,
+      rules: prev.rules.map(rule => {
+        if (rule.id === id) {
+          return { ...rule, [field]: value };
+        }
+        return rule;
+      })
+    }))
+  }
+
+  const handleAddCommissionRule = () => {
+    setCommissionSettings(prev => ({
+      ...prev,
+      rules: [...prev.rules, { id: `C-${Date.now()}`, from: 0, to: 0, rate: 0 }]
+    }))
+  }
+
+  const handleRemoveCommissionRule = (id: string) => {
+    setCommissionSettings(prev => ({
+      ...prev,
+      rules: prev.rules.filter(rule => rule.id !== id)
+    }))
+  }
+  
+  const handleSaveCommissionSettings = () => {
+    // Optional: Add validation logic here
+    toast({ title: "Configuración de comisiones guardada."});
+    setIsCommissionSettingsOpen(false);
   }
 
   if (!isClient) {
@@ -185,33 +172,26 @@ export default function SellersPage() {
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">Nombre Completo</Label>
-                    <Input id="name" value={formData.name} onChange={handleFormChange}/>
+                    <Input id="name" value={formData.name} onChange={(e) => handleFormChange('name', e.target.value)}/>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="dni">DNI</Label>
-                    <Input id="dni" value={formData.dni} onChange={handleFormChange}/>
+                    <Input id="dni" value={formData.dni} onChange={(e) => handleFormChange('dni', e.target.value)}/>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="phone">Teléfono</Label>
-                    <Input id="phone" value={formData.phone} onChange={handleFormChange}/>
+                    <Input id="phone" value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)}/>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="commission">Comisión (%)</Label>
-                    <Input id="commission" type="number" value={formData.commission} onChange={handleFormChange} placeholder="Ej: 10"/>
+                <div className="flex items-center space-x-2 pt-4">
+                  <Switch id="useFixedCommission" checked={formData.useFixedCommission} onCheckedChange={(c) => handleFormChange('useFixedCommission', c)} />
+                  <Label htmlFor="useFixedCommission">Usar Comisión Fija</Label>
                 </div>
-
-                {selectedSeller && (
-                    <div className="space-y-2 pt-4">
-                        <Label>Link de Registro Único</Label>
-                         <div className="flex items-center gap-2">
-                            <Input value={getRegistrationLink(selectedSeller.id)} readOnly className="text-muted-foreground"/>
-                            <Button size="icon" variant="outline" onClick={() => handleCopyLink(selectedSeller.id)}>
-                                <Clipboard className="w-4 h-4"/>
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Comparte este link para que el vendedor pueda (re)crear su contraseña.</p>
+                 {formData.useFixedCommission && (
+                    <div className="space-y-2 pl-8">
+                        <Label htmlFor="fixedCommissionRate">Comisión Fija (%)</Label>
+                        <Input id="fixedCommissionRate" type="number" value={formData.fixedCommissionRate} onChange={(e) => handleFormChange('fixedCommissionRate', parseFloat(e.target.value) || 0)} placeholder="Ej: 15"/>
                     </div>
-                )}
+                 )}
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
@@ -220,28 +200,53 @@ export default function SellersPage() {
         </DialogContent>
        </Dialog>
 
+       <Dialog open={isCommissionSettingsOpen} onOpenChange={setIsCommissionSettingsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Configurar Comisiones por Venta</DialogTitle>
+              <DialogDescription>
+                Define los rangos de comisiones que se aplicarán a los vendedores (a menos que tengan una comisión fija).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              {commissionSettings.rules.map((rule, index) => (
+                <div key={rule.id} className="flex items-center gap-2">
+                  <Input type="number" placeholder="Desde" value={rule.from} onChange={e => handleCommissionRuleChange(rule.id, 'from', parseInt(e.target.value) || 0)} className="w-24"/>
+                  <span>-</span>
+                  {rule.to === 'infinite' ? (
+                     <Button variant="outline" size="icon" onClick={() => handleCommissionRuleChange(rule.id, 'to', (rule.from || 0) + 1)}><InfinityIcon className="w-4 h-4"/></Button>
+                  ) : (
+                    <Input type="number" placeholder="Hasta" value={rule.to} onChange={e => handleCommissionRuleChange(rule.id, 'to', parseInt(e.target.value) || 0)} className="w-24"/>
+                  )}
+                   <Input type="number" placeholder="%" value={rule.rate} onChange={e => handleCommissionRuleChange(rule.id, 'rate', parseInt(e.target.value) || 0)} className="w-24"/>
+                  <Button variant="ghost" size="icon" onClick={() => handleRemoveCommissionRule(rule.id)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
+                </div>
+              ))}
+              <Button variant="outline" onClick={handleAddCommissionRule}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Rango</Button>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCommissionSettingsOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveCommissionSettings}><Save className="mr-2 h-4 w-4"/>Guardar Configuración</Button>
+            </DialogFooter>
+          </DialogContent>
+       </Dialog>
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vendedores</h2>
           <p className="text-muted-foreground">
-            Añade, edita o archiva a los vendedores de viajes.
+            Añade vendedores y configura las comisiones por ventas.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-           {exSellers.length > 0 && (
-             <Select onValueChange={handleRehireSelect}>
-                <SelectTrigger className="w-[200px] h-10">
-                    <SelectValue placeholder="Recontratar..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {exSellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-            </Select>
-           )}
-            <Button onClick={handleCreate}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Vendedor
-            </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsCommissionSettingsOpen(true)}>
+            <Settings className="mr-2 h-4 w-4" />
+            Configurar Comisiones
+          </Button>
+          <Button onClick={handleCreate}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nuevo Vendedor
+          </Button>
         </div>
       </div>
       <Card>
@@ -249,33 +254,31 @@ export default function SellersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Link Reg.</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>DNI</TableHead>
                 <TableHead>Teléfono</TableHead>
-                <TableHead>Comisión</TableHead>
+                <TableHead>Tipo Comisión</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sellers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No hay vendedores registrados.
                   </TableCell>
                 </TableRow>
               ) : sellers.map((seller) => (
                   <TableRow key={seller.id}>
-                     <TableCell>
-                      <Button variant="outline" size="icon" onClick={() => handleCopyLink(seller.id)}>
-                        <Clipboard className="w-4 h-4" />
-                        <span className="sr-only">Copiar link de registro</span>
-                      </Button>
-                    </TableCell>
                     <TableCell className="font-medium">{seller.name}</TableCell>
                     <TableCell>{seller.dni}</TableCell>
                     <TableCell>{seller.phone}</TableCell>
-                    <TableCell>{seller.commission}%</TableCell>
+                    <TableCell>
+                      {seller.useFixedCommission 
+                        ? <span className="font-semibold">{seller.fixedCommissionRate}% (Fija)</span>
+                        : <span>Por Rangos</span>
+                      }
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -291,7 +294,7 @@ export default function SellersPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDelete(seller)} className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Archivar
+                            Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
