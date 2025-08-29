@@ -26,33 +26,23 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
   startDateGrid.setDate(startDateGrid.getDate() - startDateGrid.getDay());
 
   const merges: XLSX.Range[] = [];
+  const cellData: Record<string, {text: string[], color?: string}> = {};
 
+  // First, populate day numbers
   for (let i = 0; i < 42; i++) {
     const currentDay = new Date(startDateGrid);
     currentDay.setDate(startDateGrid.getDate() + i);
-    const row = Math.floor(i / 7) + 1; // +1 for header row
-    const col = i % 7;
-    const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+    const dayKey = currentDay.toISOString().split('T')[0];
 
     const isCurrentMonth = currentDay.getMonth() === month;
     const dayNumber = currentDay.getDate();
 
-    if (!ws[cellRef]) ws[cellRef] = { v: "" };
-    ws[cellRef].v = isCurrentMonth ? dayNumber : "";
-    ws[cellRef].t = 's';
-    ws[cellRef].s = {
-      font: {
-        sz: 14,
-        bold: true,
-        color: { rgb: isCurrentMonth ? "000000" : "AAAAAA" }
-      },
-      alignment: {
-        vertical: "top",
-        horizontal: "left"
-      }
-    };
+    if (isCurrentMonth) {
+      cellData[dayKey] = { text: [String(dayNumber)] };
+    }
   }
 
+  // Then, process bubbles
   bubbles.forEach(bubble => {
     const dates = bubble.multiSelectDates?.sort((a,b) => new Date(a).getTime() - new Date(b).getTime()) || [];
     const colorClass = bubble.color?.split(' ')[0] || '';
@@ -61,50 +51,71 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
     let currentMerge: {s: XLSX.CellAddress, e: XLSX.CellAddress} | null = null;
     
     dates.forEach((dateStr, index) => {
-        const date = new Date(dateStr + "T00:00:00");
+      if (!cellData[dateStr]) cellData[dateStr] = { text: [] };
+      cellData[dateStr].text.push(bubble.text);
+      cellData[dateStr].color = hexColor;
+
+      const date = new Date(dateStr + "T00:00:00");
+      const prevDate = index > 0 ? new Date(dates[index - 1] + "T00:00:00") : null;
+      const isConsecutiveInWeek = prevDate && (date.getTime() - prevDate.getTime() === 86400000) && date.getDay() !== 0;
+
+      if (isConsecutiveInWeek) {
+        if (currentMerge) {
+          const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
+          currentMerge.e.c = dayDiff % 7;
+        }
+      } else {
+        if (currentMerge) {
+          merges.push(currentMerge);
+        }
         const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
         const r = Math.floor(dayDiff / 7) + 1;
         const c = dayDiff % 7;
-
-        // Place text and style
-        const cellRef = XLSX.utils.encode_cell({ r, c });
-        if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-        
-        ws[cellRef].s = {
-            ...ws[cellRef].s,
-            fill: { fgColor: { rgb: hexColor } },
-            font: { ...ws[cellRef].s?.font, sz: 10, bold: false },
-            alignment: { ...ws[cellRef].s?.alignment, vertical: 'center', horizontal: 'center', wrapText: true }
-        };
-
-        const existingText = (ws[cellRef].v || '').toString();
-        const separator = existingText.includes('\n') || existingText.length === 0 ? '' : '\n\n';
-        ws[cellRef].v = `${existingText}${separator}${bubble.text}`;
-        
-        // Handle merging logic
-        const prevDate = index > 0 ? new Date(dates[index - 1] + "T00:00:00") : null;
-        const isConsecutive = prevDate && (date.getTime() - prevDate.getTime() === 86400000) && prevDate.getDay() < 6;
-
-        if (isConsecutive) {
-            if (currentMerge) {
-                currentMerge.e.c = c; // Extend the merge range
-            }
-        } else {
-            if (currentMerge) {
-                merges.push(currentMerge);
-            }
-            currentMerge = { s: { r, c }, e: { r, c } };
-        }
+        currentMerge = { s: { r, c }, e: { r, c } };
+      }
     });
 
     if (currentMerge) {
-        merges.push(currentMerge);
+      merges.push(currentMerge);
     }
   });
 
+  // Write data to worksheet
+  for (let i = 0; i < 42; i++) {
+    const currentDay = new Date(startDateGrid);
+    currentDay.setDate(startDateGrid.getDate() + i);
+    const dayKey = currentDay.toISOString().split('T')[0];
+    const data = cellData[dayKey];
+    
+    const r = Math.floor(i / 7) + 1;
+    const c = i % 7;
+    const cellRef = XLSX.utils.encode_cell({ r, c });
+
+    if (data) {
+      ws[cellRef] = {
+        v: data.text.join('\n\n'),
+        t: 's',
+        s: {
+          font: {
+            sz: 10,
+            color: { rgb: "000000" }
+          },
+          alignment: {
+            vertical: "top",
+            horizontal: "left",
+            wrapText: true
+          },
+          ...(data.color && { fill: { fgColor: { rgb: data.color } } })
+        }
+      };
+    }
+  }
+
   ws['!merges'] = merges;
-  ws['!cols'] = weekdays.map(() => ({ wch: 20 }));
+  ws['!cols'] = weekdays.map(() => ({ wch: 25 }));
   ws['!rows'] = Array(7).fill({ hpx: 80 });
+  // Set header row height
+  if (ws['!rows'][0]) ws['!rows'][0].hpx = 20;
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, ws_name);
