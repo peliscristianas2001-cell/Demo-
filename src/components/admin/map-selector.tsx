@@ -8,7 +8,7 @@ import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { MapPin } from 'lucide-react';
+import { LocateFixed, MapPin } from 'lucide-react';
 
 interface MapSelectorProps {
     settings: GeoSettings;
@@ -49,12 +49,21 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
         if (isMarking) {
             map.on('click', handleClick);
+            if (mapContainerRef.current) {
+                mapContainerRef.current.style.cursor = 'crosshair';
+            }
         } else {
             map.off('click', handleClick);
+             if (mapContainerRef.current) {
+                mapContainerRef.current.style.cursor = '';
+            }
         }
 
         return () => {
             map.off('click', handleClick);
+            if (mapContainerRef.current) {
+                mapContainerRef.current.style.cursor = '';
+            }
         };
     }, [isMarking, onSettingsChange, settings]);
 
@@ -65,7 +74,7 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
 
         const position = new LatLng(settings.latitude, settings.longitude);
 
-        map.panTo(position);
+        map.setView(position, map.getZoom());
 
         if (!markerRef.current) {
             markerRef.current = L.marker(position, {
@@ -95,7 +104,6 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         }
     }, [settings]);
 
-
     const handleRadiusChange = (value: number[]) => {
         onSettingsChange({
             ...settings,
@@ -103,13 +111,33 @@ export function MapSelector({ settings, onSettingsChange }: MapSelectorProps) {
         });
     };
 
+    const handleUseMyLocation = () => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                onSettingsChange({
+                    ...settings,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                });
+            },
+            (error) => {
+                console.error("Error getting location: ", error);
+                alert("No se pudo obtener tu ubicación. Asegúrate de tener los permisos activados.");
+            }
+        );
+    };
+
     return (
         <div className="space-y-4">
-            <div ref={mapContainerRef} className={cn("h-96 w-full rounded-lg overflow-hidden border z-0", isMarking && "cursor-crosshair")} />
-            <div className="flex items-center gap-4">
+            <div ref={mapContainerRef} className={cn("h-96 w-full rounded-lg overflow-hidden border z-0")} />
+            <div className="flex flex-wrap items-center gap-4">
                  <Button onClick={() => setIsMarking(!isMarking)} variant={isMarking ? "destructive" : "outline"}>
                     <MapPin className="mr-2 h-4 w-4" />
                     {isMarking ? "Cancelar Marcado" : "Marcar Centro en el Mapa"}
+                </Button>
+                <Button onClick={handleUseMyLocation} variant="outline">
+                    <LocateFixed className="mr-2 h-4 w-4" />
+                    Usar mi ubicación actual
                 </Button>
             </div>
             <div className="space-y-2">

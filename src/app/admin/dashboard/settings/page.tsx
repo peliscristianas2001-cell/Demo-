@@ -459,7 +459,7 @@ export default function SettingsPage() {
 
             <div className="space-y-4 p-4 border rounded-lg">
                 <Label className="text-lg font-medium flex items-center gap-2"><MapPin className="w-5 h-5"/> Zona Geográfica</Label>
-                <p className="text-sm text-muted-foreground">Haz clic en el mapa para definir el centro y ajusta el radio de tu zona de servicio.</p>
+                <p className="text-sm text-muted-foreground">Define el centro y el radio de tu zona de servicio.</p>
                  <MapSelector
                     settings={geoSettings}
                     onSettingsChange={setGeoSettings}

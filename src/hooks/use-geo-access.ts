@@ -43,10 +43,18 @@ export const useGeoAccess = () => {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLon = position.coords.longitude;
+    // Fetch user's location via IP
+    fetch('https://get.geojs.io/v1/ip/geo.json')
+      .then(response => response.json())
+      .then(data => {
+        const userLat = parseFloat(data.latitude);
+        const userLon = parseFloat(data.longitude);
+
+        if (isNaN(userLat) || isNaN(userLon)) {
+          // If IP geolocation fails, deny access as a fallback
+          setStatus("denied");
+          return;
+        }
         
         const distance = getDistanceInKm(
           userLat,
@@ -60,18 +68,12 @@ export const useGeoAccess = () => {
         } else {
           setStatus("denied");
         }
-      },
-      (error) => {
-        // If user denies permission, they are considered "denied"
-        console.warn("Error getting user location:", error.message);
+      })
+      .catch(error => {
+        console.warn("Error getting user location via IP:", error);
+        // Fallback to denying if the service fails
         setStatus("denied");
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
+      });
 
   }, []);
 
