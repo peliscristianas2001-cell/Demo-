@@ -115,19 +115,19 @@ export const useCalendarBubbles = () => {
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.calendar-bubble')) {
-      e.stopPropagation();
+    const bubbleElement = target.closest('.calendar-bubble');
+    if (bubbleElement || !mouseDownRef.current) {
+      if (bubbleElement) e.stopPropagation();
       mouseDownRef.current = false;
       setIsSelecting(false);
       return;
     }
 
-    if (!mouseDownRef.current) return;
     mouseDownRef.current = false;
     
     if (isSelecting && selection.start && selection.end) {
       const start = selection.start < selection.end ? selection.start : selection.end;
-      const end = selection.start < selection.end ? selection.end : selection.start;
+      const end = selection.start > selection.end ? selection.end : selection.start;
       
       const selectedDates = [];
       let currentDate = new Date(start);

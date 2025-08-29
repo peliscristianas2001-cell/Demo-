@@ -27,6 +27,15 @@ import type { Bubble } from "@/hooks/use-calendar-bubbles";
 
 const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
 
+const tailwindToHex: Record<string, { bg: string; border: string }> = {
+  "bg-blue-200 border-blue-400": { bg: "#BFDBFE", border: "#60A5FA" },
+  "bg-green-200 border-green-400": { bg: "#BBF7D0", border: "#4ADE80" },
+  "bg-yellow-200 border-yellow-400": { bg: "#FEF08A", border: "#FACC15" },
+  "bg-red-200 border-red-400": { bg: "#FECACA", border: "#F87171" },
+  "bg-purple-200 border-purple-400": { bg: "#E9D5FF", border: "#A78BFA" },
+  "bg-pink-200 border-pink-400": { bg: "#FBCFE8", border: "#F472B6" },
+};
+
 export function Calendar() {
   const {
     currentDate,
@@ -73,14 +82,7 @@ export function Calendar() {
   const currentYear = currentDate.getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
-  const colors = [
-    "bg-blue-200 border-blue-400",
-    "bg-green-200 border-green-400",
-    "bg-yellow-200 border-yellow-400",
-    "bg-red-200 border-red-400",
-    "bg-purple-200 border-purple-400",
-    "bg-pink-200 border-pink-400",
-  ];
+  const colors = Object.keys(tailwindToHex);
 
   const renderBubble = (bubble: Bubble, dayKey: string, isStartOfWeek: boolean) => {
     const dayOfWeek = new Date(dayKey + "T00:00:00").getDay();
@@ -101,6 +103,8 @@ export function Calendar() {
         break; // The consecutive block ends
       }
     }
+    
+    const printColors = tailwindToHex[bubble.color || colors[0]];
 
     return (
       <div
@@ -109,7 +113,9 @@ export function Calendar() {
         style={{
           height: `${bubble.height || 28}px`,
           gridColumn: `span ${colSpan}`,
-        }}
+          '--bubble-print-bg-color': printColors.bg,
+          '--bubble-print-border-color': printColors.border,
+        } as React.CSSProperties}
         onClick={(e) => {
           e.stopPropagation();
           handleBubbleClick(bubble.id);
@@ -189,7 +195,7 @@ export function Calendar() {
                 </Button>
             )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 no-print">
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir a A4
