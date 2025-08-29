@@ -50,6 +50,8 @@ const defaultReservation = {
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
+  const [passengerPopoverOpen, setPassengerPopoverOpen] = useState(false);
+  const [sellerPopoverOpen, setSellerPopoverOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         paxCount: 1,
         boardingPointId: passenger.boardingPointId,
     }));
+    setPassengerPopoverOpen(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -177,38 +180,49 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         <div className="flex-1 overflow-y-auto pr-6 space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="passenger">Pasajero Principal</Label>
-                 {selectedMainPassenger ? (
-                     <div className="flex items-center justify-between p-2 border rounded-md bg-muted">
-                        <span>{selectedMainPassenger.fullName} (DNI: {selectedMainPassenger.dni})</span>
-                        <Button variant="link" onClick={() => setFormData(prev => ({...prev, mainPassengerId: '', selectedPassengerIds: []}))}>Cambiar</Button>
-                     </div>
-                 ) : (
-                    <Command>
-                        <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
-                        <CommandList>
-                            <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
-                            <CommandGroup>
-                            {availablePassengers.map((passenger) => (
-                                <CommandItem
-                                    key={passenger.id}
-                                    value={`${passenger.fullName} ${passenger.dni}`}
-                                    onSelect={(currentValue) => {
-                                        const selected = availablePassengers.find(p => `${p.fullName} ${p.dni}` === currentValue)
-                                        if (selected) {
-                                            handleMainPassengerSelect(selected.id)
-                                        }
-                                    }}
-                                >
-                                    <div>
-                                        <p>{passenger.fullName}</p>
-                                        <p className="text-xs text-muted-foreground">{passenger.dni}</p>
-                                    </div>
-                                </CommandItem>
-                            ))}
-                            </CommandGroup>
-                        </CommandList>
-                    </Command>
-                 )}
+                <Popover open={passengerPopoverOpen} onOpenChange={setPassengerPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={passengerPopoverOpen}
+                            className="w-full justify-between"
+                        >
+                            {selectedMainPassenger
+                                ? `${selectedMainPassenger.fullName} (DNI: ${selectedMainPassenger.dni})`
+                                : "Seleccionar pasajero..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                        <Command>
+                            <CommandInput placeholder="Buscar pasajero por nombre o DNI..." />
+                            <CommandList>
+                                <CommandEmpty>No se encontró ningún pasajero.</CommandEmpty>
+                                <CommandGroup>
+                                    {availablePassengers.map((passenger) => (
+                                        <CommandItem
+                                            key={passenger.id}
+                                            value={`${passenger.fullName} ${passenger.dni}`}
+                                            onSelect={() => handleMainPassengerSelect(passenger.id)}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    formData.mainPassengerId === passenger.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            <div>
+                                                <p>{passenger.fullName}</p>
+                                                <p className="text-xs text-muted-foreground">{passenger.dni}</p>
+                                            </div>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </div>
             
             {selectedMainPassenger && (
@@ -266,13 +280,56 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="seller">Vendedor/a</Label>
-                            <Select value={formData.sellerId} onValueChange={(val) => handleFormChange('sellerId', val)}>
-                                <SelectTrigger id="seller"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="unassigned">Sin asignar</SelectItem>
-                                    {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={sellerPopoverOpen} onOpenChange={setSellerPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={sellerPopoverOpen}
+                                        className="w-full justify-between"
+                                    >
+                                        {formData.sellerId && formData.sellerId !== 'unassigned'
+                                            ? sellers.find((seller) => seller.id === formData.sellerId)?.name
+                                            : "Seleccionar vendedor..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Buscar vendedor..." />
+                                        <CommandList>
+                                            <CommandEmpty>No se encontró ningún vendedor.</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandItem
+                                                    value="unassigned"
+                                                    onSelect={() => {
+                                                        handleFormChange('sellerId', 'unassigned');
+                                                        setSellerPopoverOpen(false);
+                                                    }}
+                                                >
+                                                     <Check className={cn("mr-2 h-4 w-4", formData.sellerId === 'unassigned' ? "opacity-100" : "opacity-0")}/>
+                                                     Sin asignar
+                                                </CommandItem>
+                                                {sellers.map((seller) => (
+                                                    <CommandItem
+                                                        value={seller.name}
+                                                        key={seller.id}
+                                                        onSelect={() => {
+                                                            handleFormChange('sellerId', seller.id);
+                                                            setSellerPopoverOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn("mr-2 h-4 w-4", formData.sellerId === seller.id ? "opacity-100" : "opacity-0")}
+                                                        />
+                                                        {seller.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="paymentStatus">Estado de Pago</Label>
