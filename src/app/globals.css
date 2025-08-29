@@ -115,7 +115,9 @@ body {
 }
 .calendar-day-cell {
   position: relative;
-  min-height: 120px; /* Ensure enough space for bubbles */
+  min-height: 80px; /* Adjust min-height for landscape */
+  display: flex; /* Use flexbox for vertical alignment */
+  flex-direction: column; /* Stack day number and bubbles vertically */
 }
 .calendar-bubbles-container {
   position: absolute;
@@ -141,13 +143,12 @@ body {
 
 .printable-calendar .calendar-grid {
   display: grid;
-  flex-grow: 1;
+  grid-template-columns: repeat(7, 1fr);
   grid-template-rows: auto repeat(6, 1fr); /* Header row + 6 weeks */
+  flex-grow: 1;
 }
 
 .printable-calendar .calendar-day-cell {
-  display: flex;
-  flex-direction: column;
   border: 1px solid hsl(var(--border));
 }
 
@@ -164,20 +165,34 @@ body {
     margin: 0;
     padding: 0;
   }
-  .no-print, body > *:not(#__next), #__next > *:not(.printable-container) {
+  .no-print, .no-print * {
     display: none !important;
   }
 
-  .printable-container, .printable-calendar {
-    display: block !important;
+  body > *:not(.printable-container) {
+     display: none !important;
+  }
+
+  .printable-container {
+     display: block !important;
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100% !important;
+     height: 100% !important;
+     margin: 0 !important;
+     padding: 0 !important;
+     box-shadow: none !important;
+     border: none !important;
+     background: white !important;
+  }
+
+  .printable-calendar {
     width: 100% !important;
     height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    aspect-ratio: auto !important; /* Remove aspect ratio for printing */
     box-shadow: none !important;
     border: none !important;
-    background: white !important;
-    aspect-ratio: auto !important; /* Remove aspect ratio for printing */
   }
 
   .printable-calendar .calendar-day-cell {
