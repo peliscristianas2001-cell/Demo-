@@ -288,7 +288,7 @@ export default function ReservationsPage() {
     const reservationPassengers = passengers.filter(p => (reservation.passengerIds || []).includes(p.id));
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto pr-2">
         {/* Columna Izquierda: Edición de Datos */}
         <div className="space-y-4">
           <Card>
@@ -491,7 +491,7 @@ export default function ReservationsPage() {
     )}
 
     <Dialog open={editingReservation.isOpen} onOpenChange={(open) => setEditingReservation({ isOpen: open, reservation: open ? editingReservation.reservation : null })}>
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-w-4xl flex flex-col max-h-[90vh]">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="max-w-4xl flex flex-col max-h-[90vh] flex-1">
         <DialogHeader>
           <DialogTitle>Gestionar Reserva</DialogTitle>
           <DialogDescription>
@@ -687,5 +687,6 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
+
 
 
