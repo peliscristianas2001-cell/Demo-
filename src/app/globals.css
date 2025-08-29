@@ -101,52 +101,98 @@ body {
   animation: keyframes-up 0.6s ease-out forwards;
 }
 
-
 /* === CALENDAR STYLES === */
-.calendar-bubble {
-  @apply border text-primary-foreground rounded-md p-1 text-xs cursor-pointer overflow-hidden text-center relative;
-  transition: all 0.2s ease-in-out;
+.printable-calendar {
+  width: 277mm; /* Ancho útil de A4 */
+  height: 190mm; /* Alto útil de A4 */
+  aspect-ratio: 277 / 190;
+  margin: auto; /* Centrar en pantalla */
+  border: 1px solid hsl(var(--border));
+  display: flex;
+  flex-direction: column;
 }
-.calendar-bubble:hover {
-  @apply opacity-80;
+
+.calendar-header-month {
+  height: 10mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: hsl(var(--muted));
+  font-size: 1.5rem;
 }
-.calendar-bubble textarea {
-  @apply bg-transparent border-0 w-full h-full p-0 m-0 resize-none text-center outline-none focus:ring-0;
+
+.calendar-header-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 8mm;
+  background-color: hsl(var(--muted));
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
 }
+
+.calendar-header-days > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  flex-grow: 1;
+  border-top: 1px solid hsl(var(--border));
+}
+
 .calendar-day-cell {
   position: relative;
   display: flex;
-  flex-direction: column; 
-}
-.calendar-bubbles-container {
-  position: absolute;
-  top: 1.75rem; 
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2px;
-  padding: 2px;
-}
-.calendar-grid {
+  flex-direction: column;
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
   user-select: none;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
+}
+.calendar-day-cell:nth-child(7n) { border-right: 0; }
+.calendar-day-cell:nth-child(n+36) { border-bottom: 0; }
+
+.calendar-day-number {
+  padding: 4px;
+}
+
+.calendar-bubbles-container {
+  flex-grow: 1;
+  position: relative;
   overflow: hidden;
 }
 
-.calendar-day-cell {
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
+.calendar-bubble {
+  border: 1px solid;
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  position: absolute; /* Para renderizado de selección múltiple */
 }
-.calendar-day-cell:nth-child(7n) {
-  border-right: 0;
+
+.calendar-bubble:hover {
+  opacity: 0.8;
 }
-.calendar-day-cell:nth-child(n+36) {
-  border-bottom: 0;
+
+.calendar-bubble textarea {
+  background: transparent;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  resize: none;
+  text-align: center;
+  outline: none;
+  box-shadow: none;
+  color: inherit;
 }
 
 
@@ -171,41 +217,23 @@ body {
     top: 0;
     width: 100%;
     height: 100%;
-    padding: 1cm;
+    padding: 10mm; /* Márgenes de impresión */
     box-sizing: border-box;
   }
   
   .printable-calendar {
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    margin: 0;
+    border: none;
   }
 
-  .printable-calendar .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: auto repeat(6, 1fr);
-    flex-grow: 1; 
-  }
-
-  .printable-calendar .calendar-day-cell {
-    border: 1px solid hsl(var(--border));
+  .calendar-bubble {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .no-print {
     display: none !important;
-  }
-  
-  .printable-calendar .calendar-bubble {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    background-color: var(--bubble-print-bg-color, #e0e7ff) !important;
-    border: 1px solid var(--bubble-print-border-color, #a5b4fc) !important;
-    color: #1e293b !important;
-  }
-  
-  .printable-calendar .calendar-bubble textarea {
-    color: #1e293b !important;
   }
 }

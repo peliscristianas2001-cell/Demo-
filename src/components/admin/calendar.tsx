@@ -85,7 +85,6 @@ export function Calendar() {
   const renderBubble = (bubble: Bubble, dayKey: string, isStartOfWeek: boolean) => {
     let colSpan = 1;
 
-    // Only render the bubble starting from the first day it appears in the week.
     if (!isStartOfWeek) {
         return null;
     }
@@ -97,7 +96,7 @@ export function Calendar() {
       if (bubble.dates.includes(nextDayKey)) {
         colSpan++;
       } else {
-        break; // The consecutive block ends
+        break; 
       }
     }
     
@@ -113,7 +112,7 @@ export function Calendar() {
           '--bubble-print-bg-color': printColors.bg,
           '--bubble-print-border-color': printColors.border,
         } as React.CSSProperties}
-        onMouseDown={(e) => e.stopPropagation()} // Prevent day click from firing when interacting with bubble
+        onMouseDown={(e) => e.stopPropagation()} 
       >
         <textarea
           value={bubble.text}
@@ -148,7 +147,6 @@ export function Calendar() {
       </div>
     );
   };
-
 
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm">
@@ -191,7 +189,7 @@ export function Calendar() {
         <div className="flex items-center gap-2 no-print">
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
-            Imprimir a A4
+            Imprimir
           </Button>
           <Button variant="outline" onClick={handleExport}>
             <FileDown className="mr-2 h-4 w-4" />
@@ -201,13 +199,17 @@ export function Calendar() {
       </div>
 
       <div className="printable-calendar">
-        <div className="calendar-grid">
+         <div className="calendar-header-month text-center font-bold">
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </div>
+        <div className="calendar-header-days">
             {weekdays.map((day) => (
-            <div key={day} className="text-center font-bold py-2 bg-muted">
+            <div key={day} className="text-center font-bold">
                 {day}
             </div>
             ))}
-
+        </div>
+        <div className="calendar-grid">
             {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
                 const dayKey = date.toISOString().split("T")[0];
                 const dayOfWeek = date.getDay();
@@ -224,14 +226,13 @@ export function Calendar() {
                     onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
                     className={cn(
                     "calendar-day-cell",
-                    "h-24", // Restore fixed height for web view
                     !isCurrentMonth && "bg-muted/50 text-muted-foreground",
                     selectionInfo?.isSelecting && !multiSelectMode && "bg-primary/20",
                     isSelectedForMulti && multiSelectMode && "bg-primary/30 ring-2 ring-primary inset-0",
                     multiSelectMode && "cursor-pointer"
                     )}
                 >
-                    <div className="p-1 flex justify-start items-start">
+                    <div className="calendar-day-number">
                         <span
                         className={cn(
                             "flex items-center justify-center w-6 h-6 rounded-full text-sm",
