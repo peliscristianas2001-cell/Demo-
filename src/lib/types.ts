@@ -1,3 +1,4 @@
+
 import type { Layout, Cell } from './layouts';
 
 export type LayoutCategory = 'vehicles' | 'airplanes' | 'cruises';
@@ -26,6 +27,13 @@ export interface ExtraCost {
     id: string;
     description: string;
     amount: number;
+}
+
+export interface CustomExpense {
+    id: string;
+    description: string;
+    amount: number;
+    date: Date;
 }
 
 export interface TourCosts {
@@ -195,3 +203,4 @@ export interface CommissionRule {
 export interface CommissionSettings {
     rules: CommissionRule[];
 }
+
