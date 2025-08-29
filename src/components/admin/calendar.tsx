@@ -23,6 +23,7 @@ import { exportToExcel } from "@/lib/excel-export";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
+import type { Bubble } from "@/hooks/use-calendar-bubbles";
 
 const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
 
@@ -81,6 +82,89 @@ export function Calendar() {
     "bg-pink-200 border-pink-400",
   ];
 
+  const renderBubble = (bubble: Bubble, dayKey: string) => {
+    let showBubble = false;
+    let colSpan = 1;
+
+    if (bubble.isMultiSelect) {
+      if (!bubble.multiSelectDates?.includes(dayKey)) return null;
+      
+      const dayIndexInWeek = new Date(dayKey).getDay();
+      if (dayIndexInWeek === 0 || !bubble.multiSelectDates.includes(days.find(d => d.date.toISOString().split('T')[0] === dayKey)!.date.toISOString().split('T')[0])) {
+         // It's the start of a week or the first day in selection for this week
+         showBubble = true;
+         let currentDay = new Date(dayKey);
+         while(currentDay.getDay() < 6) {
+            currentDay.setDate(currentDay.getDate() + 1);
+            const nextDayKey = currentDay.toISOString().split('T')[0];
+            if (bubble.multiSelectDates.includes(nextDayKey)) {
+                colSpan++;
+            } else {
+                break;
+            }
+         }
+      }
+    } else { // Drag-select bubble
+      const bubbleStartDate = new Date(bubble.startDate + "T00:00:00");
+      const dayDate = new Date(dayKey + "T00:00:00");
+      if (dayDate.getTime() === bubbleStartDate.getTime()) {
+          showBubble = true;
+          const bubbleEndDate = new Date(bubble.endDate + "T00:00:00");
+          colSpan = (bubbleEndDate.getTime() - bubbleStartDate.getTime()) / (1000 * 3600 * 24) + 1;
+      }
+    }
+
+    if (!showBubble) return null;
+
+    return (
+      <div
+        key={bubble.id}
+        className={cn("calendar-bubble relative group z-10", bubble.color)}
+        style={{
+          height: `${bubble.height || 28}px`,
+          gridColumn: `span ${colSpan}`,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleBubbleClick(bubble.id);
+        }}
+      >
+        <textarea
+          value={bubble.text}
+          onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          className="text-black"
+          placeholder="Escribe aquí..."
+        />
+        <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
+                <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+              <div className="flex gap-1">
+                {colors.map(color => (
+                  <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
+                    <div className={cn("w-4 h-4 rounded-full", color)}></div>
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
+            <Expand className="w-3 h-3"/>
+          </Button>
+          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
+            <Trash2 className="w-3 h-3"/>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm printable-calendar">
       <div className="flex justify-between items-center mb-4 no-print">
@@ -133,10 +217,6 @@ export function Calendar() {
 
       <div
         className="grid grid-cols-7 gap-px bg-border calendar-grid"
-        onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
-        onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
-        onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
-        onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
       >
         {weekdays.map((day) => (
           <div key={day} className="text-center font-bold py-2 bg-muted">
@@ -151,6 +231,10 @@ export function Calendar() {
               <div
                 key={dayKey}
                 data-date={dayKey}
+                onMouseDown={!multiSelectMode ? handleMouseDown : undefined}
+                onMouseMove={!multiSelectMode ? handleMouseMove : undefined}
+                onMouseUp={!multiSelectMode ? handleMouseUp : undefined}
+                onMouseLeave={isSelecting && !multiSelectMode ? handleMouseUp : undefined}
                 onClick={multiSelectMode ? () => handleMultiSelectDayClick(dayKey) : undefined}
                 className={cn(
                   "calendar-day-cell bg-card p-1",
@@ -168,72 +252,8 @@ export function Calendar() {
                 >
                   {date.getDate()}
                 </span>
-                <div className="calendar-bubbles-container">
-                  {(dayBubbles || []).map((bubble) => {
-                     const isMultiDayStart = bubble.startDate !== bubble.endDate && bubble.startDate === dayKey;
-                     const isSingleDayInMulti = bubble.isMultiSelect && bubble.multiSelectDates?.includes(dayKey);
-
-                     // Render logic for bubbles
-                     if (isMultiDayStart || (isSingleDayInMulti && bubble.multiSelectDates?.[0] === dayKey) || (!bubble.isMultiSelect && !isMultiDayStart)) {
-                         const colSpan = isMultiDayStart && !bubble.isMultiSelect ? (new Date(bubble.endDate).getTime() - new Date(bubble.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1 : 1;
-                        
-                        return (
-                            <div
-                                key={bubble.id}
-                                className={cn("calendar-bubble relative group z-10", bubble.color)}
-                                style={{
-                                    height: `${bubble.height || 28}px`,
-                                    width: !bubble.isMultiSelect && isMultiDayStart ? `calc(${colSpan * 100}% + ${(colSpan - 1)}px)` : '100%',
-                                }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleBubbleClick(bubble.id);
-                                }}
-                            >
-                                <textarea
-                                value={bubble.text}
-                                onChange={(e) =>
-                                    handleBubbleChange(bubble.id, e.target.value)
-                                }
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-black"
-                                placeholder="Escribe aquí..."
-                                />
-                                <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
-                                            <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-2">
-                                        <div className="flex gap-1">
-                                        {colors.map(color => (
-                                            <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
-                                                <div className={cn("w-4 h-4 rounded-full", color)}></div>
-                                            </Button>
-                                        ))}
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
-                                        <Expand className="w-3 h-3"/>
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
-                                        <Trash2 className="w-3 h-3"/>
-                                    </Button>
-                                </div>
-                            </div>
-                        );
-                     } else if (isSingleDayInMulti) { // Render subsequent days of a multi-select bubble
-                         return (
-                            <div key={`${bubble.id}-${dayKey}`} className={cn("calendar-bubble h-full", bubble.color)}>
-                                {/* Visual continuation without text/controls */}
-                            </div>
-                         )
-                     }
-                     return null;
-                  })}
+                <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
+                   {dayBubbles.map((bubble) => renderBubble(bubble, dayKey))}
                 </div>
               </div>
             );

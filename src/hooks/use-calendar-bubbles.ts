@@ -5,13 +5,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 export interface Bubble {
   id: string;
-  startDate: string;
-  endDate: string;
+  startDate: string; // The very first day of the bubble
+  endDate: string; // The very last day of the bubble
   text: string;
   height?: number;
   color?: string;
   isMultiSelect?: boolean;
-  multiSelectDates?: string[];
+  multiSelectDates?: string[]; // All dates covered by this bubble
 }
 
 export const useCalendarBubbles = () => {
@@ -52,9 +52,11 @@ export const useCalendarBubbles = () => {
   while (days.length < 42) {
     const dateStr = currentDatePointer.toISOString().split("T")[0];
     const dayBubbles = bubbles.filter(bubble => {
-        if (bubble.isMultiSelect && bubble.multiSelectDates) {
-            return bubble.multiSelectDates.includes(dateStr);
+        const dates = bubble.multiSelectDates || [];
+        if (dates.length > 0) {
+            return dates.includes(dateStr);
         }
+        // Fallback for older drag-select bubbles
         const bubbleStart = new Date(bubble.startDate + "T00:00:00");
         const bubbleEnd = new Date(bubble.endDate + "T00:00:00");
         const currentDay = new Date(dateStr + "T00:00:00");
@@ -85,8 +87,8 @@ export const useCalendarBubbles = () => {
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    // Prevent starting selection if clicking on a bubble or its controls
     if (target.closest('.calendar-bubble')) {
+      e.stopPropagation();
       return;
     }
     const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
@@ -108,7 +110,15 @@ export const useCalendarBubbles = () => {
       }
     }, [isSelecting, selection.start]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.calendar-bubble')) {
+      e.stopPropagation();
+      mouseDownRef.current = false;
+      setIsSelecting(false);
+      return;
+    }
+
     if (!mouseDownRef.current) return;
     mouseDownRef.current = false;
     
@@ -116,16 +126,22 @@ export const useCalendarBubbles = () => {
       const start = selection.start < selection.end ? selection.start : selection.end;
       const end = selection.start < selection.end ? selection.end : selection.start;
       
-      const startStr = start.toISOString().split("T")[0];
-      const endStr = end.toISOString().split("T")[0];
-      
+      const selectedDates = [];
+      let currentDate = new Date(start);
+      while(currentDate <= end) {
+        selectedDates.push(currentDate.toISOString().split("T")[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
       const newBubble: Bubble = {
         id: `bubble-${Date.now()}`,
-        startDate: startStr,
-        endDate: endStr,
+        startDate: start.toISOString().split("T")[0],
+        endDate: end.toISOString().split("T")[0],
         text: "",
         height: 28,
-        color: "bg-blue-200 border-blue-400"
+        color: "bg-blue-200 border-blue-400",
+        isMultiSelect: false,
+        multiSelectDates: selectedDates,
       };
       setBubbles((prev) => [...prev, newBubble]);
     }
@@ -134,7 +150,7 @@ export const useCalendarBubbles = () => {
     setSelection({ start: null, end: null });
   }, [isSelecting, selection]);
 
-  const handleDayClick = useCallback(() => {}, []); // Placeholder, logic is now in up/down
+  const handleDayClick = useCallback(() => {}, []);
 
   const handleBubbleChange = useCallback((id: string, text: string) => {
     setBubbles((prev) =>
@@ -162,7 +178,6 @@ export const useCalendarBubbles = () => {
     setBubbles(prev => prev.map(b => b.id === id ? { ...b, color } : b));
   }, []);
 
-  // --- New Multi-Select Logic ---
   const handleMultiSelectDayClick = (dayStr: string) => {
       setMultiSelectedDays(prev => {
           if (prev.includes(dayStr)) {
@@ -176,7 +191,7 @@ export const useCalendarBubbles = () => {
   const createBubbleFromMultiSelect = () => {
     if (multiSelectedDays.length === 0) return;
 
-    const sortedDates = [...multiSelectedDays].sort();
+    const sortedDates = [...multiSelectedDays].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     
     const newBubble: Bubble = {
         id: `bubble-${Date.now()}`,
@@ -190,7 +205,7 @@ export const useCalendarBubbles = () => {
     };
 
     setBubbles(prev => [...prev, newBubble]);
-    setMultiSelectedDays([]); // Clear selection after creating bubble
+    setMultiSelectedDays([]);
   };
 
 
