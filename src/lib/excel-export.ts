@@ -59,18 +59,16 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
       const prevDate = index > 0 ? new Date(dates[index - 1] + "T00:00:00") : null;
       const isConsecutiveInWeek = prevDate && (date.getTime() - prevDate.getTime() === 86400000) && date.getDay() !== 0;
 
-      if (isConsecutiveInWeek) {
-        if (currentMerge) {
-          const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
-          currentMerge.e.c = dayDiff % 7;
-        }
+      const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
+      const r = Math.floor(dayDiff / 7) + 1;
+      const c = dayDiff % 7;
+
+      if (isConsecutiveInWeek && currentMerge) {
+          currentMerge.e.c = c;
       } else {
         if (currentMerge) {
           merges.push(currentMerge);
         }
-        const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
-        const r = Math.floor(dayDiff / 7) + 1;
-        const c = dayDiff % 7;
         currentMerge = { s: { r, c }, e: { r, c } };
       }
     });
