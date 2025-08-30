@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { Ticket as TicketType, Tour, Seller, BoardingPoint, Pension } from "@/lib/types"
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 import { 
     Users, MapPin, CalendarDays, BedDouble, Utensils, Bus, Clock, Armchair, 
-    FileText, Info, AlertTriangle, UserSquare, UserCircle, Building, TicketIcon
+    FileText, Info, AlertTriangle, UserSquare, UserCircle, Building, TicketIcon, Loader2
 } from "lucide-react"
 
 interface TravelTicketProps {
@@ -42,7 +42,9 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint, pension }, ref) => {
   const reservation = ticket.reservation;
-  const passengerNameDisplay = `${reservation.passenger} (x${reservation.paxCount})`;
+  const [isQrLoading, setIsQrLoading] = useState(true);
+
+  const qrProxyUrl = `/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`;
 
   const assignedLocations = [
     ...(reservation.assignedSeats || []).map(s => s.seatId),
@@ -53,8 +55,6 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
     ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${reservation.roomType || 'No especificada'}`
     : "Solo ida";
     
-  const qrProxyUrl = `/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`;
-
   return (
     <div ref={ref} className={cn(
       "bg-slate-100 text-black rounded-lg overflow-hidden shadow-2xl border",
@@ -123,7 +123,18 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                      <p>{tour.observations || "Obligatorio llevar D.N.I."}</p>
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
-                    <img src={qrProxyUrl} alt={`QR Code for ${ticket.passengerName}`} width={150} height={150} />
+                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md" data-qr-container>
+                        {isQrLoading && <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />}
+                        <img 
+                            src={qrProxyUrl} 
+                            alt={`QR Code for ${ticket.passengerName}`} 
+                            width={150} 
+                            height={150}
+                            className={cn(isQrLoading && "hidden")}
+                            onLoad={() => setIsQrLoading(false)}
+                            onError={() => setIsQrLoading(false)} // Handle error case
+                        />
+                    </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
                     <p>¡PUNTUALIDAD CON LOS HORARIOS!</p>

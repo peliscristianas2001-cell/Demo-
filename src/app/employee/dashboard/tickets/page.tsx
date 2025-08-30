@@ -149,6 +149,19 @@ export default function EmployeeTicketsPage() {
     const ticketElement = ticketRefs[ticketId].current;
     if (!ticketElement) return;
 
+    // Check if the QR code image is still loading
+    const qrContainer = ticketElement.querySelector('[data-qr-container]');
+    const isLoading = qrContainer ? qrContainer.querySelector('.animate-spin') !== null : true;
+
+    if (isLoading) {
+        toast({
+            title: "Cargando código QR",
+            description: "Por favor, espera un momento a que el código QR se cargue y vuelve a intentarlo.",
+            variant: "default",
+        });
+        return;
+    }
+
     try {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
@@ -167,7 +180,7 @@ export default function EmployeeTicketsPage() {
       console.error("Error al generar el PDF del ticket:", error);
       toast({
         title: "Error al Descargar",
-        description: "No se pudo generar el PDF. Puede ser un problema con la carga de imágenes externas. Inténtalo de nuevo.",
+        description: "No se pudo generar el PDF. Asegúrate de que tu conexión a internet está activa y vuelve a intentarlo.",
         variant: "destructive"
       });
     }
