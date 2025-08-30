@@ -25,9 +25,7 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
   const startDateGrid = new Date(firstDayOfMonth);
   startDateGrid.setDate(startDateGrid.getDate() - startDateGrid.getDay());
 
-  const merges: XLSX.Range[] = [];
   const cellData: Record<string, { text: string[], colors: string[] }> = {};
-
   const borderStyle = { style: 'thin', color: { rgb: "000000" } };
   const cellBorders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
 
@@ -67,7 +65,7 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
     const cellRef = XLSX.utils.encode_cell({ r, c });
 
     if (data) {
-      const mainColor = data.colors[0]; // For simplicity, we use the color of the first bubble
+      const mainColor = data.colors[0]; 
       ws[cellRef] = {
         v: data.text.join('\n'),
         t: 's',

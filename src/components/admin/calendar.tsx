@@ -115,65 +115,64 @@ export function Calendar() {
     if (!days || days.length === 0) return segments;
 
     const gridStartDate = new Date(days[0].date);
-    const dayTracks: Record<string, number> = {};
+    const dayTracks: Record<string, number[]> = {};
 
     bubbles.forEach(bubble => {
       const sortedDates = bubble.dates.map(d => new Date(d + 'T00:00:00')).sort((a, b) => a.getTime() - b.getTime());
       if (sortedDates.length === 0) return;
 
-      let currentSegment: Date[] = [];
       let isFirstSegment = true;
+      let currentSegment: Date[] = [];
+      
+      const commitSegment = () => {
+          if (currentSegment.length === 0) return;
+
+          const segmentStartDate = currentSegment[0];
+          const segmentStartDateStr = segmentStartDate.toISOString().split('T')[0];
+
+          if (!dayTracks[segmentStartDateStr]) dayTracks[segmentStartDateStr] = [];
+
+          let track = 1;
+          while (dayTracks[segmentStartDateStr].includes(track)) {
+              track++;
+          }
+          
+          dayTracks[segmentStartDateStr].push(track);
+          currentSegment.slice(1).forEach(d => {
+              const dStr = d.toISOString().split('T')[0];
+              if (!dayTracks[dStr]) dayTracks[dStr] = [];
+              dayTracks[dStr].push(track);
+          });
+          
+          const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
+          const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+          const row = Math.floor(dayDiff / 7);
+          const startCol = segmentStartDate.getDay();
+          
+          segments.push({
+            bubble,
+            startCol: startCol + 1,
+            colSpan: currentSegment.length,
+            row: row + 1,
+            isFirstSegment,
+            track
+          });
+          if (isFirstSegment) isFirstSegment = false;
+      }
+
 
       for (let i = 0; i < sortedDates.length; i++) {
         const date = sortedDates[i];
         const prevDate = i > 0 ? sortedDates[i - 1] : null;
 
-        if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
-          if (currentSegment.length > 0) {
-            const segmentStartDate = currentSegment[0];
-            const track = (dayTracks[segmentStartDate.toISOString().split('T')[0]] || 0) + 1;
-            currentSegment.forEach(d => dayTracks[d.toISOString().split('T')[0]] = (dayTracks[d.toISOString().split('T')[0]] || 0) + 1);
-
-            const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
-            const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-            const row = Math.floor(dayDiff / 7);
-            const startCol = segmentStartDate.getDay();
-            
-            segments.push({
-              bubble,
-              startCol: startCol + 1,
-              colSpan: currentSegment.length,
-              row: row + 1,
-              isFirstSegment,
-              track
-            });
-            if (isFirstSegment) isFirstSegment = false;
-          }
-          currentSegment = [date];
-        } else {
+        if (prevDate && (date.getTime() - prevDate.getTime() <= 86400000) && date.getDay() !== 0) {
           currentSegment.push(date);
+        } else {
+          commitSegment();
+          currentSegment = [date];
         }
       }
-      
-      if (currentSegment.length > 0) {
-        const segmentStartDate = currentSegment[0];
-        const track = (dayTracks[segmentStartDate.toISOString().split('T')[0]] || 0) + 1;
-        currentSegment.forEach(d => dayTracks[d.toISOString().split('T')[0]] = (dayTracks[d.toISOString().split('T')[0]] || 0) + 1);
-        
-        const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
-        const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        const row = Math.floor(dayDiff / 7);
-        const startCol = segmentStartDate.getDay();
-
-        segments.push({
-          bubble,
-          startCol: startCol + 1,
-          colSpan: currentSegment.length,
-          row: row + 1,
-          isFirstSegment,
-          track
-        });
-      }
+      commitSegment();
     });
 
     return segments;
