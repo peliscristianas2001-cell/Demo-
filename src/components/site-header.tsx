@@ -42,25 +42,25 @@ export function SiteHeader() {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="left" className="w-[300px] sm:w-[400px] flex flex-col p-0">
               <SheetHeader className="p-6">
                 <SheetTitle className="sr-only">Menú Principal</SheetTitle>
                  <Logo />
               </SheetHeader>
-              <div className="flex flex-col h-full">
-                <nav className="flex flex-col gap-4 p-6 text-lg font-medium">
+              <div className="flex flex-col h-full flex-1 overflow-hidden">
+                <nav className="flex-1 overflow-y-auto p-6 text-lg font-medium space-y-4">
                   {navLinks.map(({ href, label }) => (
                     <Link
                       key={label}
                       href={href}
-                      className="transition-colors text-foreground hover:text-primary"
+                      className="block transition-colors text-foreground hover:text-primary"
                       prefetch={false}
                     >
                       {label}
                     </Link>
                   ))}
                 </nav>
-                <div className="p-6 mt-auto space-y-4">
+                <div className="p-6 mt-auto space-y-4 border-t">
                     <Button asChild className="w-full" variant="outline">
                       <Link href="/login">
                         <LogInIcon className="w-4 h-4 mr-2" />

@@ -69,46 +69,48 @@ export default function EmployeeDashboardLayout({
     <SidebarProvider>
       <div className="flex min-h-screen">
         <Sidebar>
-          <SidebarContent className="bg-card">
+          <SidebarContent className="bg-card flex flex-col">
             <SidebarHeader>
               <Logo />
             </SidebarHeader>
-            <SidebarMenu>
-               <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Crear Nueva Reserva"
-                  >
-                    <Link href="/tours">
-                      <Plane />
-                      <span>Nueva Venta</span>
-                    </Link>
+            <div className="flex-1 overflow-y-auto">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Crear Nueva Reserva"
+                    >
+                      <Link href="/tours">
+                        <Plane />
+                        <span>Nueva Venta</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
+            <SidebarFooter className="mt-auto">
+              <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
+                      <LogOut />
+                      <span>Cerrar Sesión</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            </SidebarFooter>
           </SidebarContent>
-          <SidebarFooter>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
-                    <LogOut />
-                    <span>Cerrar Sesión</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-          </SidebarFooter>
         </Sidebar>
         <SidebarInset>
             <header className="flex items-center justify-between h-16 px-6 border-b bg-card">

@@ -59,59 +59,61 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="flex min-h-screen">
         <Sidebar>
-          <SidebarContent className="bg-card">
+          <SidebarContent className="bg-card flex flex-col">
             <SidebarHeader>
               <Logo />
             </SidebarHeader>
-            <SidebarMenu>
-               <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Crear Nueva Reserva"
-                  >
-                    <Link href="/tours">
-                      <Plane />
-                      <span>Nueva Venta</span>
+            <div className="flex-1 overflow-y-auto">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Crear Nueva Reserva"
+                    >
+                      <Link href="/tours">
+                        <Plane />
+                        <span>Nueva Venta</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Ver Sitio Web"
+                    >
+                      <Link href="/" target="_blank">
+                        <Globe />
+                        <span>Ver Sitio Web</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
+            <SidebarFooter className="mt-auto">
+              <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Salir del Panel">
+                    <Link href="/">
+                      <LogOut />
+                      <span>Salir del Panel</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Ver Sitio Web"
-                  >
-                    <Link href="/" target="_blank">
-                      <Globe />
-                      <span>Ver Sitio Web</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            </SidebarFooter>
           </SidebarContent>
-          <SidebarFooter>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Salir del Panel">
-                  <Link href="/">
-                    <LogOut />
-                    <span>Salir del Panel</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-          </SidebarFooter>
         </Sidebar>
         <div className="flex-1">
           <SidebarInset>
