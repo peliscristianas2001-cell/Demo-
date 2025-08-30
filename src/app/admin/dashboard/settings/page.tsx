@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
@@ -30,7 +30,7 @@ export default function SettingsPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
-    const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "" });
+    const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "", calendarDownloadFolder: "Calendarios YO-TE-LLEVO", reportDownloadFolder: "Reportes Gen. YO-TE-LLEVO" });
     const [contactSettings, setContactSettings] = useState<ContactSettings>({});
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
@@ -112,6 +112,10 @@ export default function SettingsPage() {
                 variant: "destructive"
             })
         }
+    }
+
+    const handleGeneralSettingsChange = (field: keyof GeneralSettings, value: string) => {
+        setGeneralSettings(prev => ({ ...prev, [field]: value }));
     }
 
     const handleGeneralSettingsSave = () => {
@@ -311,10 +315,21 @@ export default function SettingsPage() {
                         type="tel"
                         placeholder="Ej: 5491122334455"
                         value={generalSettings.mainWhatsappNumber || ''}
-                        onChange={(e) => setGeneralSettings(prev => ({...prev, mainWhatsappNumber: e.target.value}))}
+                        onChange={(e) => handleGeneralSettingsChange('mainWhatsappNumber', e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">Este número se usará si un vendedor no tiene uno asignado.</p>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="calendar-folder" className="flex items-center gap-2"><Folder/> Nombre Carpeta Calendarios</Label>
+                        <Input id="calendar-folder" value={generalSettings.calendarDownloadFolder} onChange={(e) => handleGeneralSettingsChange('calendarDownloadFolder', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="report-folder" className="flex items-center gap-2"><Folder/> Nombre Carpeta Reportes</Label>
+                        <Input id="report-folder" value={generalSettings.reportDownloadFolder} onChange={(e) => handleGeneralSettingsChange('reportDownloadFolder', e.target.value)} />
+                    </div>
+                </div>
+
                 <Button onClick={handleGeneralSettingsSave}>
                     <Save className="mr-2 h-4 w-4" />
                     Guardar Ajustes
@@ -517,4 +532,3 @@ export default function SettingsPage() {
     </>
   )
 }
-

@@ -33,13 +33,14 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
-import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome } from "@/lib/types"
+import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome, HistoryItem } from "@/lib/types"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { HistoryViewer } from "@/components/admin/history-viewer"
 
 type CommissionDetail = {
     sellerId: string;
@@ -72,6 +73,9 @@ export default function ReportsPage() {
     const [commissionModalData, setCommissionModalData] = useState<{ tour: Tour, details: CommissionDetail[] } | null>(null);
     const [newItem, setNewItem] = useState({ description: "", amount: "" });
     const { toast } = useToast();
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [hasDueItems, setHasDueItems] = useState(false);
+
 
     useEffect(() => {
         setIsClient(true)
@@ -88,6 +92,58 @@ export default function ReportsPage() {
         setCustomExpenses(storedCustomExpenses ? JSON.parse(storedCustomExpenses) : [])
         setExternalCommissions(storedExternalCommissions ? JSON.parse(storedExternalCommissions) : []);
         setExcursionIncomes(storedExcursionIncomes ? JSON.parse(storedExcursionIncomes) : []);
+
+        // Archiving logic
+        const now = new Date();
+        const activeTours = storedTours ? JSON.parse(storedTours) : mockTours;
+        const pastTours = activeTours.filter((t: Tour) => new Date(t.date) < now);
+        
+        if (pastTours.length > 0) {
+            const reportHistory: HistoryItem[] = JSON.parse(localStorage.getItem("ytl_report_history") || "[]");
+            const newHistoryItems: HistoryItem[] = [];
+
+            pastTours.forEach((tour: Tour) => {
+                if (!reportHistory.some(h => h.id === tour.id)) {
+                    // This tour hasn't been archived yet, create a report for it
+                    const tripReservations = reservations.filter(res => res.tripId === tour.id && res.status === 'Confirmado');
+                    const totalIncome = tripReservations.reduce((sum, res) => sum + res.finalPrice, 0);
+                    const tourCosts = tour.costs || {};
+                    const transportCost = tourCosts.transport || 0;
+                    const hotelCost = tourCosts.hotel || 0;
+                    const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
+                    const totalFixedCosts = transportCost + hotelCost + extrasCost;
+
+                    const report: ReportData = {
+                        tour: tour,
+                        totalIncome: totalIncome,
+                        totalCommission: 0, // Simplified for history
+                        commissionDetails: [],
+                        totalFixedCosts: totalFixedCosts,
+                        netProfit: totalIncome - totalFixedCosts,
+                        reservationCount: tripReservations.length,
+                    };
+                    
+                    newHistoryItems.push({
+                        id: tour.id,
+                        name: `${tour.destination} - ${new Date(tour.date).toLocaleDateString()}`,
+                        data: report,
+                        savedAt: new Date().toISOString(),
+                    });
+                }
+            });
+
+            if (newHistoryItems.length > 0) {
+                const updatedHistory = [...reportHistory, ...newHistoryItems];
+                localStorage.setItem("ytl_report_history", JSON.stringify(updatedHistory));
+                // Remove archived tours from active list
+                const remainingTours = activeTours.filter((t: Tour) => new Date(t.date) >= now);
+                localStorage.setItem("ytl_tours", JSON.stringify(remainingTours));
+                setTours(remainingTours);
+                window.dispatchEvent(new Event('storage'));
+                toast({ title: `${newHistoryItems.length} reporte(s) archivado(s).`, description: "Los viajes pasados se han movido al historial." });
+            }
+        }
+
     }, [])
     
      useEffect(() => {
@@ -316,10 +372,24 @@ export default function ReportsPage() {
             </DialogContent>
         </Dialog>
 
+        <HistoryViewer
+            isOpen={isHistoryOpen}
+            onOpenChange={setIsHistoryOpen}
+            historyKey="ytl_report_history"
+            title="Historial de Reportes"
+            itemTitleKey="name"
+            downloadFolderNameKey="reportDownloadFolder"
+            setHasDueItems={setHasDueItems}
+        />
 
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div><h2 className="text-2xl font-bold">Reportes Financieros</h2><p className="text-muted-foreground">Analiza los ingresos, gastos y ganancias de cada viaje activo.</p></div>
+                 <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
+                    {hasDueItems && <AlertCircle className="mr-2 h-4 w-4 text-destructive" />}
+                    <BookMarked className="mr-2 h-4 w-4" />
+                    Historial de Reportes
+                </Button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                  <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('expenses')}>
@@ -385,5 +455,6 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
+
 
 

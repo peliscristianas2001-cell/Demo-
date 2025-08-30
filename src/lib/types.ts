@@ -74,6 +74,8 @@ export interface ContactSettings {
 export interface GeneralSettings {
     mainWhatsappNumber?: string;
     contact?: ContactSettings;
+    calendarDownloadFolder?: string;
+    reportDownloadFolder?: string;
 }
 
 export interface GeoSettings {
@@ -234,4 +236,12 @@ export interface CommissionRule {
 
 export interface CommissionSettings {
     rules: CommissionRule[];
+}
+
+// --- History & Archiving Types ---
+export interface HistoryItem {
+  id: string; // Can be tour id for reports, or a custom id for calendars
+  name: string; // Display name, e.g., "Bariloche - 15/08/2025" or "Calendario 2025"
+  data: any; // The actual data, e.g., ReportData or Bubble[]
+  savedAt: string; // ISO date string
 }
