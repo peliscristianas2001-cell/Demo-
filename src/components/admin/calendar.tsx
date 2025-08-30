@@ -108,88 +108,88 @@ export function Calendar() {
 
   const colors = Object.keys(tailwindToHex);
 
-  const renderBubble = (bubble: Bubble, dayKey: string) => {
-      const date = new Date(dayKey + 'T00:00:00');
-      const dayOfWeek = date.getDay();
-
-      const weekStartDate = new Date(date);
-      weekStartDate.setDate(date.getDate() - dayOfWeek);
-
+  const renderBubblesForDay = (dayKey: string) => {
+    return bubbles.map((bubble) => {
+      // Find segments of the bubble that start on this day
       const segments = [];
       let currentSegment: string[] = [];
 
-      for (let i = 0; i < 7; i++) {
-          const d = new Date(weekStartDate);
-          d.setDate(weekStartDate.getDate() + i);
-          const dStr = d.toISOString().split('T')[0];
+      bubble.dates.forEach((d, i) => {
+        const date = new Date(d + 'T00:00:00');
+        const prevDate = i > 0 ? new Date(bubble.dates[i - 1] + 'T00:00:00') : null;
 
-          if (bubble.dates.includes(dStr)) {
-              currentSegment.push(dStr);
-          } else {
-              if (currentSegment.length > 0) {
-                  segments.push(currentSegment);
-                  currentSegment = [];
-              }
+        // Start a new segment if it's the first date, not consecutive, or starts a new week
+        if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
+          if (currentSegment.length > 0) {
+            segments.push(currentSegment);
           }
-      }
+          currentSegment = [d];
+        } else {
+          currentSegment.push(d);
+        }
+      });
       if (currentSegment.length > 0) {
-          segments.push(currentSegment);
+        segments.push(currentSegment);
       }
 
       return segments.map((segment, index) => {
-          if (segment[0] !== dayKey) return null;
-          
-          const isStartOfBubble = segment[0] === bubble.dates[0];
+        // Only render the segment if it starts on the current day
+        if (segment[0] !== dayKey) {
+          return null;
+        }
 
-          return (
-              <div
-                  key={`${bubble.id}-${dayKey}-${index}`}
-                  className={cn("calendar-bubble relative group z-10", bubble.color)}
-                  style={{
-                      height: `${bubble.height || 28}px`,
-                      gridColumn: `span ${segment.length}`,
-                  } as React.CSSProperties}
-                  onMouseDown={(e) => e.stopPropagation()}
-              >
-                  {isStartOfBubble && (
-                    <>
-                      <textarea
-                          value={bubble.text}
-                          onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
-                          className="text-black"
-                          placeholder="Escribe aquí..."
-                      />
-                      <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
-                          <Popover>
-                              <PopoverTrigger asChild>
-                                  <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
-                                      <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
-                                  </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-2">
-                                  <div className="flex gap-1">
-                                      {colors.map(color => (
-                                          <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
-                                              <div className={cn("w-4 h-4 rounded-full", color)}></div>
-                                          </Button>
-                                      ))}
-                                  </div>
-                              </PopoverContent>
-                          </Popover>
-                          <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
-                              <Expand className="w-3 h-3" />
+        const isFirstSegmentOfBubble = segment[0] === bubble.dates[0];
+
+        return (
+          <div
+            key={`${bubble.id}-${dayKey}-${index}`}
+            className={cn("calendar-bubble relative group z-10", bubble.color)}
+            style={{
+              height: `${bubble.height || 28}px`,
+              gridColumn: `span ${segment.length}`,
+            } as React.CSSProperties}
+            onMouseDown={(e) => e.stopPropagation()} // Prevent starting a new selection
+          >
+            {isFirstSegmentOfBubble && (
+              <>
+                <textarea
+                  value={bubble.text}
+                  onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
+                  className="text-black"
+                  placeholder="Escribe aquí..."
+                />
+                <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
+                        <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2">
+                      <div className="flex gap-1">
+                        {colors.map(color => (
+                          <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
+                            <div className={cn("w-4 h-4 rounded-full", color)}></div>
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
-                              <Trash2 className="w-3 h-3" />
-                          </Button>
+                        ))}
                       </div>
-                    </>
-                  )}
-              </div>
-          );
+                    </PopoverContent>
+                  </Popover>
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
+                    <Expand className="w-3 h-3" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        );
       });
+    });
   };
-
+  
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-4 no-print">
@@ -284,10 +284,7 @@ export function Calendar() {
                         </span>
                     </div>
                     <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
-                        {dayBubbles.map((bubble) => {
-                            if (!bubble.dates.includes(dayKey)) return null;
-                            return renderBubble(bubble, dayKey);
-                        })}
+                       {renderBubblesForDay(dayKey)}
                     </div>
                 </div>
                 );
@@ -297,3 +294,4 @@ export function Calendar() {
     </div>
   );
 }
+
