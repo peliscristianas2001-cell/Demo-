@@ -1,5 +1,4 @@
 
-
 import type { Tour, Reservation, Ticket, Employee, Passenger, AssignedCabin, BoardingPoint, Seller, CommissionSettings, Pension, RoomType } from './types';
 
 export const mockPensions: Pension[] = [
@@ -30,81 +29,64 @@ export const mockCommissionSettings: CommissionSettings = {
     ]
 }
 
-// --- NEW MOCK DATA ---
 
 export const mockTours: Tour[] = [
   {
-    id: 'T-2024-SALTA',
-    destination: 'Salta & Jujuy',
-    date: new Date('2024-08-15T20:00:00'),
-    price: 210000,
-    flyerUrl: 'https://placehold.co/400x500/A21CAF/FFFFFF.png',
+    id: 'T-2026-BARILOCHE',
+    destination: 'Bariloche Clásico',
+    date: new Date('2026-07-10T20:00:00'),
+    price: 350000,
+    flyerUrl: 'https://placehold.co/400x500/0284C7/FFFFFF.png',
     flyerType: 'image',
     origin: "Buenos Aires",
-    nights: 5,
-    bus: "Flecha Bus",
+    nights: 7,
+    bus: "Via Bariloche",
     transportUnits: [
         { id: 1, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Marcos Gil", coordinatorPhone: "341-504-0710" },
     ],
   },
   {
-    id: 'T-2024-MERLO',
-    destination: 'Merlo, San Luis',
-    date: new Date('2024-09-20T21:30:00'),
-    price: 185000,
-    flyerUrl: 'https://placehold.co/400x500/3B82F6/FFFFFF.png',
+    id: 'T-2026-CATARATAS',
+    destination: 'Cataratas del Iguazú',
+    date: new Date('2026-09-05T18:30:00'),
+    price: 280000,
+    flyerUrl: 'https://placehold.co/400x500/16A34A/FFFFFF.png',
     flyerType: 'image',
     origin: "Rosario",
-    nights: 4,
-    bus: "Andesmar",
+    nights: 5,
+    bus: "Crucero del Norte",
     transportUnits: [
         { id: 1, category: 'vehicles', type: 'micro_largo', count: 1, coordinator: "Laura Fernandez", coordinatorPhone: "11-2233-4455" },
     ],
   },
   {
-    id: 'T-2025-MENDOZA',
-    destination: 'Mendoza Capital',
-    date: new Date('2025-01-10T19:00:00'),
-    price: 250000,
-    flyerUrl: 'https://placehold.co/400x500/8B5CF6/FFFFFF.png',
+    id: 'T-2026-PATAGONIA',
+    destination: 'Patagonia Austral',
+    date: new Date('2026-11-20T10:00:00'),
+    price: 550000,
+    flyerUrl: 'https://placehold.co/400x500/5B21B6/FFFFFF.png',
     flyerType: 'image',
-    origin: "Córdoba",
-    nights: 6,
-    bus: "CATA Internacional",
+    origin: "Aeroparque J. Newbery",
+    nights: 8,
+    bus: "Aerolíneas Argentinas",
     transportUnits: [
-        { id: 1, category: 'vehicles', type: 'doble_piso', count: 1, coordinator: "Sofia Acosta", coordinatorPhone: "11-3344-5566" },
-        { id: 2, category: 'vehicles', type: 'combi', count: 1, coordinator: "Marcos Gil", coordinatorPhone: "341-504-0710" },
+        { id: 1, category: 'airplanes', type: 'boeing_737', count: 1, coordinator: "Sofia Acosta", coordinatorPhone: "11-3344-5566" },
     ],
   },
    {
-    id: 'T-2025-CRUCERO',
-    destination: 'Crucero por Brasil',
-    date: new Date('2025-02-05T18:00:00'),
-    price: 950000,
-    flyerUrl: 'https://placehold.co/400x500/10B981/FFFFFF.png',
+    id: 'T-2026-CRUCERO-SUR',
+    destination: 'Crucero por el Sur',
+    date: new Date('2026-12-15T16:00:00'),
+    price: 1250000,
+    flyerUrl: 'https://placehold.co/400x500/0D9488/FFFFFF.png',
     flyerType: 'image',
-    origin: "Puerto de Buenos Aires",
-    nights: 8,
-    bus: "MSC Cruceros",
+    origin: "Puerto de Ushuaia",
+    nights: 10,
+    bus: "Antarctic Cruises Inc.",
     transportUnits: [
         { id: 1, category: 'cruises', type: 'gran_crucero', count: 1, coordinator: "Angela Rojas", coordinatorPhone: "11-1111-1111" },
     ],
   },
-  {
-    id: 'T-2024-PASADO',
-    destination: 'Termas de Colón (Viaje Pasado)',
-    date: new Date('2024-05-01T08:00:00'),
-    price: 90000,
-    flyerUrl: 'https://placehold.co/400x500/EF4444/FFFFFF.png',
-    flyerType: 'image',
-    origin: "Paraná",
-    nights: 2,
-    bus: "Empresa local",
-    transportUnits: [
-        { id: 1, category: 'vehicles', type: 'micro_bajo', count: 1, coordinator: "Laura Fernandez", coordinatorPhone: "11-2233-4455" },
-    ],
-    costs: { transport: 500000, hotel: 300000 }
-  }
 ];
 
 export const mockEmployees: Employee[] = [
@@ -115,61 +97,52 @@ export const mockEmployees: Employee[] = [
 ];
 
 export const mockSellers: Seller[] = [
-    { id: 'SELL-EXT-01', name: 'Viajes El Sol', dni: '30111222', phone: '351-555-0101', useFixedCommission: false },
-    { id: 'SELL-EXT-02', name: 'Turismo CityBell', dni: '30333444', phone: '221-555-0202', useFixedCommission: true, fixedCommissionRate: 12 },
+    { id: 'SELL-EXT-01', name: 'Turismo del Litoral', dni: '30111222', phone: '342-555-0101', useFixedCommission: false },
+    { id: 'SELL-EXT-02', name: 'Andes Viajes', dni: '30333444', phone: '261-555-0202', useFixedCommission: true, fixedCommissionRate: 12 },
 ];
 
-export const mockPassengers: Passenger[] = [
-    // Familia Gonzalez
-    { id: 'P-30M-GON', fullName: 'Miguel Gonzalez', dni: '30111222', dob: new Date('1983-05-10'), phone: '11-1234-5678', family: 'Gonzalez', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-32F-GON', fullName: 'Carla Rodriguez de Gonzalez', dni: '32222333', dob: new Date('1986-08-15'), phone: '11-1234-5678', family: 'Gonzalez', nationality: 'Argentina', tierId: 'adult', password: 'password' },
-    { id: 'P-50M-GON', fullName: 'Tomas Gonzalez', dni: '50333444', dob: new Date('2010-12-20'), phone: '', family: 'Gonzalez', nationality: 'Argentina', tierId: 'adult' },
-    
-    // Familia Perez
-    { id: 'P-28M-PER', fullName: 'Roberto Perez', dni: '28444555', dob: new Date('1979-02-28'), phone: '341-234-5678', family: 'Perez', nationality: 'Argentina', tierId: 'adult', password: 'password' },
-    { id: 'P-29F-PER', fullName: 'Lucia Gimenez', dni: '29555666', dob: new Date('1981-11-05'), phone: '341-234-5678', family: 'Perez', nationality: 'Argentina', tierId: 'adult' },
 
-    // Familia Romero
-    { id: 'P-17F-ROM', fullName: 'Susana Romero', dni: '17666777', dob: new Date('1965-01-12'), phone: '351-345-6789', family: 'Romero', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-18M-ROM', fullName: 'Ernesto Diaz', dni: '18777888', dob: new Date('1967-07-07'), phone: '351-345-6789', family: 'Romero', nationality: 'Argentina', tierId: 'adult' },
+export const mockPassengers: Passenger[] = [
+    // Familia Perez
+    { id: 'P-30M-PER', fullName: 'Juan Perez', dni: '30123456', dob: new Date('1983-04-12'), phone: '11-3030-4040', family: 'Perez', nationality: 'Argentina', tierId: 'adult' },
+    { id: 'P-32F-PER', fullName: 'Maria Lopez de Perez', dni: '32456789', dob: new Date('1986-07-25'), phone: '11-3030-4040', family: 'Perez', nationality: 'Argentina', tierId: 'adult', password: 'password' },
+    { id: 'P-50M-PER', fullName: 'Lucas Perez', dni: '50123456', dob: new Date('2011-01-10'), phone: '', family: 'Perez', nationality: 'Argentina', tierId: 'adult' },
     
-    // Grupo de Amigas
-    { id: 'P-35F-GAR', fullName: 'Valentina Garcia', dni: '35888999', dob: new Date('1992-04-18'), phone: '11-4567-8901', family: 'Amigas-Mendoza', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-36F-FER', fullName: 'Julieta Fernandez', dni: '36999000', dob: new Date('1993-09-21'), phone: '11-4567-8902', family: 'Amigas-Mendoza', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-37F-LOP', fullName: 'Camila Lopez', dni: '37000111', dob: new Date('1994-03-03'), phone: '11-4567-8903', family: 'Amigas-Mendoza', nationality: 'Argentina', tierId: 'adult' },
+    // Familia Garcia
+    { id: 'P-28M-GAR', fullName: 'Carlos Garcia', dni: '28987654', dob: new Date('1980-01-15'), phone: '341-505-6060', family: 'Garcia', nationality: 'Argentina', tierId: 'adult', password: 'password' },
+    { id: 'P-29F-GAR', fullName: 'Ana Martinez', dni: '29876543', dob: new Date('1982-10-30'), phone: '341-505-6060', family: 'Garcia', nationality: 'Argentina', tierId: 'adult' },
+
+    // Familia Rodriguez
+    { id: 'P-17F-ROD', fullName: 'Marta Rodriguez', dni: '17888999', dob: new Date('1966-02-20'), phone: '351-606-7070', family: 'Rodriguez', nationality: 'Argentina', tierId: 'adult' },
+    
+    // Grupo Amigos Patagonia
+    { id: 'P-35F-GOM', fullName: 'Valeria Gomez', dni: '35111222', dob: new Date('1992-05-20'), phone: '11-707-8080', family: 'Amigos Patagonia', nationality: 'Argentina', tierId: 'adult' },
+    { id: 'P-36F-ROM', fullName: 'Julieta Romero', dni: '36222333', dob: new Date('1993-08-11'), phone: '11-707-8081', family: 'Amigos Patagonia', nationality: 'Argentina', tierId: 'adult' },
     
     // Pasajeros individuales
-    { id: 'P-25M-SAN', fullName: 'Jorge Sanchez', dni: '25111222', dob: new Date('1975-06-30'), phone: '221-567-8901', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-40F-TOR', fullName: 'Ana Torres', dni: '40222333', dob: new Date('2000-10-10'), phone: '342-678-9012', nationality: 'Argentina', tierId: 'adult' },
-
-    // Pasajeros para el viaje pasado
-    { id: 'P-26M-RAM', fullName: 'Esteban Ramirez', dni: '26333444', dob: new Date('1977-04-14'), phone: '343-789-0123', family: 'Ramirez', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-27F-RAM', fullName: 'Marta Sosa de Ramirez', dni: '27444555', dob: new Date('1978-05-15'), phone: '343-789-0123', family: 'Ramirez', nationality: 'Argentina', tierId: 'adult' }
+    { id: 'P-25M-FLO', fullName: 'Ricardo Flores', dni: '25444555', dob: new Date('1976-09-01'), phone: '221-808-9090', nationality: 'Argentina', tierId: 'adult' },
+    { id: 'P-40F-CAS', fullName: 'Lorena Castro', dni: '40555666', dob: new Date('2001-11-12'), phone: '342-909-1010', nationality: 'Argentina', tierId: 'adult' },
 ];
 
 export const mockReservations: Reservation[] = [
-  // Reserva Familia Gonzalez para Salta
-  { id: "R-001", tripId: "T-2024-SALTA", passenger: "Miguel Gonzalez", passengerIds: ["P-30M-GON", "P-32F-GON", "P-50M-GON"], paxCount: 3, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}, {seatId: "3", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-01", finalPrice: 630000, boardingPointId: 'BP01', roomTypeId: "RT03" },
+  // Reserva Familia Perez para Bariloche
+  { id: "R-26-001", tripId: "T-2026-BARILOCHE", passenger: "Juan Perez", passengerIds: ["P-30M-PER", "P-32F-PER", "P-50M-PER"], paxCount: 3, assignedSeats: [{seatId: "1", unit: 1}, {seatId: "2", unit: 1}, {seatId: "3", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-01", finalPrice: 1050000, boardingPointId: 'BP01', roomTypeId: "RT03" },
   
-  // Reserva Familia Perez para Merlo
-  { id: "R-002", tripId: "T-2024-MERLO", passenger: "Roberto Perez", passengerIds: ["P-28M-PER", "P-29F-PER"], paxCount: 2, assignedSeats: [{seatId: "5", unit: 1}, {seatId: "6", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "EMP-02", finalPrice: 370000, boardingPointId: 'BP02', roomTypeId: "RT01" },
+  // Reserva Familia Garcia para Cataratas
+  { id: "R-26-002", tripId: "T-2026-CATARATAS", passenger: "Carlos Garcia", passengerIds: ["P-28M-GAR", "P-29F-GAR"], paxCount: 2, assignedSeats: [{seatId: "5", unit: 1}, {seatId: "6", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Parcial", sellerId: "EMP-02", finalPrice: 560000, boardingPointId: 'BP02', roomTypeId: "RT01" },
 
-  // Reserva Familia Romero para Salta
-  { id: "R-003", tripId: "T-2024-SALTA", passenger: "Susana Romero", passengerIds: ["P-17F-ROM", "P-18M-ROM"], paxCount: 2, assignedSeats: [{seatId: "4", unit: 1}, {seatId: "5", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "SELL-EXT-01", finalPrice: 420000, boardingPointId: 'BP03' },
+  // Reserva Marta Rodriguez para Bariloche
+  { id: "R-26-003", tripId: "T-2026-BARILOCHE", passenger: "Marta Rodriguez", passengerIds: ["P-17F-ROD"], paxCount: 1, assignedSeats: [{seatId: "4", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "SELL-EXT-01", finalPrice: 350000, boardingPointId: 'BP03' },
   
-  // Reserva Grupo de Amigas para Mendoza
-  { id: "R-004", tripId: "T-2025-MENDOZA", passenger: "Valentina Garcia", passengerIds: ["P-35F-GAR", "P-36F-FER", "P-37F-LOP"], paxCount: 3, assignedSeats: [{seatId: "10", unit: 1}, {seatId: "11", unit: 1}, {seatId: "12", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-03", finalPrice: 750000, roomTypeId: "RT03" },
+  // Reserva Grupo Amigos para Patagonia
+  { id: "R-26-004", tripId: "T-2026-PATAGONIA", passenger: "Valeria Gomez", passengerIds: ["P-35F-GOM", "P-36F-ROM"], paxCount: 2, assignedSeats: [{seatId: "10A", unit: 1}, {seatId: "10B", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-03", finalPrice: 1100000, roomTypeId: "RT02" },
 
-  // Reserva individual para Merlo
-  { id: "R-005", tripId: "T-2024-MERLO", passenger: "Jorge Sanchez", passengerIds: ["P-25M-SAN"], paxCount: 1, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 185000 },
+  // Reserva individual pendiente para Cataratas
+  { id: "R-26-005", tripId: "T-2026-CATARATAS", passenger: "Ricardo Flores", passengerIds: ["P-25M-FLO"], paxCount: 1, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 280000 },
   
   // Reserva para el Crucero
-  { id: "R-006", tripId: "T-2025-CRUCERO", passenger: "Ana Torres", passengerIds: ["P-40F-TOR"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-ADMIN", finalPrice: 950000, roomTypeId: 'RT01', pensionId: 'pension-completa'},
-  
-  // Reserva para el viaje pasado
-  { id: "R-007", tripId: "T-2024-PASADO", passenger: "Esteban Ramirez", passengerIds: ["P-26M-RAM", "P-27F-RAM"], paxCount: 2, assignedSeats: [{seatId: "15", unit: 1}, {seatId: "16", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-01", finalPrice: 180000, roomTypeId: "RT01" },
+  { id: "R-26-006", tripId: "T-2026-CRUCERO-SUR", passenger: "Lorena Castro", passengerIds: ["P-40F-CAS"], paxCount: 1, assignedSeats: [], assignedCabins: [{cabinId: "C101", unit: 1}], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-ADMIN", finalPrice: 1250000, roomTypeId: 'RT01', pensionId: 'pension-completa'},
 ];
 
 
-export const mockTickets: Ticket[] = []; // Se genera dinámicamente en el componente ahora
-
+export const mockTickets: Ticket[] = []; // Se genera dinámicamente
