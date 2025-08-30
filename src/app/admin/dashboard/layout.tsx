@@ -64,7 +64,18 @@ export default function DashboardLayout({
               <Logo />
             </SidebarHeader>
             <SidebarMenu>
-              <SidebarMenuItem>
+               <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Crear Nueva Reserva"
+                  >
+                    <Link href="/tours">
+                      <Plane />
+                      <span>Nueva Venta</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     tooltip="Ver Sitio Web"

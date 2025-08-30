@@ -31,8 +31,6 @@ import { TripForm } from "@/components/admin/trip-form"
 export default function TripsPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
 
@@ -111,29 +109,6 @@ export default function TripsPage() {
     return Array.from(types);
   }, [activeTours]);
 
-  const handleCreate = () => {
-    setSelectedTour(null)
-    setIsFormOpen(true)
-  }
-
-  const handleEdit = (tour: Tour) => {
-    setSelectedTour(tour)
-    setIsFormOpen(true)
-  }
-
-  const handleSave = (tourData: Tour) => {
-    if (selectedTour) {
-      setTours(tours.map(t => t.id === tourData.id ? tourData : t))
-    } else {
-      setTours([...tours, { ...tourData, id: `T-${Math.random().toString(36).substring(2, 11)}` }])
-    }
-    setIsFormOpen(false)
-    setSelectedTour(null)
-  }
-
-  const handleDelete = (tourId: string) => {
-    setTours(tours.filter(t => t.id !== tourId))
-  }
 
   if (!isClient) {
     return null;
@@ -141,23 +116,13 @@ export default function TripsPage() {
 
   return (
     <div className="space-y-6">
-      <TripForm
-        isOpen={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        onSave={handleSave}
-        tour={selectedTour}
-      />
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Viajes</h2>
+          <h2 className="text-2xl font-bold">Viajes Disponibles</h2>
           <p className="text-muted-foreground">
-            Aquí podrás crear, editar y eliminar los viajes. Los viajes pasados se ocultan automáticamente.
+            Aquí podrás ver todos los viajes activos para realizar ventas.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Crear Nuevo Viaje
-        </Button>
       </div>
       <Card>
         <CardContent className="pt-6">
@@ -173,7 +138,6 @@ export default function TripsPage() {
                 {activeTransportTypes.includes('vehicles') && <TableHead>Vehículos</TableHead>}
                 {activeTransportTypes.includes('airplanes') && <TableHead>Aviones</TableHead>}
                 {activeTransportTypes.includes('cruises') && <TableHead>Cruceros</TableHead>}
-                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -212,26 +176,6 @@ export default function TripsPage() {
                     {activeTransportTypes.includes('vehicles') && <TableCell>{unitsByType.vehicles || 0}</TableCell>}
                     {activeTransportTypes.includes('airplanes') && <TableCell>{unitsByType.airplanes || 0}</TableCell>}
                     {activeTransportTypes.includes('cruises') && <TableCell>{unitsByType.cruises || 0}</TableCell>}
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Abrir menú</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(tour)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(tour.id)} className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
                   </TableRow>
                 )
               })}

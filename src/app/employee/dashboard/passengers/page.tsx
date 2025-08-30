@@ -157,6 +157,7 @@ export default function PassengersPage() {
         onSave={handleSave}
         passenger={selectedPassenger}
         prefilledFamily={prefilledFamily}
+        allPassengers={passengers}
     />
     <div className="space-y-6">
       <div className="flex justify-between items-center">

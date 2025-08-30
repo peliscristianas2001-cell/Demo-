@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -22,6 +21,7 @@ import { SearchableSelect } from "@/components/searchable-select"
 import { PlusCircle } from "lucide-react"
 import { Checkbox } from "../ui/checkbox"
 import { AddPassengerSubForm } from "./add-passenger-subform"
+import { ScrollArea } from "../ui/scroll-area"
 
 interface AddReservationFormProps {
   isOpen: boolean
@@ -194,113 +194,117 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto pr-6 space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="passenger">Pasajero Principal</Label>
-                <SearchableSelect
-                    options={passengerOptions}
-                    value={formData.mainPassengerId}
-                    onChange={handleMainPassengerSelect}
-                    placeholder="Buscar pasajero por nombre o DNI..."
-                    listHeight="h-48"
-                />
+        <ScrollArea className="flex-grow pr-6 -mr-6">
+          <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                  <Label htmlFor="passenger">Pasajero Principal</Label>
+                  <SearchableSelect
+                      options={passengerOptions}
+                      value={formData.mainPassengerId}
+                      onChange={handleMainPassengerSelect}
+                      placeholder="Buscar pasajero por nombre o DNI..."
+                      listHeight="h-48"
+                  />
+              </div>
+              
+              {selectedMainPassenger && (
+                  <>
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
+                              <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="finalPrice">Precio Final (Total)</Label>
+                              <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
+                          </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md space-y-3">
+                          <div className="flex justify-between items-center">
+                              <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
+                              <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
+                                  <DialogTrigger asChild>
+                                      <Button variant="outline" size="sm">
+                                          <PlusCircle className="mr-2 h-4 w-4" />
+                                          Añadir Nuevo
+                                      </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                      <DialogHeader>
+                                          <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
+                                          <DialogDescription>
+                                              El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
+                                          </DialogDescription>
+                                      </DialogHeader>
+                                      <AddPassengerSubForm onSave={handleAddNewPassenger} />
+                                  </DialogContent>
+                              </Dialog>
+                          </div>
+                          <ScrollArea className="h-40">
+                              <div className="space-y-2 pr-2">
+                                {familyMembers.map(member => (
+                                    <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                        <Checkbox
+                                            id={`member-${member.id}`}
+                                            checked={formData.selectedPassengerIds.includes(member.id)}
+                                            onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
+                                            disabled={member.id === selectedMainPassenger.id}
+                                        />
+                                        <Label htmlFor={`member-${member.id}`} className="font-normal flex-1 cursor-pointer">
+                                            {member.fullName} <span className="text-muted-foreground"> (DNI: {member.dni})</span>
+                                        </Label>
+                                    </div>
+                                ))}
+                              </div>
+                          </ScrollArea>
+                      </div>
+
+
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="seller">Vendedor/a</Label>
+                              <SearchableSelect
+                                  options={sellerOptions}
+                                  value={formData.sellerId}
+                                  onChange={(value) => handleFormChange('sellerId', value)}
+                                  placeholder="Buscar vendedor..."
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="paymentStatus">Estado de Pago</Label>
+                              <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
+                                  <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                      <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                      <SelectItem value="Parcial">Parcial</SelectItem>
+                                      <SelectItem value="Pagado">Pagado</SelectItem>
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
+                          <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
+                              <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
+                              <SelectContent>
+                                  {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="boardingPointId">Punto de Embarque</Label>
+                          <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                              <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                              <SelectContent>
+                                  {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                      </div>
+                  </>
+              )}
             </div>
-            
-            {selectedMainPassenger && (
-                 <>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
-                            <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="finalPrice">Precio Final (Total)</Label>
-                            <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-md space-y-3">
-                        <div className="flex justify-between items-center">
-                            <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
-                             <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Añadir Nuevo
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
-                                        <DialogDescription>
-                                            El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <AddPassengerSubForm onSave={handleAddNewPassenger} />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-                            {familyMembers.map(member => (
-                                <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
-                                    <Checkbox
-                                        id={`member-${member.id}`}
-                                        checked={formData.selectedPassengerIds.includes(member.id)}
-                                        onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
-                                        disabled={member.id === selectedMainPassenger.id}
-                                    />
-                                    <Label htmlFor={`member-${member.id}`} className="font-normal flex-1 cursor-pointer">
-                                        {member.fullName} <span className="text-muted-foreground"> (DNI: {member.dni})</span>
-                                    </Label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="seller">Vendedor/a</Label>
-                             <SearchableSelect
-                                options={sellerOptions}
-                                value={formData.sellerId}
-                                onChange={(value) => handleFormChange('sellerId', value)}
-                                placeholder="Buscar vendedor..."
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="paymentStatus">Estado de Pago</Label>
-                            <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
-                                <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                                    <SelectItem value="Parcial">Parcial</SelectItem>
-                                    <SelectItem value="Pagado">Pagado</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
-                        <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
-                            <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
-                            <SelectContent>
-                                {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="boardingPointId">Punto de Embarque</Label>
-                        <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
-                            <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
-                            <SelectContent>
-                                {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </>
-            )}
-        </div>
+        </ScrollArea>
         
         <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
