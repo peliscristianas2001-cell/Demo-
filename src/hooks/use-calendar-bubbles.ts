@@ -51,7 +51,6 @@ export const useCalendarBubbles = () => {
 
   while (days.length < 42) {
     const dateStr = currentDatePointer.toISOString().split("T")[0];
-    const dayBubbles = bubbles.filter(bubble => bubble.dates.includes(dateStr));
     
     const isDateInSelection = () => {
         if (!isSelecting || !selection.start || !selection.end) return false;
@@ -67,7 +66,6 @@ export const useCalendarBubbles = () => {
       date: new Date(currentDatePointer),
       isCurrentMonth: currentDatePointer.getMonth() === month,
       isToday: currentDatePointer.toDateString() === new Date().toDateString(),
-      bubbles: dayBubbles,
       selectionInfo: { isSelecting: isDateInSelection(), isMultiSelecting: isMultiSelected },
     });
 
@@ -77,8 +75,8 @@ export const useCalendarBubbles = () => {
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (multiSelectMode) return;
     const target = e.target as HTMLElement;
-    const isBubble = target.closest('.calendar-bubble');
-    if (isBubble) return;
+    const isBubbleControl = target.closest('.calendar-bubble') || target.closest('.no-print');
+    if (isBubbleControl) return;
 
     const dateStr = target.closest("[data-date]")?.getAttribute("data-date");
     if (dateStr) {

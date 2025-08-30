@@ -26,6 +26,7 @@ import { Label } from "../ui/label";
 import type { Bubble } from "@/hooks/use-calendar-bubbles";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import { useMemo } from "react";
 
 const monthNames = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
 
@@ -37,6 +38,7 @@ const tailwindToHex: Record<string, { bg: string; border: string }> = {
   "bg-purple-200 border-purple-400": { bg: "#E9D5FF", border: "#A78BFA" },
   "bg-pink-200 border-pink-400": { bg: "#FBCFE8", border: "#F472B6" },
 };
+
 
 export function Calendar() {
   const {
@@ -108,87 +110,65 @@ export function Calendar() {
 
   const colors = Object.keys(tailwindToHex);
 
-  const renderBubblesForDay = (dayKey: string) => {
-    return bubbles.map((bubble) => {
-      // Find segments of the bubble that start on this day
-      const segments = [];
-      let currentSegment: string[] = [];
+  const bubbleSegments = useMemo(() => {
+    const segments: { bubble: Bubble; startCol: number; colSpan: number; row: number; isFirstSegment: boolean }[] = [];
+    const gridStartDate = new Date(days[0].date);
 
-      bubble.dates.forEach((d, i) => {
-        const date = new Date(d + 'T00:00:00');
-        const prevDate = i > 0 ? new Date(bubble.dates[i - 1] + 'T00:00:00') : null;
+    bubbles.forEach(bubble => {
+        const sortedDates = bubble.dates.map(d => new Date(d + 'T00:00:00')).sort((a, b) => a.getTime() - b.getTime());
+        if (sortedDates.length === 0) return;
 
-        // Start a new segment if it's the first date, not consecutive, or starts a new week
-        if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
-          if (currentSegment.length > 0) {
-            segments.push(currentSegment);
-          }
-          currentSegment = [d];
-        } else {
-          currentSegment.push(d);
+        let currentSegment: Date[] = [];
+        let isFirstSegmentOfBubble = true;
+
+        for (let i = 0; i < sortedDates.length; i++) {
+            const date = sortedDates[i];
+            const prevDate = i > 0 ? sortedDates[i - 1] : null;
+
+            // Start a new segment if it's the first date, not consecutive, or starts a new week
+            if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
+                if (currentSegment.length > 0) {
+                    const segmentStartDate = currentSegment[0];
+                    const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
+                    const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                    const row = Math.floor(dayDiff / 7);
+                    const startCol = segmentStartDate.getDay();
+                    
+                    segments.push({
+                        bubble,
+                        startCol: startCol + 1, // CSS grid is 1-based
+                        colSpan: currentSegment.length,
+                        row: row + 1, // CSS grid is 1-based
+                        isFirstSegment
+                    });
+                    isFirstSegment = false;
+                }
+                currentSegment = [date];
+            } else {
+                currentSegment.push(date);
+            }
         }
-      });
-      if (currentSegment.length > 0) {
-        segments.push(currentSegment);
-      }
+        
+        // Push the last segment
+        if (currentSegment.length > 0) {
+            const segmentStartDate = currentSegment[0];
+            const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
+            const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const row = Math.floor(dayDiff / 7);
+            const startCol = segmentStartDate.getDay();
 
-      return segments.map((segment, index) => {
-        // Only render the segment if it starts on the current day
-        if (segment[0] !== dayKey) {
-          return null;
+            segments.push({
+                bubble,
+                startCol: startCol + 1,
+                colSpan: currentSegment.length,
+                row: row + 1,
+                isFirstSegment
+            });
         }
-
-        const isFirstSegmentOfBubble = segment[0] === bubble.dates[0];
-
-        return (
-          <div
-            key={`${bubble.id}-${dayKey}-${index}`}
-            className={cn("calendar-bubble relative group z-10", bubble.color)}
-            style={{
-              height: `${bubble.height || 28}px`,
-              gridColumn: `span ${segment.length}`,
-            } as React.CSSProperties}
-            onMouseDown={(e) => e.stopPropagation()} // Prevent starting a new selection
-          >
-            {isFirstSegmentOfBubble && (
-              <>
-                <textarea
-                  value={bubble.text}
-                  onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
-                  className="text-black"
-                  placeholder="Escribe aquí..."
-                />
-                <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
-                        <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-2">
-                      <div className="flex gap-1">
-                        {colors.map(color => (
-                          <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
-                            <div className={cn("w-4 h-4 rounded-full", color)}></div>
-                          </Button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
-                    <Expand className="w-3 h-3" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        );
-      });
     });
-  };
+
+    return segments;
+  }, [bubbles, days]);
   
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm">
@@ -252,7 +232,7 @@ export function Calendar() {
             ))}
         </div>
         <div className="calendar-grid">
-            {days.map(({ date, isCurrentMonth, isToday, bubbles: dayBubbles, selectionInfo }) => {
+            {days.map(({ date, isCurrentMonth, isToday, selectionInfo }) => {
                 const dayKey = date.toISOString().split("T")[0];
                 const isSelectedForMulti = selectionInfo?.isMultiSelecting;
                 
@@ -283,15 +263,63 @@ export function Calendar() {
                         {date.getDate()}
                         </span>
                     </div>
-                    <div className="calendar-bubbles-container grid grid-cols-1 auto-rows-min gap-0.5">
-                       {renderBubblesForDay(dayKey)}
-                    </div>
                 </div>
                 );
             })}
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 grid grid-cols-7 grid-rows-6">
+                {bubbleSegments.map(({ bubble, startCol, colSpan, row, isFirstSegment }) => (
+                    <div
+                        key={`${bubble.id}-segment-${row}-${startCol}`}
+                        className={cn("calendar-bubble relative group pointer-events-auto", bubble.color)}
+                        style={{
+                            gridColumnStart: startCol,
+                            gridColumnEnd: `span ${colSpan}`,
+                            gridRowStart: row,
+                            height: `${bubble.height || 28}px`,
+                            alignSelf: 'start',
+                            marginTop: '2px', // Add a small margin to not overlap day number completely
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()} // Prevent starting a new selection
+                    >
+                        {isFirstSegment && (
+                            <>
+                                <textarea
+                                    value={bubble.text}
+                                    onChange={(e) => handleBubbleChange(bubble.id, e.target.value)}
+                                    className="text-black"
+                                    placeholder="Escribe aquí..."
+                                />
+                                <div className="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print z-20">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full" onClick={e => e.stopPropagation()}>
+                                        <div className={cn("w-3 h-3 rounded-full", bubble.color)}></div>
+                                    </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-2">
+                                    <div className="flex gap-1">
+                                        {colors.map(color => (
+                                        <Button key={color} size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleColorChange(bubble.id, color); }}>
+                                            <div className={cn("w-4 h-4 rounded-full", color)}></div>
+                                        </Button>
+                                        ))}
+                                    </div>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button size="icon" variant="ghost" className="h-5 w-5 text-black/50 hover:text-black" onClick={(e) => { e.stopPropagation(); handleExpandBubble(bubble.id); }}>
+                                    <Expand className="w-3 h-3" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-5 w-5 text-red-500/50 hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleDeleteBubble(bubble.id); }}>
+                                    <Trash2 className="w-3 h-3" />
+                                </Button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
       </div>
     </div>
   );
 }
-

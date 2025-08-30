@@ -103,10 +103,9 @@ body {
 
 /* === CALENDAR STYLES === */
 .printable-calendar {
-  width: 277mm; /* Ancho útil de A4 */
-  height: 190mm; /* Alto útil de A4 */
-  aspect-ratio: 277 / 190;
-  margin: auto; /* Centrar en pantalla */
+  width: 277mm; 
+  height: 190mm;
+  margin: auto; 
   border: 1px solid hsl(var(--border));
   display: flex;
   flex-direction: column;
@@ -119,25 +118,32 @@ body {
   justify-content: center;
   background-color: hsl(var(--muted));
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .calendar-header-days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   height: 8mm;
   background-color: hsl(var(--muted));
   border-top: 1px solid hsl(var(--border));
   border-bottom: 1px solid hsl(var(--border));
+  flex-shrink: 0;
 }
 
 .calendar-header-days > div {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-right: 1px solid hsl(var(--border));
+}
+.calendar-header-days > div:last-child {
+  border-right: 0;
 }
 
 .calendar-grid {
   display: grid;
+  position: relative;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: repeat(6, minmax(0, 1fr));
   flex-grow: 1;
@@ -159,16 +165,6 @@ body {
   padding: 4px;
 }
 
-.calendar-bubbles-container {
-  flex-grow: 1;
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: auto;
-  align-items: start;
-}
-
 .calendar-bubble {
   border: 1px solid;
   color: #000;
@@ -179,7 +175,7 @@ body {
   overflow: hidden;
   text-align: center;
   position: relative; 
-  margin: 1px 0;
+  margin: 1px;
 }
 
 .calendar-bubble:hover {
@@ -199,6 +195,7 @@ body {
   box-shadow: none;
   color: inherit;
   font-size: inherit;
+  pointer-events: auto;
 }
 
 
@@ -240,7 +237,7 @@ body {
     flex-grow: 1;
   }
 
-  .calendar-day-cell {
+  .calendar-day-cell, .calendar-header-days > div {
     border-color: black !important;
   }
 
