@@ -110,61 +110,70 @@ export function Calendar() {
 
   const colors = Object.keys(tailwindToHex);
 
-  const bubbleSegments = useMemo(() => {
-    const segments: { bubble: Bubble; startCol: number; colSpan: number; row: number; isFirstSegment: boolean }[] = [];
+ const bubbleSegments = useMemo(() => {
+    const segments: { bubble: Bubble; startCol: number; colSpan: number; row: number; isFirstSegment: boolean; track: number }[] = [];
     if (!days || days.length === 0) return segments;
 
     const gridStartDate = new Date(days[0].date);
+    const dayTracks: Record<string, number> = {};
 
     bubbles.forEach(bubble => {
-        const sortedDates = bubble.dates.map(d => new Date(d + 'T00:00:00')).sort((a, b) => a.getTime() - b.getTime());
-        if (sortedDates.length === 0) return;
+      const sortedDates = bubble.dates.map(d => new Date(d + 'T00:00:00')).sort((a, b) => a.getTime() - b.getTime());
+      if (sortedDates.length === 0) return;
 
-        let currentSegment: Date[] = [];
-        let isFirstSegment = true; // FIX: Declaration was missing from previous broken versions.
+      let currentSegment: Date[] = [];
+      let isFirstSegment = true;
 
-        for (let i = 0; i < sortedDates.length; i++) {
-            const date = sortedDates[i];
-            const prevDate = i > 0 ? sortedDates[i - 1] : null;
+      for (let i = 0; i < sortedDates.length; i++) {
+        const date = sortedDates[i];
+        const prevDate = i > 0 ? sortedDates[i - 1] : null;
 
-            if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
-                if (currentSegment.length > 0) {
-                    const segmentStartDate = currentSegment[0];
-                    const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
-                    const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                    const row = Math.floor(dayDiff / 7);
-                    const startCol = segmentStartDate.getDay();
-                    
-                    segments.push({
-                        bubble,
-                        startCol: startCol + 1,
-                        colSpan: currentSegment.length,
-                        row: row + 1,
-                        isFirstSegment
-                    });
-                    if (isFirstSegment) isFirstSegment = false;
-                }
-                currentSegment = [date];
-            } else {
-                currentSegment.push(date);
-            }
-        }
-        
-        if (currentSegment.length > 0) {
+        if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
+          if (currentSegment.length > 0) {
             const segmentStartDate = currentSegment[0];
+            const track = (dayTracks[segmentStartDate.toISOString().split('T')[0]] || 0) + 1;
+            currentSegment.forEach(d => dayTracks[d.toISOString().split('T')[0]] = (dayTracks[d.toISOString().split('T')[0]] || 0) + 1);
+
             const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
             const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const row = Math.floor(dayDiff / 7);
             const startCol = segmentStartDate.getDay();
-
+            
             segments.push({
-                bubble,
-                startCol: startCol + 1,
-                colSpan: currentSegment.length,
-                row: row + 1,
-                isFirstSegment
+              bubble,
+              startCol: startCol + 1,
+              colSpan: currentSegment.length,
+              row: row + 1,
+              isFirstSegment,
+              track
             });
+            if (isFirstSegment) isFirstSegment = false;
+          }
+          currentSegment = [date];
+        } else {
+          currentSegment.push(date);
         }
+      }
+      
+      if (currentSegment.length > 0) {
+        const segmentStartDate = currentSegment[0];
+        const track = (dayTracks[segmentStartDate.toISOString().split('T')[0]] || 0) + 1;
+        currentSegment.forEach(d => dayTracks[d.toISOString().split('T')[0]] = (dayTracks[d.toISOString().split('T')[0]] || 0) + 1);
+        
+        const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
+        const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const row = Math.floor(dayDiff / 7);
+        const startCol = segmentStartDate.getDay();
+
+        segments.push({
+          bubble,
+          startCol: startCol + 1,
+          colSpan: currentSegment.length,
+          row: row + 1,
+          isFirstSegment,
+          track
+        });
+      }
     });
 
     return segments;
@@ -267,7 +276,7 @@ export function Calendar() {
                 );
             })}
              <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 grid grid-cols-7 grid-rows-6">
-                {bubbleSegments.map(({ bubble, startCol, colSpan, row, isFirstSegment }) => (
+                {bubbleSegments.map(({ bubble, startCol, colSpan, row, isFirstSegment, track }) => (
                     <div
                         key={`${bubble.id}-segment-${row}-${startCol}`}
                         className={cn("calendar-bubble relative group pointer-events-auto", bubble.color)}
@@ -277,7 +286,7 @@ export function Calendar() {
                             gridRowStart: row,
                             height: `${bubble.height || 28}px`,
                             alignSelf: 'start',
-                            marginTop: '2px',
+                            marginTop: `${2 + (track - 1) * 30}px`,
                         }}
                         onMouseDown={(e) => e.stopPropagation()} 
                     >

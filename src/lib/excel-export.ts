@@ -26,7 +26,10 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
   startDateGrid.setDate(startDateGrid.getDate() - startDateGrid.getDay());
 
   const merges: XLSX.Range[] = [];
-  const cellData: Record<string, {text: string[], color?: string}> = {};
+  const cellData: Record<string, { text: string[], colors: string[] }> = {};
+
+  const borderStyle = { style: 'thin', color: { rgb: "000000" } };
+  const cellBorders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
 
   for (let i = 0; i < 42; i++) {
     const currentDay = new Date(startDateGrid);
@@ -34,41 +37,23 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
     const dayKey = currentDay.toISOString().split('T')[0];
 
     if (currentDay.getMonth() === month) {
-      cellData[dayKey] = { text: [String(currentDay.getDate())] };
+      cellData[dayKey] = { text: [String(currentDay.getDate())], colors: [] };
     }
   }
 
   bubbles.forEach(bubble => {
-    const dates = bubble.dates.sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+    const dates = bubble.dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     const colorClass = bubble.color?.split(' ')[0] || '';
-    const hexColor = tailwindToHex[colorClass] || "E5E7EB";
-    
-    let currentMerge: {s: XLSX.CellAddress, e: XLSX.CellAddress} | null = null;
-    
-    dates.forEach((dateStr, index) => {
+    const hexColor = tailwindToHex[colorClass] || "FFFFFF";
+
+    dates.forEach(dateStr => {
       const date = new Date(dateStr + "T00:00:00");
-      if (date.getMonth() !== month) return; 
+      if (date.getMonth() !== month) return;
 
-      if (!cellData[dateStr]) cellData[dateStr] = { text: [] };
+      if (!cellData[dateStr]) cellData[dateStr] = { text: [String(date.getDate())], colors: [] };
       cellData[dateStr].text.push(bubble.text);
-      cellData[dateStr].color = hexColor;
-
-      const dayDiff = Math.floor((date.getTime() - startDateGrid.getTime()) / (1000 * 60 * 60 * 24));
-      const r = Math.floor(dayDiff / 7) + 1;
-      const c = dayDiff % 7;
-      
-      const prevDate = index > 0 ? new Date(dates[index - 1] + "T00:00:00") : null;
-      const isConsecutiveInWeek = prevDate && (date.getTime() - prevDate.getTime() === 86400000) && date.getDay() !== 0;
-
-      if (isConsecutiveInWeek && currentMerge) {
-          currentMerge.e.c = c;
-      } else {
-        if (currentMerge) merges.push(currentMerge);
-        currentMerge = { s: { r, c }, e: { r, c } };
-      }
+      cellData[dateStr].colors.push(hexColor);
     });
-
-    if (currentMerge) merges.push(currentMerge);
   });
 
   for (let i = 0; i < 42; i++) {
@@ -82,22 +67,35 @@ export const exportToExcel = (currentDate: Date, bubbles: Bubble[]) => {
     const cellRef = XLSX.utils.encode_cell({ r, c });
 
     if (data) {
+      const mainColor = data.colors[0]; // For simplicity, we use the color of the first bubble
       ws[cellRef] = {
-        v: data.text.join('\n\n'),
+        v: data.text.join('\n'),
         t: 's',
         s: {
           font: { sz: 10, color: { rgb: "000000" } },
           alignment: { vertical: "top", horizontal: "left", wrapText: true },
-          ...(data.color && { fill: { fgColor: { rgb: data.color } } })
+          border: cellBorders,
+          ...(mainColor && { fill: { fgColor: { rgb: mainColor } } })
         }
       };
+    } else {
+       ws[cellRef] = { v: '', t: 's', s: { border: cellBorders } };
     }
   }
 
-  ws['!merges'] = merges;
+  weekdays.forEach((_, c) => {
+      const headerRef = XLSX.utils.encode_cell({ r: 0, c });
+      ws[headerRef].s = {
+          font: { bold: true, sz: 12, color: { rgb: "FFFFFF" }},
+          fill: { fgColor: { rgb: "4A5568" }},
+          alignment: { horizontal: "center", vertical: "center" },
+          border: cellBorders
+      }
+  });
+
   ws['!cols'] = weekdays.map(() => ({ wch: 25 }));
   ws['!rows'] = Array(7).fill({ hpx: 80 });
-  if (ws['!rows'][0]) ws['!rows'][0].hpx = 20;
+  if (ws['!rows'][0]) ws['!rows'][0].hpx = 25;
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, ws_name);
