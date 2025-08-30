@@ -181,7 +181,7 @@ export default function ReportsPage() {
             const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
             const totalFixedCosts = transportCost + hotelCost + extrasCost;
 
-            const totalExpenses = totalFixedCosts + (commissionData.total > 0 ? commissionData.total : 0);
+            const totalExpenses = totalFixedCosts + commissionData.total;
             const netProfit = totalIncome - totalExpenses;
 
             return {
@@ -196,7 +196,7 @@ export default function ReportsPage() {
         }).filter(data => data.reservationCount > 0 || data.totalFixedCosts > 0);
     }, [tours, reservations, sellers]);
 
-    const monthlyReport = useMemo(() => {
+     const monthlyReport = useMemo(() => {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
@@ -204,48 +204,36 @@ export default function ReportsPage() {
             const tourDate = new Date(rd.tour.date);
             return tourDate.getMonth() === currentMonth && tourDate.getFullYear() === currentYear;
         });
-        const monthlyTours = monthlyToursData.map(rd => rd.tour);
-        
-        const transportCosts = monthlyTours.reduce((sum, t) => sum + (t.costs?.transport || 0), 0);
-        const hotelCosts = monthlyTours.reduce((sum, t) => sum + (t.costs?.hotel || 0), 0);
-        const extraCosts = monthlyTours.flatMap(t => t.costs?.extras || []);
-        
-        const commissionCosts = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
 
-        const manualExpenses = customExpenses.filter(e => {
-            const expenseDate = new Date(e.date);
-            return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-        });
-        
-        const externalCommissionIncomes = externalCommissions.filter(e => {
-            const incomeDate = new Date(e.date);
-            return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
-        });
+        // Calculate all incomes
+        const totalNetProfitFromTrips = monthlyToursData.reduce((sum, rd) => sum + rd.netProfit, 0);
+        const monthlyExternalCommissions = externalCommissions.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
+        const totalCommissionIncome = monthlyExternalCommissions.reduce((sum, e) => sum + e.amount, 0);
+        const monthlyExcursionIncomes = excursionIncomes.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
+        const totalExcursionIncome = monthlyExcursionIncomes.reduce((sum, e) => sum + e.amount, 0);
 
-        const excursionIncomesFiltered = excursionIncomes.filter(e => {
-            const incomeDate = new Date(e.date);
-            return incomeDate.getMonth() === currentMonth && incomeDate.getFullYear() === currentYear;
-        });
+        // Calculate all expenses
+        const monthlyManualExpenses = customExpenses.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
+        const totalManualExpenses = monthlyManualExpenses.reduce((sum, e) => sum + e.amount, 0);
+        
+        const totalTripFixedCosts = monthlyToursData.reduce((sum, rd) => sum + rd.totalFixedCosts, 0);
+        const totalTripCommissionsPaid = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
+        const totalNetExpense = totalTripFixedCosts + totalTripCommissionsPaid + totalManualExpenses;
 
-        const totalManualExpenses = manualExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const totalTripExpenses = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + commissionCosts;
-        const totalNetExpense = totalTripExpenses + totalManualExpenses;
-        
-        const totalCommissionIncome = externalCommissionIncomes.reduce((sum, e) => sum + e.amount, 0);
-        const totalExcursionIncome = excursionIncomesFiltered.reduce((sum, e) => sum + e.amount, 0);
-        
-        const totalNetIncomeFromTrips = monthlyToursData.reduce((sum, rd) => sum + rd.netProfit, 0);
-        const totalNetIncome = totalNetIncomeFromTrips + totalCommissionIncome + totalExcursionIncome - totalManualExpenses;
+        // Calculate final Net Income for the month
+        const totalNetIncome = totalNetProfitFromTrips + totalCommissionIncome + totalExcursionIncome;
         
         return {
-            transportCosts, hotelCosts, extraCosts, commissionCosts,
-            manualExpenses, totalNetExpense,
-            externalCommissionIncomes, totalCommissionIncome,
-            excursionIncomes: excursionIncomesFiltered, totalExcursionIncome,
-            monthlyTours, totalNetIncome,
-            monthlyToursData
+            totalNetExpense,
+            totalCommissionIncome,
+            monthlyExternalCommissions,
+            totalExcursionIncome,
+            monthlyExcursionIncomes,
+            totalNetIncome,
+            monthlyToursData,
+            monthlyManualExpenses
         };
-    }, [tours, reservations, sellers, customExpenses, externalCommissions, excursionIncomes, reportData]);
+    }, [reportData, customExpenses, externalCommissions, excursionIncomes]);
     
     const handleAddItem = (type: 'expense' | 'commission' | 'excursion') => {
         if (!newItem.description || !newItem.amount) {
@@ -309,17 +297,22 @@ export default function ReportsPage() {
         <Dialog open={activeModal === 'expenses'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
             <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Desglose de Gastos del Mes</DialogTitle><DialogDescription>Aquí se detallan todos los gastos registrados en el mes actual.</DialogDescription></DialogHeader>
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
-                    <Card><CardHeader><CardTitle className="text-base">Costos de Viajes</CardTitle></CardHeader>
-                        <CardContent className="space-y-2">
-                           <InfoRow label="Comisiones Pagadas" value={formatCurrency(monthlyReport.commissionCosts)} />
-                           <InfoRow label="Transporte" value={formatCurrency(monthlyReport.transportCosts)} />
-                           <InfoRow label="Hotel" value={formatCurrency(monthlyReport.hotelCosts)} />
-                           <Accordion type="single" collapsible><AccordionItem value="extras"><AccordionTrigger className="text-sm">Gastos Extras ({monthlyReport.extraCosts.length})</AccordionTrigger><AccordionContent>{monthlyReport.extraCosts.map(e => <InfoRow key={e.id} label={e.description} value={formatCurrency(e.amount)}/>)}</AccordionContent></AccordionItem></Accordion>
-                        </CardContent>
-                    </Card>
+                    {monthlyReport.monthlyToursData.length > 0 && (
+                        <Card><CardHeader><CardTitle className="text-base">Costos de Viajes</CardTitle></CardHeader>
+                            <CardContent className="space-y-2">
+                               {monthlyReport.monthlyToursData.map(rd => (
+                                    <div key={rd.tour.id}>
+                                        <p className="font-semibold text-sm">{rd.tour.destination}</p>
+                                        <InfoRow label="Comisiones Pagadas" value={formatCurrency(rd.totalCommission)} />
+                                        <InfoRow label="Gastos Fijos (transporte, hotel, etc.)" value={formatCurrency(rd.totalFixedCosts)} />
+                                    </div>
+                               ))}
+                            </CardContent>
+                        </Card>
+                    )}
                     <Card><CardHeader><CardTitle className="text-base">Gastos Manuales</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="space-y-2 mb-4">{monthlyReport.manualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                            <div className="space-y-2 mb-4">{monthlyReport.monthlyManualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
                              <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nuevo Gasto Manual</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('expense')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
                         </CardContent>
                     </Card>
@@ -332,7 +325,7 @@ export default function ReportsPage() {
             <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingresos por Comisión (Externos)</DialogTitle><DialogDescription>Registra aquí las comisiones ganadas por ventas de servicios de terceros.</DialogDescription></DialogHeader>
                  <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
                      <Card><CardContent className="pt-6">
-                        <div className="space-y-2 mb-4">{monthlyReport.externalCommissionIncomes.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'commission')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                        <div className="space-y-2 mb-4">{monthlyReport.monthlyExternalCommissions.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'commission')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
                         <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nueva Comisión Ganada</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('commission')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
                     </CardContent></Card>
                  </div></ScrollArea>
@@ -344,7 +337,7 @@ export default function ReportsPage() {
             <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingresos por Excursión</DialogTitle><DialogDescription>Registra aquí los ingresos generados por excursiones adicionales.</DialogDescription></DialogHeader>
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
                     <Card><CardContent className="pt-6">
-                        <div className="space-y-2 mb-4">{monthlyReport.excursionIncomes.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'excursion')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                        <div className="space-y-2 mb-4">{monthlyReport.monthlyExcursionIncomes.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'excursion')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
                         <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nuevo Ingreso por Excursión</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('excursion')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
                     </CardContent></Card>
                 </div></ScrollArea>
@@ -358,9 +351,9 @@ export default function ReportsPage() {
                     {monthlyReport.monthlyToursData.map(rd => (
                         <InfoRow key={rd.tour.id} label={`Ganancia Neta - ${rd.tour.destination}`} value={formatCurrency(rd.netProfit)} />
                     ))}
+                     <hr className="my-2"/>
                     {monthlyReport.totalCommissionIncome > 0 && <InfoRow label="Total Comisiones Externas" value={formatCurrency(monthlyReport.totalCommissionIncome)} />}
                     {monthlyReport.totalExcursionIncome > 0 && <InfoRow label="Total Ingresos Excursiones" value={formatCurrency(monthlyReport.totalExcursionIncome)} />}
-                    {monthlyReport.manualExpenses.length > 0 && <InfoRow label="Total Gastos Manuales" value={`-${formatCurrency(monthlyReport.manualExpenses.reduce((sum, e) => sum + e.amount, 0))}`} />}
                 </div></ScrollArea>
                 <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
             </DialogContent>
@@ -449,3 +442,4 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
+
