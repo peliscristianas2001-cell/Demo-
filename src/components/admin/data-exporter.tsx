@@ -29,6 +29,7 @@ import type { Tour, Reservation, Passenger } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
 import { Download, Copy, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface DataExporterProps {
   isOpen: boolean;
@@ -83,7 +84,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
       let tripPassengers = reservations
         .filter((r) => r.tripId === trip.id)
         .flatMap((r) => {
-            const reservationPassengers = passengers.filter(p => r.passengerIds.includes(p.id));
+            const reservationPassengers = passengers.filter(p => (r.passengerIds || []).includes(p.id));
             if (showInsuredOnly) {
                 return reservationPassengers.filter(p => (r.insuredPassengerIds || []).includes(p.id));
             }
@@ -94,7 +95,8 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
       tripPassengers = tripPassengers.filter((p, index, self) => index === self.findIndex((t) => t.id === p.id));
 
       const passengerData = tripPassengers.map(p => {
-          const boardingPoint = boardingPoints.find(bp => bp.id === p.boardingPointId)?.name || "N/A";
+          const reservationForPassenger = reservations.find(r => r.tripId === trip.id && (r.passengerIds || []).includes(p.id));
+          const boardingPoint = boardingPoints.find(bp => bp.id === reservationForPassenger?.boardingPointId)?.name || "N/A";
           const dobString = p.dob ? new Date(p.dob).toLocaleDateString("es-AR") : "N/A";
           return {
               id: p.id,
