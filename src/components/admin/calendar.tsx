@@ -112,6 +112,8 @@ export function Calendar() {
 
   const bubbleSegments = useMemo(() => {
     const segments: { bubble: Bubble; startCol: number; colSpan: number; row: number; isFirstSegment: boolean }[] = [];
+    if (!days || days.length === 0) return segments;
+
     const gridStartDate = new Date(days[0].date);
 
     bubbles.forEach(bubble => {
@@ -119,13 +121,12 @@ export function Calendar() {
         if (sortedDates.length === 0) return;
 
         let currentSegment: Date[] = [];
-        let isFirstSegmentOfBubble = true;
+        let isFirstSegment = true; // FIX: Declaration was missing from previous broken versions.
 
         for (let i = 0; i < sortedDates.length; i++) {
             const date = sortedDates[i];
             const prevDate = i > 0 ? sortedDates[i - 1] : null;
 
-            // Start a new segment if it's the first date, not consecutive, or starts a new week
             if (!prevDate || (date.getTime() - prevDate.getTime() > 86400000) || date.getDay() === 0) {
                 if (currentSegment.length > 0) {
                     const segmentStartDate = currentSegment[0];
@@ -136,12 +137,12 @@ export function Calendar() {
                     
                     segments.push({
                         bubble,
-                        startCol: startCol + 1, // CSS grid is 1-based
+                        startCol: startCol + 1,
                         colSpan: currentSegment.length,
-                        row: row + 1, // CSS grid is 1-based
+                        row: row + 1,
                         isFirstSegment
                     });
-                    isFirstSegment = false;
+                    if (isFirstSegment) isFirstSegment = false;
                 }
                 currentSegment = [date];
             } else {
@@ -149,7 +150,6 @@ export function Calendar() {
             }
         }
         
-        // Push the last segment
         if (currentSegment.length > 0) {
             const segmentStartDate = currentSegment[0];
             const timeDiff = segmentStartDate.getTime() - gridStartDate.getTime();
@@ -277,9 +277,9 @@ export function Calendar() {
                             gridRowStart: row,
                             height: `${bubble.height || 28}px`,
                             alignSelf: 'start',
-                            marginTop: '2px', // Add a small margin to not overlap day number completely
+                            marginTop: '2px',
                         }}
-                        onMouseDown={(e) => e.stopPropagation()} // Prevent starting a new selection
+                        onMouseDown={(e) => e.stopPropagation()} 
                     >
                         {isFirstSegment && (
                             <>
