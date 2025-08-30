@@ -179,12 +179,14 @@ export default function ReportsPage() {
         });
 
         const totalManualExpenses = manualExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const totalNetExpense = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + (commissionCosts > 0 ? commissionCosts : 0) + totalManualExpenses;
+        const totalTripExpenses = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + (commissionCosts > 0 ? commissionCosts : 0);
+        const totalNetExpense = totalTripExpenses + totalManualExpenses;
+        
         const totalCommissionIncome = externalCommissionIncomes.reduce((sum, e) => sum + e.amount, 0);
         const totalExcursionIncome = excursionIncomesFiltered.reduce((sum, e) => sum + e.amount, 0);
         const totalTripIncome = monthlyReservations.reduce((sum, r) => sum + r.finalPrice, 0);
         
-        const totalNetIncome = totalTripIncome + totalCommissionIncome + totalExcursionIncome - totalNetExpense;
+        const totalNetIncome = (totalTripIncome - totalTripExpenses) + totalCommissionIncome + totalExcursionIncome - totalManualExpenses;
         
         return {
             transportCosts, hotelCosts, extraCosts, commissionCosts,
@@ -383,4 +385,5 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
+
 

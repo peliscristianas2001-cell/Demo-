@@ -18,7 +18,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Tour, LayoutItemType, LayoutCategory, Insurance, Pension, PricingTier, TourCosts, ExtraCost, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
-import { PlusCircle, Trash2 } from "lucide-react"
+import { PlusCircle, Trash2, Upload } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/accordion"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import Image from "next/image"
 
 interface TripFormProps {
   isOpen: boolean
@@ -78,6 +79,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const [isLoading, setIsLoading] = useState(false)
   const [nextId, setNextId] = useState(1);
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
+  const [bgImagePreview, setBgImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
 
   const categoryNames: Record<LayoutCategory, string> = {
@@ -115,15 +117,18 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               vehicles: tour.vehicles || {},
               airplanes: tour.airplanes || {},
               cruises: tour.cruises || {},
+              backgroundImage: tour.backgroundImage,
             });
             setTransportUnits(tour.transportUnits || []);
             setNextId((tour.transportUnits?.length || 0) + 1);
+            setBgImagePreview(tour.backgroundImage || null);
 
         } else {
             // Reset form for new trip
             setFormData({destination: "", date: new Date(), price: 0, ...defaultTourData});
             setTransportUnits([]);
             setNextId(1);
+            setBgImagePreview(null);
         }
         setIsLoading(false); 
     }
@@ -185,6 +190,19 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   const handleRemoveExtraCost = (id: string) => {
     setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: prev.costs?.extras?.filter(c => c.id !== id)}}));
   }
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setBgImagePreview(dataUrl);
+        handleFormChange('backgroundImage', dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
 
   const handleSubmit = () => {
@@ -243,6 +261,20 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
 
                 <div className="space-y-4 pt-2">
                     <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport']}>
+                        <AccordionItem value="images">
+                            <AccordionTrigger className="text-base font-medium">Imágenes</AccordionTrigger>
+                            <AccordionContent className="pt-4 space-y-4">
+                               <div className="space-y-2">
+                                  <Label htmlFor="bg-image">Imagen de Fondo para Página de Reserva</Label>
+                                  <Input id="bg-image" type="file" accept="image/*" onChange={handleImageChange} />
+                               </div>
+                               {bgImagePreview && (
+                                  <div className="relative h-32 w-full rounded-md overflow-hidden border">
+                                    <Image src={bgImagePreview} alt="Vista previa" layout="fill" objectFit="cover"/>
+                                  </div>
+                               )}
+                            </AccordionContent>
+                         </AccordionItem>
                          <AccordionItem value="general">
                             <AccordionTrigger className="text-base font-medium">Información para Tickets</AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-4">

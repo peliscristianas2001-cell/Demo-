@@ -202,6 +202,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     value={formData.mainPassengerId}
                     onChange={handleMainPassengerSelect}
                     placeholder="Buscar pasajero por nombre o DNI..."
+                    listHeight="h-48"
                 />
             </div>
             

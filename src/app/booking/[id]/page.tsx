@@ -291,7 +291,14 @@ export default function BookingPage() {
             <div className="lg:col-span-2 space-y-8">
               <Card className="overflow-hidden shadow-lg">
                 <div className="relative h-48 sm:h-64">
-                  <Image src={tour.flyerUrl} alt={tour.destination} layout="fill" objectFit="cover" className="brightness-90" data-ai-hint="travel destination"/>
+                   <Image 
+                    src={tour.backgroundImage || tour.flyerUrl} 
+                    alt={tour.destination} 
+                    layout="fill" 
+                    objectFit="cover" 
+                    className="brightness-90" 
+                    data-ai-hint="travel destination"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-6 flex flex-col justify-end">
                       <h1 className="text-3xl sm:text-4xl font-headline text-white drop-shadow-xl">{tour.destination}</h1>
                   </div>

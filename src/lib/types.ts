@@ -96,6 +96,13 @@ export interface TransportUnit {
     coordinatorPhone?: string;
 }
 
+export interface Insurance {
+    active: boolean;
+    cost: number;
+    minAge: number;
+    maxAge: number;
+}
+
 export interface Tour {
   id: string;
   destination: string;
@@ -103,6 +110,7 @@ export interface Tour {
   price: number;
   flyerUrl: string;
   flyerType?: 'image' | 'video';
+  backgroundImage?: string;
   
   origin?: string;
   nights?: number;
@@ -111,6 +119,10 @@ export interface Tour {
   presentationTime?: string;
   departureTime?: string;
   bus?: string;
+  coordinator?: string; // This can be the main coordinator if a unit doesn't have one
+  coordinatorPhone?: string;
+  roomType?: string; // e.g. 'Doble', 'Triple' etc.
+  insurance?: Insurance;
 
   pricingTiers?: PricingTier[];
   costs?: TourCosts;

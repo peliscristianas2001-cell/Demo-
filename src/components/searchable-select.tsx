@@ -18,9 +18,10 @@ interface SearchableSelectProps {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    listHeight?: string;
 }
 
-export function SearchableSelect({ options, value, onChange, placeholder }: SearchableSelectProps) {
+export function SearchableSelect({ options, value, onChange, placeholder, listHeight = 'h-60' }: SearchableSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -81,7 +82,7 @@ export function SearchableSelect({ options, value, onChange, placeholder }: Sear
 
             {isOpen && (
                 <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
-                    <ScrollArea className="max-h-60">
+                    <ScrollArea className={listHeight}>
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map(option => (
                                 <div
