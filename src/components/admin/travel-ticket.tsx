@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React from "react"
@@ -53,6 +52,8 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   const nightsAndRoom = tour.nights && tour.nights > 0 
     ? `${tour.nights} ${tour.nights > 1 ? 'noches' : 'noche'} - ${reservation.roomType || 'No especificada'}`
     : "Solo ida";
+    
+  const qrProxyUrl = `/api/image-proxy?url=${encodeURIComponent(ticket.qrCodeUrl)}`;
 
   return (
     <div ref={ref} className={cn(
@@ -107,7 +108,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
             </div>
 
             {/* Columna Derecha */}
-            <div className="col-span-4 space-y-3">
+            <div className="col-span-4 space-y-3 flex flex-col">
                  <InfoSection title="Agencia" icon={Building}>
                     <InfoRow label="Nombre" value="YO TE LLEVO" />
                  </InfoSection>
@@ -121,6 +122,9 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                   <InfoSection title="Observaciones" icon={Info} contentClassName="text-center font-medium">
                      <p>{tour.observations || "Obligatorio llevar D.N.I."}</p>
                  </InfoSection>
+                 <div className="flex-grow flex items-center justify-center">
+                    <img src={qrProxyUrl} alt={`QR Code for ${ticket.passengerName}`} width={150} height={150} />
+                 </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
                     <p>¡PUNTUALIDAD CON LOS HORARIOS!</p>
                  </InfoSection>

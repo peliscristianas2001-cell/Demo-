@@ -25,8 +25,9 @@ import {
 import { Download, TicketCheck, User, Plane } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
-import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint } from "@/lib/types"
+import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 export default function EmployeeTicketsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -34,9 +35,11 @@ export default function EmployeeTicketsPage() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
+  const [pensions, setPensions] = useState<Pension[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
+  const { toast } = useToast();
   
   useEffect(() => {
     setIsClient(true);
@@ -46,12 +49,15 @@ export default function EmployeeTicketsPage() {
     const storedSellers = localStorage.getItem("ytl_sellers");
     const storedPassengers = localStorage.getItem("ytl_passengers");
     const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+    const storedPensions = localStorage.getItem("ytl_pensions");
+
 
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
     setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers);
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
+    if(storedPensions) setPensions(JSON.parse(storedPensions));
 
     // Add storage event listeners to update state on changes from other tabs
     const handleStorageChange = () => {
@@ -60,11 +66,13 @@ export default function EmployeeTicketsPage() {
         const newStoredSellers = localStorage.getItem("ytl_sellers");
         const newStoredPassengers = localStorage.getItem("ytl_passengers");
         const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        const newStoredPensions = localStorage.getItem("ytl_pensions");
         setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
         setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
         setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
+        if(newStoredPensions) setPensions(JSON.parse(newStoredPensions));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -145,13 +153,7 @@ export default function EmployeeTicketsPage() {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
         pixelRatio: 2,
-         style: {
-            fontFamily: "'PT Sans', sans-serif",
-        },
-        fetchRequestInit: {
-            headers: new Headers(),
-            mode: 'no-cors'
-        }
+        style: { fontFamily: "'PT Sans', sans-serif" }
       });
 
       const pdf = new jsPDF({
@@ -162,7 +164,12 @@ export default function EmployeeTicketsPage() {
       pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
       pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
-      console.error('oops, something went wrong!', error);
+      console.error("Error al generar el PDF del ticket:", error);
+      toast({
+        title: "Error al Descargar",
+        description: "No se pudo generar el PDF. Puede ser un problema con la carga de imágenes externas. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -223,6 +230,7 @@ export default function EmployeeTicketsPage() {
                                 {tripTickets.map((ticket) => {
                                     const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
                                     const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
+                                    const pension = pensions.find(p => p.id === ticket.reservation.pensionId);
                                     return (
                                         <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
                                             <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
@@ -237,7 +245,7 @@ export default function EmployeeTicketsPage() {
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
                                                     <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
-                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint}/>
+                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension}/>
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
                                                     <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>

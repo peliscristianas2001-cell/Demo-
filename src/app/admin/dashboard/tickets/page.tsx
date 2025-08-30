@@ -27,6 +27,7 @@ import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 export default function TicketsAdminPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -38,6 +39,7 @@ export default function TicketsAdminPage() {
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
+  const { toast } = useToast();
   
   useEffect(() => {
     setIsClient(true);
@@ -151,13 +153,7 @@ export default function TicketsAdminPage() {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
         pixelRatio: 2,
-         style: {
-            fontFamily: "'PT Sans', sans-serif",
-        },
-        fetchRequestInit: {
-            headers: new Headers(),
-            mode: 'no-cors'
-        }
+        style: { fontFamily: "'PT Sans', sans-serif" }
       });
 
       const pdf = new jsPDF({
@@ -168,7 +164,12 @@ export default function TicketsAdminPage() {
       pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
       pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
-      console.error('oops, something went wrong!', error);
+      console.error("Error al generar el PDF del ticket:", error);
+      toast({
+        title: "Error al Descargar",
+        description: "No se pudo generar el PDF. Puede ser un problema con la carga de imágenes externas. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
     }
   };
 
