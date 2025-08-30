@@ -240,7 +240,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                 </DialogContent>
                             </Dialog>
                         </div>
-                        <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
                             {familyMembers.map(member => (
                                 <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
                                     <Checkbox

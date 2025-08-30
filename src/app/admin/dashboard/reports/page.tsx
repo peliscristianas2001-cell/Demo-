@@ -200,25 +200,18 @@ export default function ReportsPage() {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
-        const monthlyTours = tours.filter(t => {
-            const tourDate = new Date(t.date);
+        const monthlyToursData = reportData.filter(rd => {
+            const tourDate = new Date(rd.tour.date);
             return tourDate.getMonth() === currentMonth && tourDate.getFullYear() === currentYear;
         });
-        const monthlyTripIds = new Set(monthlyTours.map(t => t.id));
-        const monthlyReservations = reservations.filter(r => monthlyTripIds.has(r.tripId) && r.status === 'Confirmado');
-
+        const monthlyTours = monthlyToursData.map(rd => rd.tour);
+        
         const transportCosts = monthlyTours.reduce((sum, t) => sum + (t.costs?.transport || 0), 0);
         const hotelCosts = monthlyTours.reduce((sum, t) => sum + (t.costs?.hotel || 0), 0);
         const extraCosts = monthlyTours.flatMap(t => t.costs?.extras || []);
-
-        const commissionCosts = monthlyReservations.reduce((sum, res) => {
-            const seller = sellers.find(s => s.id === res.sellerId);
-            if (seller) {
-                return sum + (res.finalPrice * ((seller.fixedCommissionRate || 0) / 100));
-            }
-            return sum;
-        }, 0);
         
+        const commissionCosts = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
+
         const manualExpenses = customExpenses.filter(e => {
             const expenseDate = new Date(e.date);
             return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
@@ -235,23 +228,24 @@ export default function ReportsPage() {
         });
 
         const totalManualExpenses = manualExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const totalTripExpenses = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + (commissionCosts > 0 ? commissionCosts : 0);
+        const totalTripExpenses = transportCosts + hotelCosts + extraCosts.reduce((s, e) => s + e.amount, 0) + commissionCosts;
         const totalNetExpense = totalTripExpenses + totalManualExpenses;
         
         const totalCommissionIncome = externalCommissionIncomes.reduce((sum, e) => sum + e.amount, 0);
         const totalExcursionIncome = excursionIncomesFiltered.reduce((sum, e) => sum + e.amount, 0);
-        const totalTripIncome = monthlyReservations.reduce((sum, r) => sum + r.finalPrice, 0);
         
-        const totalNetIncome = (totalTripIncome - totalTripExpenses) + totalCommissionIncome + totalExcursionIncome - totalManualExpenses;
+        const totalNetIncomeFromTrips = monthlyToursData.reduce((sum, rd) => sum + rd.netProfit, 0);
+        const totalNetIncome = totalNetIncomeFromTrips + totalCommissionIncome + totalExcursionIncome - totalManualExpenses;
         
         return {
             transportCosts, hotelCosts, extraCosts, commissionCosts,
             manualExpenses, totalNetExpense,
             externalCommissionIncomes, totalCommissionIncome,
             excursionIncomes: excursionIncomesFiltered, totalExcursionIncome,
-            monthlyTours, totalNetIncome, totalTripIncome
+            monthlyTours, totalNetIncome,
+            monthlyToursData
         };
-    }, [tours, reservations, sellers, customExpenses, externalCommissions, excursionIncomes]);
+    }, [tours, reservations, sellers, customExpenses, externalCommissions, excursionIncomes, reportData]);
     
     const handleAddItem = (type: 'expense' | 'commission' | 'excursion') => {
         if (!newItem.description || !newItem.amount) {
@@ -359,14 +353,14 @@ export default function ReportsPage() {
         </Dialog>
         
         <Dialog open={activeModal === 'netIncome'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
-            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingreso Neto Mensual</DialogTitle><DialogDescription>Desglose de todos los ingresos del mes en curso.</DialogDescription></DialogHeader>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingreso Neto Mensual</DialogTitle><DialogDescription>Desglose de todas las ganancias del mes en curso.</DialogDescription></DialogHeader>
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
-                    {monthlyReport.monthlyTours.map(tour => {
-                        const netProfit = reportData.find(rd => rd.tour.id === tour.id)?.netProfit || 0;
-                        return (<InfoRow key={tour.id} label={`Ganancia Neta - ${tour.destination}`} value={formatCurrency(netProfit)} />)
-                    })}
-                    <InfoRow label="Total Comisiones Externas" value={formatCurrency(monthlyReport.totalCommissionIncome)} />
-                    <InfoRow label="Total Ingresos Excursiones" value={formatCurrency(monthlyReport.totalExcursionIncome)} />
+                    {monthlyReport.monthlyToursData.map(rd => (
+                        <InfoRow key={rd.tour.id} label={`Ganancia Neta - ${rd.tour.destination}`} value={formatCurrency(rd.netProfit)} />
+                    ))}
+                    {monthlyReport.totalCommissionIncome > 0 && <InfoRow label="Total Comisiones Externas" value={formatCurrency(monthlyReport.totalCommissionIncome)} />}
+                    {monthlyReport.totalExcursionIncome > 0 && <InfoRow label="Total Ingresos Excursiones" value={formatCurrency(monthlyReport.totalExcursionIncome)} />}
+                    {monthlyReport.manualExpenses.length > 0 && <InfoRow label="Total Gastos Manuales" value={`-${formatCurrency(monthlyReport.manualExpenses.reduce((sum, e) => sum + e.amount, 0))}`} />}
                 </div></ScrollArea>
                 <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
             </DialogContent>
@@ -455,6 +449,3 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
-
-
-
