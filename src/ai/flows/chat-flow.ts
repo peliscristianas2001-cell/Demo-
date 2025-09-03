@@ -3,26 +3,15 @@
  * @fileOverview A chatbot flow for answering user questions about available tours.
  */
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { mockTours } from '@/lib/mock-data';
 import type { Tour } from '@/lib/types';
 
 // In a real app, you would fetch this from a database or live API.
-// For now, we use the mock data.
+// For now, we use the mock data directly on the server.
 const getAvailableTours = (): Tour[] => {
-    try {
-        // Attempt to read from localStorage if in a browser-like environment (might not work server-side)
-        if (typeof localStorage !== 'undefined') {
-            const storedTours = localStorage.getItem("ytl_tours");
-            if (storedTours) {
-                const parsedTours: Tour[] = JSON.parse(storedTours);
-                return parsedTours.filter(tour => new Date(tour.date) >= new Date());
-            }
-        }
-    } catch (e) {
-        console.error("Could not access localStorage, falling back to mock data.", e);
-    }
-    // Fallback to mock data
+    // This function runs on the server, so it cannot access localStorage.
+    // We will use the mock data directly.
     return mockTours.filter(tour => new Date(tour.date) >= new Date());
 };
 
