@@ -33,7 +33,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle, Pencil } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
 import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome, HistoryItem } from "@/lib/types"
 import { Input } from "@/components/ui/input"
@@ -75,6 +75,7 @@ export default function ReportsPage() {
     const { toast } = useToast();
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [hasDueItems, setHasDueItems] = useState(false);
+    const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -196,7 +197,7 @@ export default function ReportsPage() {
         }).filter(data => data.reservationCount > 0 || data.totalFixedCosts > 0);
     }, [tours, reservations, sellers]);
 
-     const monthlyReport = useMemo(() => {
+    const monthlyReport = useMemo(() => {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
@@ -205,23 +206,24 @@ export default function ReportsPage() {
             return tourDate.getMonth() === currentMonth && tourDate.getFullYear() === currentYear;
         });
 
-        // Calculate all incomes
-        const totalNetProfitFromTrips = monthlyToursData.reduce((sum, rd) => sum + rd.netProfit, 0);
+        // INCOMES
+        const totalProfitFromTrips = monthlyToursData.reduce((sum, rd) => sum + rd.netProfit, 0);
         const monthlyExternalCommissions = externalCommissions.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
         const totalCommissionIncome = monthlyExternalCommissions.reduce((sum, e) => sum + e.amount, 0);
         const monthlyExcursionIncomes = excursionIncomes.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
         const totalExcursionIncome = monthlyExcursionIncomes.reduce((sum, e) => sum + e.amount, 0);
 
-        // Calculate all expenses
+        // EXPENSES
         const monthlyManualExpenses = customExpenses.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
         const totalManualExpenses = monthlyManualExpenses.reduce((sum, e) => sum + e.amount, 0);
         
         const totalTripFixedCosts = monthlyToursData.reduce((sum, rd) => sum + rd.totalFixedCosts, 0);
         const totalTripCommissionsPaid = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
         const totalNetExpense = totalTripFixedCosts + totalTripCommissionsPaid + totalManualExpenses;
-
-        // Calculate final Net Income for the month
-        const totalNetIncome = totalNetProfitFromTrips + totalCommissionIncome + totalExcursionIncome;
+        
+        // NET INCOME
+        const totalGrossIncome = totalProfitFromTrips + totalCommissionIncome + totalExcursionIncome;
+        const totalNetIncome = totalGrossIncome - totalManualExpenses;
         
         return {
             totalNetExpense,
@@ -240,17 +242,43 @@ export default function ReportsPage() {
             toast({ title: "Datos incompletos", description: "Por favor, añade descripción y monto.", variant: "destructive" });
             return;
         }
-        const itemToAdd = {
-            id: `ITEM-${Date.now()}`,
-            description: newItem.description,
-            amount: parseFloat(newItem.amount),
-            date: new Date()
-        };
 
-        if(type === 'expense') setCustomExpenses(prev => [...prev, itemToAdd]);
-        else if (type === 'commission') setExternalCommissions(prev => [...prev, itemToAdd]);
-        else if (type === 'excursion') setExcursionIncomes(prev => [...prev, itemToAdd]);
+        if (type === 'expense') {
+            if (editingExpenseId) {
+                // Edit existing expense
+                setCustomExpenses(prev => prev.map(e => e.id === editingExpenseId ? { ...e, description: newItem.description, amount: parseFloat(newItem.amount) } : e));
+                setEditingExpenseId(null);
+            } else {
+                // Add new expense
+                const itemToAdd = {
+                    id: `ITEM-${Date.now()}`,
+                    description: newItem.description,
+                    amount: parseFloat(newItem.amount),
+                    date: new Date()
+                };
+                setCustomExpenses(prev => [...prev, itemToAdd]);
+            }
+        } else {
+             const itemToAdd = {
+                id: `ITEM-${Date.now()}`,
+                description: newItem.description,
+                amount: parseFloat(newItem.amount),
+                date: new Date()
+            };
+            if (type === 'commission') setExternalCommissions(prev => [...prev, itemToAdd]);
+            else if (type === 'excursion') setExcursionIncomes(prev => [...prev, itemToAdd]);
+        }
         
+        setNewItem({ description: "", amount: "" });
+    }
+
+    const handleEditItem = (expense: CustomExpense) => {
+        setEditingExpenseId(expense.id);
+        setNewItem({ description: expense.description, amount: String(expense.amount) });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingExpenseId(null);
         setNewItem({ description: "", amount: "" });
     }
 
@@ -312,8 +340,8 @@ export default function ReportsPage() {
                     )}
                     <Card><CardHeader><CardTitle className="text-base">Gastos Manuales</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="space-y-2 mb-4">{monthlyReport.monthlyManualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
-                             <div className="p-4 border rounded-lg space-y-2"><Label>Añadir Nuevo Gasto Manual</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('expense')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button></div></div>
+                            <div className="space-y-2 mb-4">{monthlyReport.monthlyManualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditItem(e)}><Pencil className="w-4 h-4"/></Button><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
+                             <div className="p-4 border rounded-lg space-y-2"><Label>{editingExpenseId ? "Editar Gasto Manual" : "Añadir Nuevo Gasto Manual"}</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('expense')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button>{editingExpenseId && <Button onClick={handleCancelEdit} variant="outline" size="sm">Cancelar</Button>}</div></div>
                         </CardContent>
                     </Card>
                 </div></ScrollArea>
@@ -346,14 +374,19 @@ export default function ReportsPage() {
         </Dialog>
         
         <Dialog open={activeModal === 'netIncome'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
-            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingreso Neto Mensual</DialogTitle><DialogDescription>Desglose de todas las ganancias del mes en curso.</DialogDescription></DialogHeader>
+            <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Ingreso Neto Mensual</DialogTitle><DialogDescription>Desglose de todas las ganancias y gastos del mes en curso.</DialogDescription></DialogHeader>
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
+                    <h4 className="font-semibold text-lg text-green-600">Ingresos</h4>
                     {monthlyReport.monthlyToursData.map(rd => (
                         <InfoRow key={rd.tour.id} label={`Ganancia Neta - ${rd.tour.destination}`} value={formatCurrency(rd.netProfit)} />
                     ))}
-                     <hr className="my-2"/>
                     {monthlyReport.totalCommissionIncome > 0 && <InfoRow label="Total Comisiones Externas" value={formatCurrency(monthlyReport.totalCommissionIncome)} />}
                     {monthlyReport.totalExcursionIncome > 0 && <InfoRow label="Total Ingresos Excursiones" value={formatCurrency(monthlyReport.totalExcursionIncome)} />}
+                    <hr className="my-4"/>
+                    <h4 className="font-semibold text-lg text-destructive">Gastos</h4>
+                    {monthlyReport.monthlyManualExpenses.map(e => (
+                       <InfoRow key={e.id} label={e.description} value={formatCurrency(e.amount * -1)} />
+                    ))}
                 </div></ScrollArea>
                 <DialogFooter><Button variant="outline" onClick={() => setActiveModal(null)}>Cerrar</Button></DialogFooter>
             </DialogContent>
