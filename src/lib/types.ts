@@ -56,8 +56,14 @@ export interface ExcursionIncome {
     date: Date;
 }
 
+export interface TransportCost {
+    unitId: number;
+    category: LayoutCategory;
+    amount: number;
+}
+
 export interface TourCosts {
-    transport?: number;
+    transport?: TransportCost[];
     hotel?: number;
     extras?: ExtraCost[];
 }

@@ -51,7 +51,7 @@ type LayoutEntry = {
     coordinatorPhone: string;
 }
 
-const defaultCosts: TourCosts = { transport: 0, hotel: 0, extras: [] };
+const defaultCosts: TourCosts = { transport: [], hotel: 0, extras: [] };
 
 const defaultTourData: Omit<Tour, 'id' | 'destination' | 'date' | 'price' | 'flyerUrl' | 'transportUnits'> = {
     origin: "",
@@ -160,6 +160,26 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
           return unit;
       }))
   }
+  
+  const handleCostChange = (index: number, value: string) => {
+      const newCosts = [...(formData.costs?.transport || [])];
+      newCosts[index] = { ...newCosts[index], amount: parseFloat(value) || 0 };
+      setFormData(prev => ({ ...prev, costs: { ...prev.costs!, transport: newCosts } }));
+  }
+
+  useEffect(() => {
+    // Sync transportUnits with costs
+    const transportCosts = transportUnits.map(unit => {
+        const existing = formData.costs?.transport?.find(c => c.unitId === unit.id);
+        return {
+            unitId: unit.id,
+            category: unit.category,
+            amount: existing?.amount || 0
+        };
+    });
+    setFormData(prev => ({ ...prev, costs: { ...prev.costs!, transport: transportCosts } }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transportUnits]);
 
   const handleAddTier = () => {
       setFormData(prev => ({...prev, pricingTiers: [...(prev.pricingTiers || []), { id: `T-${Math.random().toString(36).substring(2, 9)}`, name: '', price: 0 }]}))
@@ -175,9 +195,10 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     setFormData(prev => ({...prev, pricingTiers: prev.pricingTiers?.filter(tier => tier.id !== id)}));
   }
   
-  const handleCostChange = (field: 'transport' | 'hotel', value: string) => {
-    setFormData(prev => ({ ...prev, costs: { ...prev.costs!, [field]: parseFloat(value) || 0 }}));
+  const handleHotelCostChange = (value: string) => {
+      setFormData(prev => ({...prev, costs: {...prev.costs!, hotel: parseFloat(value) || 0}}));
   }
+
 
   const handleAddExtraCost = () => {
     setFormData(prev => ({...prev, costs: {...prev.costs, extras: [...(prev.costs?.extras || []), {id: `E-${Math.random().toString(36).substring(2, 9)}`, description: '', amount: 0}]}}));
@@ -260,7 +281,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                 </div>
 
                 <div className="space-y-4 pt-2">
-                    <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport']}>
+                    <Accordion type="multiple" className="w-full" defaultValue={['general', 'transport', 'costs']}>
                         <AccordionItem value="images">
                             <AccordionTrigger className="text-base font-medium">Imágenes</AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-4">
@@ -338,12 +359,22 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                             <AccordionTrigger className="text-base font-medium">Costos del Viaje</AccordionTrigger>
                             <AccordionContent className="pt-4 space-y-4">
                                <div className="space-y-2">
-                                   <Label htmlFor="cost-transport">Costo Transporte (Micro)</Label>
-                                   <Input id="cost-transport" type="number" value={formData.costs?.transport || ''} onChange={(e) => handleCostChange('transport', e.target.value)} placeholder="0"/>
+                                  <Label>Costo Hotel</Label>
+                                   <Input type="number" value={formData.costs?.hotel || ''} onChange={(e) => handleHotelCostChange(e.target.value)} placeholder="0"/>
                                </div>
                                <div className="space-y-2">
-                                   <Label htmlFor="cost-hotel">Costo Hotel</Label>
-                                   <Input id="cost-hotel" type="number" value={formData.costs?.hotel || ''} onChange={(e) => handleCostChange('hotel', e.target.value)} placeholder="0"/>
+                                    <Label>Costos de Transporte</Label>
+                                    {formData.costs?.transport?.map((cost, index) => {
+                                        const unit = transportUnits.find(u => u.id === cost.unitId);
+                                        if (!unit) return null;
+                                        const unitName = layoutConfig[unit.category]?.[unit.type]?.name || `Unidad ${unit.id}`;
+                                        return (
+                                            <div key={cost.unitId} className="flex items-center gap-2">
+                                                <Label className="flex-1">Costo para: {unitName}</Label>
+                                                <Input type="number" value={cost.amount} onChange={e => handleCostChange(index, e.target.value)} className="w-40"/>
+                                            </div>
+                                        )
+                                    })}
                                </div>
                                <div className="space-y-4 p-4 border rounded-lg">
                                   <Label className="text-lg font-medium">Gastos Extras</Label>
@@ -422,3 +453,4 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
+

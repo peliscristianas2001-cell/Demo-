@@ -109,7 +109,7 @@ export default function ReportsPage() {
                     const tripReservations = reservations.filter(res => res.tripId === tour.id && res.status === 'Confirmado');
                     const totalIncome = tripReservations.reduce((sum, res) => sum + res.finalPrice, 0);
                     const tourCosts = tour.costs || {};
-                    const transportCost = tourCosts.transport || 0;
+                    const transportCost = (tourCosts.transport || []).reduce((sum, cost) => sum + cost.amount, 0);
                     const hotelCost = tourCosts.hotel || 0;
                     const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
                     const totalFixedCosts = transportCost + hotelCost + extrasCost;
@@ -177,7 +177,7 @@ export default function ReportsPage() {
             }, { total: 0, details: {} as Record<string, CommissionDetail> });
 
             const tourCosts = tour.costs || {};
-            const transportCost = tourCosts.transport || 0;
+            const transportCost = (tourCosts.transport || []).reduce((sum, cost) => sum + cost.amount, 0);
             const hotelCost = tourCosts.hotel || 0;
             const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
             const totalFixedCosts = transportCost + hotelCost + extrasCost;
@@ -220,12 +220,9 @@ export default function ReportsPage() {
         const totalTripCommissionsPaid = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
         
         const costsByTransportType = monthlyToursData.reduce((acc, rd) => {
-            const transportCost = rd.tour.costs?.transport || 0;
-            if(transportCost > 0 && rd.tour.transportUnits){
-                rd.tour.transportUnits.forEach(unit => {
-                    acc[unit.category] = (acc[unit.category] || 0) + (transportCost / rd.tour.transportUnits!.length); // Distribute cost if multiple units
-                })
-            }
+            (rd.tour.costs?.transport || []).forEach(cost => {
+                acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
+            });
             return acc;
         }, {} as Record<string, number>);
 
