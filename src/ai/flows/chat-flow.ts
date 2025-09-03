@@ -7,14 +7,9 @@ import {z} from 'zod';
 import { mockTours } from '@/lib/mock-data';
 import type { Tour } from '@/lib/types';
 
-// In a real app, you would fetch this from a database or live API.
-// For now, we use the mock data directly on the server.
 const getAvailableTours = (): Tour[] => {
-    // This function runs on the server, so it cannot access localStorage.
-    // We will use the mock data directly.
     return mockTours.filter(tour => new Date(tour.date) >= new Date());
 };
-
 
 const ChatInputSchema = z.object({
   history: z.array(z.object({
@@ -28,7 +23,6 @@ export type ChatInput = z.infer<typeof ChatInputSchema>;
 export async function chat(input: ChatInput): Promise<string> {
   const availableTours = getAvailableTours();
   
-  // Create a simplified text representation of the tours for the LLM context.
   const tourContext = availableTours.map(tour => 
     `- Viaje a ${tour.destination}, sale el ${new Date(tour.date).toLocaleDateString('es-AR')}. Cuesta $${tour.price.toLocaleString('es-AR')}. Noches: ${tour.nights || 'N/A'}. ID: ${tour.id}`
   ).join('\n');
