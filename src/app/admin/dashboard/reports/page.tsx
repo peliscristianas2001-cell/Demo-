@@ -64,7 +64,7 @@ type ModalType = 'expenses' | 'commissions' | 'excursions' | 'netIncome' | 'comm
 export default function ReportsPage() {
     const [tours, setTours] = useState<Tour[]>([])
     const [reservations, setReservations] = useState<Reservation[]>([])
-    const [sellers, setSellers] = useState<Seller[]>([])
+    const [sellers, setSellers] = useState<Seller[]>([]);
     const [customExpenses, setCustomExpenses] = useState<CustomExpense[]>([])
     const [externalCommissions, setExternalCommissions] = useState<ExternalCommission[]>([]);
     const [excursionIncomes, setExcursionIncomes] = useState<ExcursionIncome[]>([]);
@@ -300,6 +300,12 @@ export default function ReportsPage() {
     if (!isClient) {
         return null;
     }
+    
+    const monthlyTotalTransportCost = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + (rd.tour.costs?.transport || 0), 0);
+    const monthlyTotalHotelCost = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + (rd.tour.costs?.hotel || 0), 0);
+    const monthlyTotalExtrasCost = monthlyReport.monthlyToursData.flatMap(rd => rd.tour.costs?.extras || []);
+    const monthlyTotalCommissionsPaid = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
+
 
     return (
         <>
@@ -325,20 +331,19 @@ export default function ReportsPage() {
         <Dialog open={activeModal === 'expenses'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
             <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Desglose de Gastos del Mes</DialogTitle><DialogDescription>Aquí se detallan todos los gastos registrados en el mes actual.</DialogDescription></DialogHeader>
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
-                    {monthlyReport.monthlyToursData.length > 0 && (
-                        <Card><CardHeader><CardTitle className="text-base">Costos de Viajes</CardTitle></CardHeader>
-                            <CardContent className="space-y-2">
-                               {monthlyReport.monthlyToursData.map(rd => (
-                                    <div key={rd.tour.id}>
-                                        <p className="font-semibold text-sm">{rd.tour.destination}</p>
-                                        <InfoRow label="Comisiones Pagadas" value={formatCurrency(rd.totalCommission)} />
-                                        <InfoRow label="Gastos Fijos (transporte, hotel, etc.)" value={formatCurrency(rd.totalFixedCosts)} />
-                                    </div>
-                               ))}
-                            </CardContent>
-                        </Card>
-                    )}
-                    <Card><CardHeader><CardTitle className="text-base">Gastos Manuales</CardTitle></CardHeader>
+                    <Card><CardHeader><CardTitle className="text-base">Costos de Viajes del Mes</CardTitle></CardHeader>
+                        <CardContent className="space-y-2">
+                            <InfoRow label="Costo Total Transporte" value={formatCurrency(monthlyTotalTransportCost)} />
+                            <InfoRow label="Costo Total Hotel" value={formatCurrency(monthlyTotalHotelCost)} />
+                            <InfoRow label="Total Comisiones Pagadas" value={formatCurrency(monthlyTotalCommissionsPaid)} />
+                            {monthlyTotalExtrasCost.length > 0 && <h4 className="font-semibold text-sm pt-2">Costos Extras de Viajes:</h4>}
+                            {monthlyTotalExtrasCost.map(extra => (
+                                <InfoRow key={extra.id} label={extra.description} value={formatCurrency(extra.amount)} />
+                            ))}
+                        </CardContent>
+                    </Card>
+                    
+                    <Card><CardHeader><CardTitle className="text-base">Gastos Varios (Manuales)</CardTitle></CardHeader>
                         <CardContent>
                             <div className="space-y-2 mb-4">{monthlyReport.monthlyManualExpenses.map(e => (<div key={e.id} className="flex items-center gap-2"><div className="flex-grow"><InfoRow label={e.description} value={formatCurrency(e.amount)}/></div><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditItem(e)}><Pencil className="w-4 h-4"/></Button><Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteItem(e.id, 'expense')}><Trash2 className="w-4 h-4"/></Button></div>))}</div>
                              <div className="p-4 border rounded-lg space-y-2"><Label>{editingExpenseId ? "Editar Gasto Manual" : "Añadir Nuevo Gasto Manual"}</Label><div className="flex items-center gap-2"><Input placeholder="Descripción..." value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}/><Input type="number" placeholder="Monto" className="w-32" value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}/><Button onClick={() => handleAddItem('expense')} size="icon" className="flex-shrink-0"><PlusCircle className="w-4 h-4"/></Button>{editingExpenseId && <Button onClick={handleCancelEdit} variant="outline" size="sm">Cancelar</Button>}</div></div>
@@ -475,4 +480,5 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between items-center text-sm"><p className="text-muted-foreground">{label}</p><p className="font-semibold">{value}</p></div>
 );
     
+
 
