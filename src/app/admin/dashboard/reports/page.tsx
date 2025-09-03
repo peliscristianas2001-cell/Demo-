@@ -33,7 +33,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle, Pencil } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle, Pencil, Bus, Ship } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
 import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome, HistoryItem } from "@/lib/types"
 import { Input } from "@/components/ui/input"
@@ -217,9 +217,26 @@ export default function ReportsPage() {
         const monthlyManualExpenses = customExpenses.filter(e => new Date(e.date).getMonth() === currentMonth && new Date(e.date).getFullYear() === currentYear);
         const totalManualExpenses = monthlyManualExpenses.reduce((sum, e) => sum + e.amount, 0);
         
-        const totalTripFixedCosts = monthlyToursData.reduce((sum, rd) => sum + rd.totalFixedCosts, 0);
         const totalTripCommissionsPaid = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
-        const totalNetExpense = totalTripFixedCosts + totalTripCommissionsPaid + totalManualExpenses;
+        
+        const costsByTransportType = monthlyToursData.reduce((acc, rd) => {
+            const transportCost = rd.tour.costs?.transport || 0;
+            if(transportCost > 0 && rd.tour.transportUnits){
+                rd.tour.transportUnits.forEach(unit => {
+                    acc[unit.category] = (acc[unit.category] || 0) + (transportCost / rd.tour.transportUnits!.length); // Distribute cost if multiple units
+                })
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
+        const totalHotelCost = monthlyToursData.reduce((sum, rd) => sum + (rd.tour.costs?.hotel || 0), 0);
+        const monthlyTotalExtrasCost = monthlyToursData.flatMap(rd => rd.tour.costs?.extras || []);
+
+        const totalNetExpense = Object.values(costsByTransportType).reduce((a,b) => a+b, 0) 
+            + totalHotelCost 
+            + monthlyTotalExtrasCost.reduce((sum, extra) => sum + extra.amount, 0)
+            + totalTripCommissionsPaid 
+            + totalManualExpenses;
         
         // NET INCOME
         const totalGrossIncome = totalProfitFromTrips + totalCommissionIncome + totalExcursionIncome;
@@ -233,7 +250,11 @@ export default function ReportsPage() {
             monthlyExcursionIncomes,
             totalNetIncome,
             monthlyToursData,
-            monthlyManualExpenses
+            monthlyManualExpenses,
+            costsByTransportType,
+            totalHotelCost,
+            monthlyTotalExtrasCost,
+            totalTripCommissionsPaid
         };
     }, [reportData, customExpenses, externalCommissions, excursionIncomes]);
     
@@ -300,12 +321,6 @@ export default function ReportsPage() {
     if (!isClient) {
         return null;
     }
-    
-    const monthlyTotalTransportCost = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + (rd.tour.costs?.transport || 0), 0);
-    const monthlyTotalHotelCost = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + (rd.tour.costs?.hotel || 0), 0);
-    const monthlyTotalExtrasCost = monthlyReport.monthlyToursData.flatMap(rd => rd.tour.costs?.extras || []);
-    const monthlyTotalCommissionsPaid = monthlyReport.monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
-
 
     return (
         <>
@@ -333,13 +348,20 @@ export default function ReportsPage() {
                 <ScrollArea className="h-[60vh]"><div className="py-4 space-y-4 pr-6">
                     <Card><CardHeader><CardTitle className="text-base">Costos de Viajes del Mes</CardTitle></CardHeader>
                         <CardContent className="space-y-2">
-                            <InfoRow label="Costo Total Transporte" value={formatCurrency(monthlyTotalTransportCost)} />
-                            <InfoRow label="Costo Total Hotel" value={formatCurrency(monthlyTotalHotelCost)} />
-                            <InfoRow label="Total Comisiones Pagadas" value={formatCurrency(monthlyTotalCommissionsPaid)} />
-                            {monthlyTotalExtrasCost.length > 0 && <h4 className="font-semibold text-sm pt-2">Costos Extras de Viajes:</h4>}
-                            {monthlyTotalExtrasCost.map(extra => (
-                                <InfoRow key={extra.id} label={extra.description} value={formatCurrency(extra.amount)} />
-                            ))}
+                             {monthlyReport.costsByTransportType.vehicles > 0 && <InfoRow label="Costo Micros" value={formatCurrency(monthlyReport.costsByTransportType.vehicles)} />}
+                             {monthlyReport.costsByTransportType.airplanes > 0 && <InfoRow label="Costo Aviones" value={formatCurrency(monthlyReport.costsByTransportType.airplanes)} />}
+                             {monthlyReport.costsByTransportType.cruises > 0 && <InfoRow label="Costo Cruceros" value={formatCurrency(monthlyReport.costsByTransportType.cruises)} />}
+                             {monthlyReport.totalHotelCost > 0 && <InfoRow label="Costo Total Hotel" value={formatCurrency(monthlyReport.totalHotelCost)} />}
+                             {monthlyReport.totalTripCommissionsPaid > 0 && <InfoRow label="Total Comisiones Pagadas" value={formatCurrency(monthlyReport.totalTripCommissionsPaid)} />}
+                             
+                             {monthlyReport.monthlyTotalExtrasCost.length > 0 && (
+                                <>
+                                    <h4 className="font-semibold text-sm pt-2">Costos Extras de Viajes:</h4>
+                                    {monthlyReport.monthlyTotalExtrasCost.map(extra => (
+                                        <InfoRow key={extra.id} label={extra.description} value={formatCurrency(extra.amount)} />
+                                    ))}
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                     
@@ -482,3 +504,6 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
     
 
 
+
+
+    
