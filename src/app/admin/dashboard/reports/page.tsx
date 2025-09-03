@@ -109,7 +109,7 @@ export default function ReportsPage() {
                     const tripReservations = reservations.filter(res => res.tripId === tour.id && res.status === 'Confirmado');
                     const totalIncome = tripReservations.reduce((sum, res) => sum + res.finalPrice, 0);
                     const tourCosts = tour.costs || {};
-                    const transportCost = (tourCosts.transport || []).reduce((sum, cost) => sum + cost.amount, 0);
+                    const transportCost = Array.isArray(tourCosts.transport) ? tourCosts.transport.reduce((sum, cost) => sum + cost.amount, 0) : 0;
                     const hotelCost = tourCosts.hotel || 0;
                     const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
                     const totalFixedCosts = transportCost + hotelCost + extrasCost;
@@ -177,7 +177,7 @@ export default function ReportsPage() {
             }, { total: 0, details: {} as Record<string, CommissionDetail> });
 
             const tourCosts = tour.costs || {};
-            const transportCost = (tourCosts.transport || []).reduce((sum, cost) => sum + cost.amount, 0);
+            const transportCost = Array.isArray(tourCosts.transport) ? tourCosts.transport.reduce((sum, cost) => sum + cost.amount, 0) : 0;
             const hotelCost = tourCosts.hotel || 0;
             const extrasCost = (tourCosts.extras || []).reduce((sum, extra) => sum + extra.amount, 0);
             const totalFixedCosts = transportCost + hotelCost + extrasCost;
@@ -501,6 +501,9 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
     
 
 
+
+
+    
 
 
     
