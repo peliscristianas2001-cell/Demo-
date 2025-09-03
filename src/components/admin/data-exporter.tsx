@@ -154,55 +154,57 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 py-4 flex-1 overflow-hidden">
           {/* Columna de Filtros */}
-          <div className="col-span-1 border-r pr-6 space-y-4">
-            <div className="space-y-2">
-              <Label className="font-semibold">Viajes</Label>
-              <ScrollArea className="h-48 border rounded-md p-2">
-                {tours.map((tour) => (
-                  <div key={tour.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`trip-${tour.id}`}
-                      checked={selectedTripIds.includes(tour.id)}
-                      onCheckedChange={(checked) => {
-                        setSelectedTripIds((prev) =>
-                          checked ? [...prev, tour.id] : prev.filter((id) => id !== tour.id)
-                        );
-                      }}
-                    />
-                    <Label htmlFor={`trip-${tour.id}`} className="font-normal">{tour.destination}</Label>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Columnas</Label>
+          <ScrollArea className="col-span-1 border-r pr-6">
+            <div className="space-y-4">
               <div className="space-y-2">
-                {Object.entries(dataColumns).map(([key, label]) => (
-                  <div key={key} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`col-${key}`}
-                      checked={selectedColumns.includes(key)}
-                      onCheckedChange={(checked) => {
-                        setSelectedColumns((prev) =>
-                          checked ? [...prev, key] : prev.filter((col) => col !== key)
-                        );
-                      }}
-                    />
-                    <Label htmlFor={`col-${key}`} className="font-normal">{label}</Label>
-                  </div>
-                ))}
+                <Label className="font-semibold">Viajes</Label>
+                <ScrollArea className="h-48 border rounded-md p-2">
+                  {tours.map((tour) => (
+                    <div key={tour.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`trip-${tour.id}`}
+                        checked={selectedTripIds.includes(tour.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedTripIds((prev) =>
+                            checked ? [...prev, tour.id] : prev.filter((id) => id !== tour.id)
+                          );
+                        }}
+                      />
+                      <Label htmlFor={`trip-${tour.id}`} className="font-normal">{tour.destination}</Label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Columnas</Label>
+                <div className="space-y-2">
+                  {Object.entries(dataColumns).map(([key, label]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`col-${key}`}
+                        checked={selectedColumns.includes(key)}
+                        onCheckedChange={(checked) => {
+                          setSelectedColumns((prev) =>
+                            checked ? [...prev, key] : prev.filter((col) => col !== key)
+                          );
+                        }}
+                      />
+                      <Label htmlFor={`col-${key}`} className="font-normal">{label}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+               <div className="flex items-center space-x-2">
+                  <Checkbox
+                      id="insured-only"
+                      checked={showInsuredOnly}
+                      onCheckedChange={(checked) => setShowInsuredOnly(!!checked)}
+                  />
+                  <Label htmlFor="insured-only">Mostrar solo pasajeros con seguro</Label>
               </div>
             </div>
-            <Separator />
-             <div className="flex items-center space-x-2">
-                <Checkbox
-                    id="insured-only"
-                    checked={showInsuredOnly}
-                    onCheckedChange={(checked) => setShowInsuredOnly(!!checked)}
-                />
-                <Label htmlFor="insured-only">Mostrar solo pasajeros con seguro</Label>
-            </div>
-          </div>
+          </ScrollArea>
 
           {/* Columna de Resultados */}
           <div className="col-span-3 overflow-hidden flex flex-col">
