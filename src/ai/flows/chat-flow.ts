@@ -5,7 +5,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import { mockTours } from '@/lib/mock-data';
-import type { Tour, GeneralSettings } from '@/lib/types';
+import type { Tour } from '@/lib/types';
 
 const ChatInputSchema = z.object({
   history: z.array(z.object({
@@ -19,24 +19,11 @@ export type ChatInput = z.infer<typeof ChatInputSchema>;
 export async function chat(input: ChatInput): Promise<string> {
   const availableTours: Tour[] = mockTours.filter(tour => new Date(tour.date) >= new Date());
   
-  let generalSettings: GeneralSettings | null = null;
-  try {
-    const settingsStr = localStorage.getItem("ytl_general_settings");
-    if (settingsStr) {
-      generalSettings = JSON.parse(settingsStr);
-    }
-  } catch (error) {
-    // localStorage is not available on the server, this is expected.
-    // We will proceed without these settings.
-  }
-
   const tourContext = availableTours.map(tour => 
-    `- Viaje a ${tour.destination}, sale el ${new Date(tour.date).toLocaleDateString('es-AR')}. Cuesta $${tour.price.toLocaleString('es-AR')}. Noches: ${tour.nights || 'N/A'}. ID: ${tour.id}`
+    `- Viaje a ${tour.destination}, sale el ${new Date(tour.date).toLocaleDateString('es-AR')}. Cuesta $${tour.price.toLocaleString('es-AR')}. ID: ${tour.id}`
   ).join('\n');
   
-  const adminContact = generalSettings?.mainWhatsappNumber 
-    ? `El número de WhatsApp para contactar a un representante es: ${generalSettings.mainWhatsappNumber}.`
-    : `Puedes contactar a un representante de la agencia para más detalles.`;
+  const adminContact = `Puedes contactar a un representante de la agencia para más detalles.`;
 
   const systemPrompt = `Eres un asistente de IA amigable y servicial para la agencia de viajes "YO TE LLEVO".
 Tu objetivo es responder preguntas de los usuarios sobre la agencia y los viajes disponibles, y ayudarles a decidir.
@@ -55,11 +42,16 @@ Historial de la conversación:
 ${input.history.map(h => `${h.role}: ${h.content}`).join('\n')}
 `;
 
-  const { output } = await ai.generate({
-    model: 'googleai/gemini-2.0-flash',
-    system: systemPrompt,
-    prompt: input.prompt,
-  });
+  try {
+    const { output } = await ai.generate({
+      model: 'googleai/gemini-2.0-flash',
+      system: systemPrompt,
+      prompt: input.prompt,
+    });
 
-  return output?.text!;
+    return output?.text || "No he podido generar una respuesta en este momento.";
+  } catch (error) {
+    console.error("Error al generar respuesta del chat:", error);
+    return "Lo siento, estoy teniendo problemas para conectarme. Por favor, inténtalo de nuevo más tarde.";
+  }
 }
