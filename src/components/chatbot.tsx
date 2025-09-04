@@ -25,7 +25,7 @@ export function Chatbot() {
   useEffect(() => {
     if (isOpen) {
         setMessages([
-            { role: 'model', content: '¡Hola! Soy tu asistente de viajes. ¿En qué puedo ayudarte a encontrar tu próxima aventura?' }
+            { role: 'model', content: '¡Hola! Soy tu asistente de IA. Puedo ayudarte con información sobre nuestros viajes o la agencia. ¿En qué puedo ayudarte hoy?' }
         ]);
     }
   }, [isOpen]);
@@ -78,7 +78,7 @@ export function Chatbot() {
           <CardHeader className="flex flex-row items-center justify-between p-4 border-b">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Bot className="w-6 h-6 text-primary" />
-              Asistente de Viajes
+              Asistente de Viaje IA
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
               <X className="w-5 h-5" />
