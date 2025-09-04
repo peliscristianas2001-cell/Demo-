@@ -9,6 +9,7 @@ import { Bot, Send, X, Loader2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { chat } from '@/ai/flows/chat-flow';
 import Textarea from 'react-textarea-autosize';
+import type { Tour, GeneralSettings } from '@/lib/types';
 
 type Message = {
   role: 'user' | 'model';
@@ -31,7 +32,6 @@ export function Chatbot() {
   }, [isOpen]);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
         top: scrollAreaRef.current.scrollHeight,
@@ -39,6 +39,41 @@ export function Chatbot() {
       });
     }
   }, [messages]);
+
+  const getAppContext = (): string => {
+    try {
+        const tours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || "[]");
+        const settings: GeneralSettings = JSON.parse(localStorage.getItem("ytl_general_settings") || "{}");
+        
+        const activeTours = tours.filter(tour => new Date(tour.date) >= new Date());
+
+        let context = "### Información de Viajes Disponibles:\n";
+        if (activeTours.length > 0) {
+            context += activeTours.map(tour => 
+                `- Viaje a ${tour.destination}, sale el ${new Date(tour.date).toLocaleDateString('es-AR')}. Cuesta $${tour.price.toLocaleString('es-AR')}.`
+            ).join('\n');
+        } else {
+            context += "No hay viajes disponibles en este momento.";
+        }
+
+        context += "\n\n### Información de Contacto de la Agencia:\n";
+        if (settings.contact) {
+            context += `Dirección: ${settings.contact.address || 'No especificada'}\n`;
+            context += `Teléfono: ${settings.contact.phone || 'No especificado'}\n`;
+            context += `Email: ${settings.contact.email || 'No especificado'}\n`;
+            context += `Horario: ${settings.contact.hours || 'No especificado'}\n`;
+        } else {
+             context += `Para más detalles, puedes contactar a un representante de la agencia.`;
+        }
+         context += `\nEl número de WhatsApp principal es: ${settings.mainWhatsappNumber || 'No especificado'}`;
+
+
+        return context;
+    } catch (error) {
+        console.error("Error al obtener contexto del localStorage:", error);
+        return "No se pudo cargar la información de la página.";
+    }
+  }
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -49,9 +84,11 @@ export function Chatbot() {
     setIsLoading(true);
 
     try {
+      const pageContext = getAppContext();
       const modelResponse = await chat({
         history: messages,
         prompt: input,
+        context: pageContext,
       });
       
       const modelMessage: Message = { role: 'model', content: modelResponse };
