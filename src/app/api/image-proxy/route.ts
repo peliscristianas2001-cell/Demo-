@@ -10,20 +10,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, {
+        headers: {
+            'Accept': 'image/png,image/jpeg,image/webp,image/svg+xml,*/*',
+        }
+    });
+
     if (!response.ok) {
+      console.error(`Error al obtener la imagen: ${response.status} ${response.statusText}`);
+      const errorBody = await response.text();
+      console.error(`Cuerpo del error: ${errorBody}`);
       return new NextResponse('No se pudo obtener la imagen', { status: response.status });
     }
 
     const imageBuffer = await response.arrayBuffer();
     const contentType = response.headers.get('content-type') || 'image/png';
 
+    const headers = new Headers();
+    headers.set('Content-Type', contentType);
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    
     return new NextResponse(imageBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      headers: headers,
     });
   } catch (error) {
     console.error('Error en el proxy de imagen:', error);

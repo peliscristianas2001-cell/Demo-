@@ -152,7 +152,11 @@ export default function EmployeeTicketsPage() {
     try {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
-        pixelRatio: 3,
+        pixelRatio: 2,
+        fetchRequestInit: {
+            mode: 'cors',
+            credentials: 'omit'
+        }
       });
 
       const pdf = new jsPDF({
@@ -162,13 +166,17 @@ export default function EmployeeTicketsPage() {
       });
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = ticketElement.offsetWidth;
-      const imgHeight = ticketElement.offsetHeight;
-      const ratio = imgHeight / imgWidth;
-      const imgPdfHeight = pdfWidth * ratio;
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise(resolve => { img.onload = resolve; });
       
-      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgPdfHeight);
+      const imgWidth = img.width;
+      const imgHeight = img.height;
+      const ratio = imgWidth / imgHeight;
+      let imgPdfWidth = pdfWidth;
+      let imgPdfHeight = pdfWidth / ratio;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, imgPdfWidth, imgPdfHeight);
       pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
 
     } catch (error) {

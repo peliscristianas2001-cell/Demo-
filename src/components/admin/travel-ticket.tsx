@@ -41,30 +41,46 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
 )
 
 function QRCodeDisplay({ url }: { url: string }) {
-    const [qrUrl, setQrUrl] = useState('');
+    const [qrUrl, setQrUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setIsLoading(true);
-        // Use an image proxy to avoid CORS issues and cache the image
-        fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to load QR code');
-                return res.blob();
-            })
-            .then(blob => {
-                const objectUrl = URL.createObjectURL(blob);
-                setQrUrl(objectUrl);
-                // Cleanup function to revoke the object URL
-                return () => URL.revokeObjectURL(objectUrl);
-            })
-            .catch(err => {
-                console.error("QR Code Error:", err);
-                // Fallback to direct URL if proxy fails, though it might not render in canvas
-                setQrUrl(url); 
-            })
-            .finally(() => setIsLoading(false));
+        let isMounted = true;
         
+        const fetchQrCode = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
+                if (!response.ok) {
+                    throw new Error(`Error al cargar el código QR: ${response.statusText}`);
+                }
+                const blob = await response.blob();
+                if (isMounted) {
+                    setQrUrl(URL.createObjectURL(blob));
+                }
+            } catch (e) {
+                if (isMounted) {
+                    setError('No se pudo cargar el QR.');
+                    console.error("QR Code Error:", e);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchQrCode();
+
+        return () => {
+            isMounted = false;
+            if (qrUrl) {
+                URL.revokeObjectURL(qrUrl);
+            }
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);
 
     if (isLoading) {
@@ -76,11 +92,11 @@ function QRCodeDisplay({ url }: { url: string }) {
         );
     }
 
-    if (!qrUrl) {
+    if (error || !qrUrl) {
          return (
             <div className="text-center">
                 <QrCode className="w-16 h-16 mx-auto text-destructive"/>
-                <p className="text-xs text-destructive mt-2">Error QR</p>
+                <p className="text-xs text-destructive mt-2">{error || 'Error QR'}</p>
             </div>
         );
     }
