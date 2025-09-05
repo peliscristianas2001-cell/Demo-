@@ -40,7 +40,7 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
     </div>
 )
 
-function QRCodeDisplay({ url }: { url: string }) {
+function QRCodeDisplay({ url, onQrLoad }: { url: string, onQrLoad: () => void }) {
     const [qrUrl, setQrUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,7 @@ function QRCodeDisplay({ url }: { url: string }) {
                 const blob = await response.blob();
                 if (isMounted) {
                     setQrUrl(URL.createObjectURL(blob));
+                    onQrLoad();
                 }
             } catch (e) {
                 if (isMounted) {
@@ -107,6 +108,7 @@ function QRCodeDisplay({ url }: { url: string }) {
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint, pension }, ref) => {
   const reservation = ticket.reservation;
+  const [isQrLoaded, setIsQrLoaded] = useState(false);
 
   const assignedLocations = [
     ...(reservation.assignedSeats || []).map(s => s.seatId),
@@ -121,7 +123,9 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
     <div ref={ref} className={cn(
       "bg-slate-100 text-black rounded-lg overflow-hidden shadow-2xl border",
       "w-[794px] min-h-[1123px] p-6 font-sans flex flex-col gap-4"
-    )}>
+    )}
+    data-qr-loaded={isQrLoaded}
+    >
         <header className="flex justify-between items-center border-b-2 border-primary/20 pb-4">
            <Logo />
            <div className="text-right">
@@ -185,8 +189,8 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                      <p>{tour.observations || "Obligatorio llevar D.N.I."}</p>
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
-                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md p-2" data-qr-container>
-                        <QRCodeDisplay url={ticket.qrCodeUrl} />
+                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md p-2">
+                        <QRCodeDisplay url={ticket.qrCodeUrl} onQrLoad={() => setIsQrLoaded(true)} />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
@@ -198,3 +202,5 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
+
+    

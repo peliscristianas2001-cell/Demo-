@@ -29,6 +29,8 @@ import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pensi
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export default function TicketsAdminPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
@@ -149,11 +151,17 @@ export default function TicketsAdminPage() {
     const ticketElement = ticketRefs[ticketId].current;
     if (!ticketElement) return;
 
+    // --- Wait for QR code to be ready ---
+    for (let i = 0; i < 5; i++) { // Try up to 5 times (2.5 seconds total)
+      const qrContainer = ticketElement.querySelector('[data-qr-loaded="true"]');
+      if (qrContainer) break; // QR is ready, exit loop
+      await delay(500);
+    }
+
     try {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
         pixelRatio: 2,
-        // Make sure external images are loaded
         fetchRequestInit: {
             mode: 'cors',
             credentials: 'omit'
