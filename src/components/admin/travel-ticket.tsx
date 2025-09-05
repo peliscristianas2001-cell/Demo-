@@ -53,7 +53,10 @@ function QRCodeDisplay({ url }: { url: string }) {
                 return res.blob();
             })
             .then(blob => {
-                setQrUrl(URL.createObjectURL(blob));
+                const objectUrl = URL.createObjectURL(blob);
+                setQrUrl(objectUrl);
+                // Cleanup function to revoke the object URL
+                return () => URL.revokeObjectURL(objectUrl);
             })
             .catch(err => {
                 console.error("QR Code Error:", err);
@@ -62,11 +65,6 @@ function QRCodeDisplay({ url }: { url: string }) {
             })
             .finally(() => setIsLoading(false));
         
-        return () => {
-            if (qrUrl) {
-                URL.revokeObjectURL(qrUrl);
-            }
-        }
     }, [url]);
 
     if (isLoading) {
@@ -74,6 +72,15 @@ function QRCodeDisplay({ url }: { url: string }) {
             <div className="text-center">
                 <Loader2 className="w-16 h-16 mx-auto text-gray-600 animate-spin"/>
                 <p className="text-xs text-gray-600 mt-2">Cargando QR...</p>
+            </div>
+        );
+    }
+
+    if (!qrUrl) {
+         return (
+            <div className="text-center">
+                <QrCode className="w-16 h-16 mx-auto text-destructive"/>
+                <p className="text-xs text-destructive mt-2">Error QR</p>
             </div>
         );
     }
@@ -175,5 +182,3 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
-
-    
