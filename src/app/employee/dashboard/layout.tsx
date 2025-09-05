@@ -75,17 +75,6 @@ export default function EmployeeDashboardLayout({
             </SidebarHeader>
             <div className="flex-1 overflow-y-auto">
               <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Crear Nueva Reserva"
-                    >
-                      <Link href="/tours">
-                        <Plane />
-                        <span>Nueva Venta</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 {navItems.map((item) => (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton

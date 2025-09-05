@@ -65,17 +65,6 @@ export default function DashboardLayout({
             </SidebarHeader>
             <div className="flex-1 overflow-y-auto">
               <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Crear Nueva Reserva"
-                    >
-                      <Link href="/tours">
-                        <Plane />
-                        <span>Nueva Venta</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
