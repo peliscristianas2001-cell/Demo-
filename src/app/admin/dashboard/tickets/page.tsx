@@ -149,38 +149,33 @@ export default function TicketsAdminPage() {
     const ticketElement = ticketRefs[ticketId].current;
     if (!ticketElement) return;
 
-    // Check if the QR code image is still loading
-    const qrContainer = ticketElement.querySelector('[data-qr-container]');
-    const isLoading = qrContainer ? qrContainer.querySelector('.animate-spin') !== null : true;
-
-    if (isLoading) {
-        toast({
-            title: "Cargando código QR",
-            description: "Por favor, espera un momento a que el código QR se cargue y vuelve a intentarlo.",
-            variant: "default",
-        });
-        return;
-    }
-
     try {
       const dataUrl = await toPng(ticketElement, { 
         quality: 1.0, 
-        pixelRatio: 2,
-        style: { fontFamily: "'PT Sans', sans-serif" }
+        pixelRatio: 3, // Higher pixel ratio for better quality
       });
 
       const pdf = new jsPDF({
         orientation: "portrait",
-        unit: "px",
-        format: [ticketElement.offsetWidth + 20, ticketElement.offsetHeight + 20]
+        unit: "mm",
+        format: "a4"
       });
-      pdf.addImage(dataUrl, 'PNG', 10, 10, ticketElement.offsetWidth, ticketElement.offsetHeight);
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = ticketElement.offsetWidth;
+      const imgHeight = ticketElement.offsetHeight;
+      const ratio = imgHeight / imgWidth;
+      const imgPdfHeight = pdfWidth * ratio;
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgPdfHeight);
       pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
+
     } catch (error) {
       console.error("Error al generar el PDF del ticket:", error);
       toast({
         title: "Error al Descargar",
-        description: "No se pudo generar el PDF. Asegúrate de que tu conexión a internet está activa y vuelve a intentarlo.",
+        description: "No se pudo generar el PDF. Por favor, inténtalo de nuevo.",
         variant: "destructive"
       });
     }
@@ -257,8 +252,10 @@ export default function TicketsAdminPage() {
                                             </AccordionTrigger>
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
-                                                    <div ref={ticketRefs[ticket.id]} className="transform scale-[0.95]">
-                                                        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />
+                                                    <div className="w-[794px]">
+                                                      <div ref={ticketRefs[ticket.id]} className="transform scale-[1]">
+                                                          <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />
+                                                      </div>
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
                                                     <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
@@ -282,3 +279,5 @@ export default function TicketsAdminPage() {
     </div>
   )
 }
+
+    

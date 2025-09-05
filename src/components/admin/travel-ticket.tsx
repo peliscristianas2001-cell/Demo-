@@ -7,9 +7,10 @@ import { es } from "date-fns/locale"
 import type { Ticket as TicketType, Tour, Seller, BoardingPoint, Pension } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
+import Image from "next/image"
 import { 
     Users, MapPin, CalendarDays, BedDouble, Utensils, Bus, Clock, Armchair, 
-    FileText, Info, AlertTriangle, UserSquare, UserCircle, Building, TicketIcon, QrCode
+    FileText, Info, AlertTriangle, UserSquare, UserCircle, Building, TicketIcon, QrCode, Loader2
 } from "lucide-react"
 
 interface TravelTicketProps {
@@ -38,6 +39,47 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
         <span className="text-right font-medium text-foreground break-words">{value || "—"}</span>
     </div>
 )
+
+function QRCodeDisplay({ url }: { url: string }) {
+    const [qrUrl, setQrUrl] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setIsLoading(true);
+        // Use an image proxy to avoid CORS issues and cache the image
+        fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load QR code');
+                return res.blob();
+            })
+            .then(blob => {
+                setQrUrl(URL.createObjectURL(blob));
+            })
+            .catch(err => {
+                console.error("QR Code Error:", err);
+                // Fallback to direct URL if proxy fails, though it might not render in canvas
+                setQrUrl(url); 
+            })
+            .finally(() => setIsLoading(false));
+        
+        return () => {
+            if (qrUrl) {
+                URL.revokeObjectURL(qrUrl);
+            }
+        }
+    }, [url]);
+
+    if (isLoading) {
+        return (
+            <div className="text-center">
+                <Loader2 className="w-16 h-16 mx-auto text-gray-600 animate-spin"/>
+                <p className="text-xs text-gray-600 mt-2">Cargando QR...</p>
+            </div>
+        );
+    }
+
+    return <Image src={qrUrl} alt="Código QR" width={150} height={150} />;
+}
 
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint, pension }, ref) => {
@@ -121,10 +163,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
                     <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md p-2" data-qr-container>
-                        <div className="text-center">
-                            <QrCode className="w-16 h-16 mx-auto text-gray-600"/>
-                            <p className="text-xs text-gray-600 mt-2">QR para escaneo</p>
-                        </div>
+                        <QRCodeDisplay url={ticket.qrCodeUrl} />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
@@ -136,3 +175,5 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
+
+    
