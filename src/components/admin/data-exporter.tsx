@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockTours, mockReservations, mockPassengers } from "@/lib/mock-data";
-import type { Tour, Reservation, Passenger } from "@/lib/types";
+import type { Tour, Reservation, Passenger, Ticket } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
 import { Download, Copy, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +37,7 @@ interface DataExporterProps {
 }
 
 const dataColumns = {
+  ticketId: "T-ID",
   fullName: "Nombre",
   dni: "DNI",
   age: "Edad",
@@ -62,44 +63,66 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [boardingPoints, setBoardingPoints] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(["fullName", "dni"]);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(["ticketId", "fullName", "dni"]);
   const [showInsuredOnly, setShowInsuredOnly] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       // Load data from localStorage every time the dialog opens
       setTours(JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours)));
-      setReservations(JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations)));
+      const currentReservations = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
+      setReservations(currentReservations);
       setPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
       setBoardingPoints(JSON.parse(localStorage.getItem("ytl_boarding_points") || "[]"));
+
+      const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
+      const generatedTickets = confirmedReservations.map((res: Reservation): Ticket => {
+        const ticketId = `${res.id}-TKT`;
+        const tour = tours.find(t => t.id === res.tripId);
+        const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour?.destination };
+        return {
+            id: ticketId,
+            reservationId: res.id,
+            tripId: res.tripId,
+            passengerName: res.passenger,
+            passengerDni: 'N/A',
+            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`,
+            reservation: res,
+        };
+      });
+      setTickets(generatedTickets);
     }
-  }, [isOpen]);
+  }, [isOpen, tours]);
 
   const exportableData = useMemo(() => {
     const tripsToExport = tours.filter((t) => selectedTripIds.includes(t.id));
     
     return tripsToExport.map((trip) => {
-      let tripPassengers = reservations
-        .filter((r) => r.tripId === trip.id)
-        .flatMap((r) => {
-            const reservationPassengers = passengers.filter(p => (r.passengerIds || []).includes(p.id));
-            if (showInsuredOnly) {
-                return reservationPassengers.filter(p => (r.insuredPassengerIds || []).includes(p.id));
-            }
-            return reservationPassengers;
-        });
-
-      // Remove duplicates
-      tripPassengers = tripPassengers.filter((p, index, self) => index === self.findIndex((t) => t.id === p.id));
-
-      const passengerData = tripPassengers.map(p => {
-          const reservationForPassenger = reservations.find(r => r.tripId === trip.id && (r.passengerIds || []).includes(p.id));
-          const boardingPoint = boardingPoints.find(bp => bp.id === reservationForPassenger?.boardingPointId)?.name || "N/A";
+      let tripReservations = reservations.filter((r) => r.tripId === trip.id);
+      
+      const passengerData = tripReservations
+        .flatMap((res) => {
+          const reservationPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
+          const filteredPassengers = showInsuredOnly
+            ? reservationPassengers.filter(p => (res.insuredPassengerIds || []).includes(p.id))
+            : reservationPassengers;
+          
+          return filteredPassengers.map(p => ({
+            passenger: p,
+            reservation: res
+          }));
+        })
+        .map(({ passenger: p, reservation: r }) => {
+          const boardingPoint = boardingPoints.find(bp => bp.id === r.boardingPointId)?.name || "N/A";
           const dobString = p.dob ? new Date(p.dob).toLocaleDateString("es-AR") : "N/A";
+          const ticketForRes = tickets.find(t => t.reservationId === r.id);
+
           return {
               id: p.id,
+              ticketId: ticketForRes?.id || 'N/A',
               fullName: p.fullName,
               dni: p.dni,
               age: calculateAge(p.dob),
@@ -110,7 +133,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
 
       return { trip, passengers: passengerData };
     });
-  }, [selectedTripIds, passengers, reservations, tours, showInsuredOnly, boardingPoints]);
+  }, [selectedTripIds, passengers, reservations, tours, showInsuredOnly, boardingPoints, tickets]);
 
   const handleCopy = (tripId: string) => {
     const tripData = exportableData.find(d => d.trip.id === tripId);

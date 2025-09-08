@@ -40,9 +40,14 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
     </div>
 )
 
-function QRCodeDisplay({ url }: { url: string; }) {
+function QRCodeDisplay({ url, onQrLoad }: { url: string; onQrLoad: () => void; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const handleLoad = () => {
+        setIsLoading(false);
+        onQrLoad();
+    };
 
     return (
         <div className="relative w-[150px] h-[150px]">
@@ -65,7 +70,7 @@ function QRCodeDisplay({ url }: { url: string; }) {
                 height={150}
                 unoptimized // Important for external URLs that don't need Next.js optimization
                 className={cn(isLoading || error ? "opacity-0" : "opacity-100")}
-                onLoad={() => setIsLoading(false)}
+                onLoad={handleLoad}
                 onError={() => {
                     setIsLoading(false);
                     setError("Error al cargar QR");
@@ -99,6 +104,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
            <div className="text-right">
                 <h2 className="text-2xl font-bold text-primary flex items-center gap-2"><TicketIcon/> PASE DE ABORDO</h2>
                 <p className="text-sm text-muted-foreground">ID Reserva: {reservation.id}</p>
+                <p className="text-sm text-muted-foreground font-mono">T-ID: {ticket.id}</p>
            </div>
         </header>
 
@@ -158,7 +164,12 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
                     <div className="flex items-center justify-center bg-gray-200 rounded-md p-2">
-                        <QRCodeDisplay url={ticket.qrCodeUrl} />
+                        <QRCodeDisplay 
+                            url={ticket.qrCodeUrl} 
+                            onQrLoad={() => {
+                                // This is a placeholder as the logic is now handled in the page
+                            }}
+                        />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
