@@ -220,9 +220,12 @@ export default function ReportsPage() {
         const totalTripCommissionsPaid = monthlyToursData.reduce((sum, rd) => sum + rd.totalCommission, 0);
         
         const costsByTransportType = monthlyToursData.reduce((acc, rd) => {
-            (rd.tour.costs?.transport || []).forEach(cost => {
-                acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
-            });
+            const transportCosts = rd.tour.costs?.transport;
+            if (Array.isArray(transportCosts)) {
+                transportCosts.forEach(cost => {
+                    acc[cost.category] = (acc[cost.category] || 0) + cost.amount;
+                });
+            }
             return acc;
         }, {} as Record<string, number>);
 
@@ -505,5 +508,7 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 
     
 
+
+    
 
     
