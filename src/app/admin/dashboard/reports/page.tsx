@@ -440,7 +440,7 @@ export default function ReportsPage() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                  <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('expenses')}>
-                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><TrendingDown className="w-4 h-4 text-destructive"/><span className="font-bold">Gasto Neto Mensual</span></div><span className="text-destructive text-lg">{formatCurrency(monthlyReport.totalNetExpense)}</span></div>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><TrendingDown className="w-4 h-4 text-destructive"/><span className="font-bold">Gastos Mensuales (Neto)</span></div><span className="text-destructive text-lg">{formatCurrency(monthlyReport.totalNetExpense)}</span></div>
                 </Button>
                  <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('commissions')}>
                     <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><HandCoins className="w-4 h-4 text-green-600"/><span className="font-bold">Ingresos Por Comisión</span></div><span className="text-green-600 text-lg">{formatCurrency(monthlyReport.totalCommissionIncome)}</span></div>
@@ -449,7 +449,7 @@ export default function ReportsPage() {
                     <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><MountainSnow className="w-4 h-4 text-cyan-600"/><span className="font-bold">Ingresos Por Excursión</span></div><span className="text-cyan-600 text-lg">{formatCurrency(monthlyReport.totalExcursionIncome)}</span></div>
                 </Button>
                  <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('netIncome')}>
-                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary"/><span className="font-bold">Ingreso Neto Mensual</span></div><span className="text-primary text-lg">{formatCurrency(monthlyReport.totalNetIncome)}</span></div>
+                    <div className="flex flex-col items-end w-full"><div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary"/><span className="font-bold">Ingresos Mensuales (Neto)</span></div><span className="text-primary text-lg">{formatCurrency(monthlyReport.totalNetIncome)}</span></div>
                 </Button>
             </div>
              {reportData.length === 0 ? (

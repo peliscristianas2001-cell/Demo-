@@ -81,7 +81,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, listHe
             </div>
 
             {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
+                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
                     <ScrollArea className={listHeight}>
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map(option => (

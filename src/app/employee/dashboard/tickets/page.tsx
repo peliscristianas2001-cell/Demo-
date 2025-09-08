@@ -1,14 +1,12 @@
 
 "use client"
 
-import { useState, useMemo, useEffect, createRef } from "react"
-import jsPDF from "jspdf"
-import { toPng } from "html-to-image"
+import { useState, useMemo, useEffect } from "react"
+import ReactDOM from "react-dom";
 import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -22,14 +20,59 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Download, TicketCheck, User, Plane } from "lucide-react"
+import { Download, TicketCheck, User, Printer } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+const TicketPrintPage = ({ ticket, tour, seller, boardingPoint, pension }: { ticket: Ticket, tour: Tour, seller?: Seller, boardingPoint?: BoardingPoint, pension?: Pension }) => {
+  useEffect(() => {
+    document.title = `Ticket - ${ticket.passengerName}`;
+    const handlePrint = () => window.print();
+    
+    const qrImage = document.querySelector('#qr-code-image');
+    if (qrImage?.complete) {
+        handlePrint();
+    } else if (qrImage) {
+        qrImage.addEventListener('load', handlePrint);
+    } else {
+        setTimeout(handlePrint, 1000);
+    }
+
+    return () => {
+        if(qrImage) qrImage.removeEventListener('load', handlePrint);
+    };
+  }, [ticket.passengerName]);
+
+  return (
+    <div className="bg-gray-100 min-h-screen p-8 print:p-0 print:bg-white">
+      <style jsx global>{`
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .no-print {
+            display: none;
+          }
+        }
+      `}</style>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-end mb-4 no-print">
+            <Button onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4"/>
+                Imprimir o Guardar PDF
+            </Button>
+        </div>
+        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />
+      </div>
+    </div>
+  );
+};
 
 export default function EmployeeTicketsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -41,7 +84,6 @@ export default function EmployeeTicketsPage() {
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
-  const { toast } = useToast();
   
   useEffect(() => {
     setIsClient(true);
@@ -139,63 +181,22 @@ export default function EmployeeTicketsPage() {
       return tours.filter(t => tripIdsWithTickets.has(t.id) && new Date(t.date) >= new Date());
   }, [allTickets, tours]);
 
-
-  const ticketRefs = useMemo(() => 
-    allTickets.reduce((acc, ticket) => {
-      acc[ticket.id] = createRef<HTMLDivElement>();
-      return acc;
-    }, {} as Record<string, React.RefObject<HTMLDivElement>>),
-  [allTickets]);
-
-  const handleDownload = async (ticketId: string, passengerName: string) => {
-    const ticketElement = ticketRefs[ticketId].current;
-    if (!ticketElement) return;
+  const handleDownload = (ticket: Ticket) => {
+    const tour = tours.find(t => t.id === ticket.tripId);
+    if (!tour) return;
     
-    // --- Wait for QR code to be ready ---
-    for (let i = 0; i < 5; i++) { // Try up to 5 times (2.5 seconds total)
-      const qrContainer = ticketElement.querySelector('[data-qr-loaded="true"]');
-      if (qrContainer) break; // QR is ready, exit loop
-      await delay(500);
-    }
+    const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
+    const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
+    const pension = pensions.find(p => p.id === ticket.reservation.pensionId);
 
-
-    try {
-      const dataUrl = await toPng(ticketElement, { 
-        quality: 1.0, 
-        pixelRatio: 2,
-        fetchRequestInit: {
-            mode: 'cors',
-            credentials: 'omit'
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+        newWindow.document.write('<html><head><title>Ticket</title></head><body><div id="print-root"></div></body></html>');
+        newWindow.document.close();
+        const printRoot = newWindow.document.getElementById('print-root');
+        if (printRoot) {
+            ReactDOM.render(<TicketPrintPage ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />, printRoot);
         }
-      });
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise(resolve => { img.onload = resolve; });
-      
-      const imgWidth = img.width;
-      const imgHeight = img.height;
-      const ratio = imgWidth / imgHeight;
-      let imgPdfWidth = pdfWidth;
-      let imgPdfHeight = pdfWidth / ratio;
-      
-      pdf.addImage(dataUrl, 'PNG', 0, 0, imgPdfWidth, imgPdfHeight);
-      pdf.save(`Ticket_${passengerName.replace(/\s+/g, "_")}.pdf`);
-
-    } catch (error) {
-      console.error("Error al generar el PDF del ticket:", error);
-      toast({
-        title: "Error al Descargar",
-        description: "No se pudo generar el PDF. Por favor, inténtalo de nuevo.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -254,9 +255,6 @@ export default function EmployeeTicketsPage() {
                         <AccordionContent className="p-0">
                              <Accordion type="multiple" className="w-full">
                                 {tripTickets.map((ticket) => {
-                                    const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
-                                    const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
-                                    const pension = pensions.find(p => p.id === ticket.reservation.pensionId);
                                     return (
                                         <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
                                             <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
@@ -271,14 +269,20 @@ export default function EmployeeTicketsPage() {
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
                                                     <div className="w-[794px]">
-                                                        <div ref={ticketRefs[ticket.id]} className="transform scale-[1]">
-                                                            <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension}/>
+                                                        <div className="transform scale-[1]">
+                                                            <TravelTicket 
+                                                                ticket={ticket} 
+                                                                tour={tour} 
+                                                                seller={sellers.find(s => s.id === ticket.reservation.sellerId)} 
+                                                                boardingPoint={boardingPoints.find(bp => bp.id === ticket.boardingPointId)} 
+                                                                pension={pensions.find(p => p.id === ticket.reservation.pensionId)}
+                                                            />
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
-                                                    <Button onClick={() => handleDownload(ticket.id, ticket.passengerName)}>
+                                                    <Button onClick={() => handleDownload(ticket)}>
                                                         <Download className="mr-2 h-4 w-4" />
-                                                        Descargar PDF
+                                                        Descargar / Imprimir
                                                     </Button>
                                                     </div>
                                                 </div>
@@ -297,5 +301,3 @@ export default function EmployeeTicketsPage() {
     </div>
   )
 }
-
-    

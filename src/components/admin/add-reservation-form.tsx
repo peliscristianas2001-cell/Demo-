@@ -269,6 +269,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                   value={formData.sellerId}
                                   onChange={(value) => handleFormChange('sellerId', value)}
                                   placeholder="Buscar vendedor..."
+                                  listHeight="h-32"
                               />
                           </div>
                           <div className="space-y-2">

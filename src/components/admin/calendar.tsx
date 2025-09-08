@@ -19,7 +19,6 @@ import {
   ListPlus,
   PlusCircle,
 } from "lucide-react";
-import { exportToExcel } from "@/lib/excel-export";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
@@ -89,10 +88,6 @@ export function Calendar() {
     }
   };
 
-  const handleExport = () => {
-    exportToExcel(currentDate, bubbles);
-  };
-  
   const handleMonthChange = (monthIndex: string) => {
     const newDate = new Date(currentDate);
     newDate.setMonth(parseInt(monthIndex));
@@ -220,10 +215,6 @@ export function Calendar() {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
-          </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <FileDown className="mr-2 h-4 w-4" />
-            Exportar a Excel
           </Button>
         </div>
       </div>
