@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import {
   Card,
   CardContent,
@@ -191,11 +191,12 @@ export default function EmployeeTicketsPage() {
 
     const newWindow = window.open('', '_blank');
     if (newWindow) {
-        newWindow.document.write('<html><head><title>Ticket</title></head><body><div id="print-root"></div></body></html>');
+        newWindow.document.write('<html><head><title>Imprimiendo Ticket...</title></head><body><div id="print-root"></div></body></html>');
         newWindow.document.close();
-        const printRoot = newWindow.document.getElementById('print-root');
-        if (printRoot) {
-            ReactDOM.render(<TicketPrintPage ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />, printRoot);
+        const printRootEl = newWindow.document.getElementById('print-root');
+        if (printRootEl) {
+            const root = createRoot(printRootEl);
+            root.render(<TicketPrintPage ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />);
         }
     }
   };
