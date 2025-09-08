@@ -27,7 +27,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button";
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
-import { createRoot } from "react-dom/client";
 
 
 export default function TicketsAdminPage() {
@@ -143,23 +142,16 @@ export default function TicketsAdminPage() {
     const ticketElement = ticketRefs.current[ticketId];
     if (!ticketElement) return;
 
-    const pollForQr = () => new Promise<void>((resolve, reject) => {
-        let attempts = 0;
-        const interval = setInterval(() => {
-            if (ticketElement.getAttribute('data-qr-loaded') === 'true') {
-                clearInterval(interval);
-                resolve();
-            } else if (attempts > 30) { // Timeout after 3 seconds
-                clearInterval(interval);
-                reject(new Error("Timeout esperando el código QR."));
-            }
-            attempts++;
-        }, 100);
-    });
-
     try {
-        await pollForQr();
-
+        const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
+        
+        if (qrImg && !qrImg.complete) {
+            await new Promise<void>((resolve, reject) => {
+                qrImg.onload = () => resolve();
+                qrImg.onerror = () => reject(new Error("No se pudo cargar la imagen del código QR."));
+            });
+        }
+        
         const dataUrl = await toPng(ticketElement, { 
             quality: 1.0, 
             pixelRatio: 2.5,

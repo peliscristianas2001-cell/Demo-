@@ -40,7 +40,7 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
     </div>
 )
 
-function QRCodeDisplay({ url, onQrLoad }: { url: string; onQrLoad: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void; }) {
+function QRCodeDisplay({ url }: { url: string; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -65,10 +65,7 @@ function QRCodeDisplay({ url, onQrLoad }: { url: string; onQrLoad: (e: React.Syn
                 height={150}
                 unoptimized // Important for external URLs that don't need Next.js optimization
                 className={cn(isLoading || error ? "opacity-0" : "opacity-100")}
-                onLoad={(e) => {
-                    setIsLoading(false);
-                    onQrLoad(e);
-                }}
+                onLoad={() => setIsLoading(false)}
                 onError={() => {
                     setIsLoading(false);
                     setError("Error al cargar QR");
@@ -161,12 +158,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
                     <div className="flex items-center justify-center bg-gray-200 rounded-md p-2">
-                        <QRCodeDisplay 
-                            url={ticket.qrCodeUrl} 
-                            onQrLoad={(e) => {
-                                (e.currentTarget.closest('[data-ticket]') as HTMLElement | null)?.setAttribute('data-qr-loaded', 'true');
-                            }}
-                        />
+                        <QRCodeDisplay url={ticket.qrCodeUrl} />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
