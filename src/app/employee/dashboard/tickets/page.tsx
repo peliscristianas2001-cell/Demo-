@@ -1,8 +1,7 @@
 
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { createRoot } from "react-dom/client";
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Card,
   CardContent,
@@ -20,59 +19,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Download, TicketCheck, User, Printer } from "lucide-react"
+import { Download, TicketCheck, User } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-const TicketPrintPage = ({ ticket, tour, seller, boardingPoint, pension }: { ticket: Ticket, tour: Tour, seller?: Seller, boardingPoint?: BoardingPoint, pension?: Pension }) => {
-  useEffect(() => {
-    document.title = `Ticket - ${ticket.passengerName}`;
-    const handlePrint = () => window.print();
-    
-    const qrImage = document.querySelector('#qr-code-image');
-    if (qrImage?.complete) {
-        handlePrint();
-    } else if (qrImage) {
-        qrImage.addEventListener('load', handlePrint);
-    } else {
-        setTimeout(handlePrint, 1000);
-    }
-
-    return () => {
-        if(qrImage) qrImage.removeEventListener('load', handlePrint);
-    };
-  }, [ticket.passengerName]);
-
-  return (
-    <div className="bg-gray-100 min-h-screen p-8 print:p-0 print:bg-white">
-      <style jsx global>{`
-        @media print {
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .no-print {
-            display: none;
-          }
-        }
-      `}</style>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-4 no-print">
-            <Button onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4"/>
-                Imprimir o Guardar PDF
-            </Button>
-        </div>
-        <TravelTicket ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />
-      </div>
-    </div>
-  );
-};
 
 export default function EmployeeTicketsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -84,6 +39,7 @@ export default function EmployeeTicketsPage() {
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
+  const ticketRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
   useEffect(() => {
     setIsClient(true);
@@ -181,23 +137,65 @@ export default function EmployeeTicketsPage() {
       return tours.filter(t => tripIdsWithTickets.has(t.id) && new Date(t.date) >= new Date());
   }, [allTickets, tours]);
 
-  const handleDownload = (ticket: Ticket) => {
-    const tour = tours.find(t => t.id === ticket.tripId);
-    if (!tour) return;
-    
-    const seller = sellers.find(s => s.id === ticket.reservation.sellerId);
-    const boardingPoint = boardingPoints.find(bp => bp.id === ticket.boardingPointId);
-    const pension = pensions.find(p => p.id === ticket.reservation.pensionId);
+  const handleDownload = async (ticketId: string) => {
+    const ticketElement = ticketRefs.current[ticketId];
+    if (!ticketElement) return;
 
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-        newWindow.document.write('<html><head><title>Imprimiendo Ticket...</title></head><body><div id="print-root"></div></body></html>');
-        newWindow.document.close();
-        const printRootEl = newWindow.document.getElementById('print-root');
-        if (printRootEl) {
-            const root = createRoot(printRootEl);
-            root.render(<TicketPrintPage ticket={ticket} tour={tour} seller={seller} boardingPoint={boardingPoint} pension={pension} />);
+    // Wait for the QR code to be fully loaded.
+    const pollForQr = (resolve: () => void, reject: (reason?: any) => void) => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            const qrLoaded = ticketElement.getAttribute('data-qr-loaded') === 'true';
+            if (qrLoaded) {
+                clearInterval(interval);
+                resolve();
+            } else if (attempts > 30) { // Timeout after ~3 seconds
+                clearInterval(interval);
+                reject(new Error('Timeout esperando el código QR.'));
+            }
+            attempts++;
+        }, 100);
+    };
+
+    try {
+        await new Promise<void>(pollForQr);
+
+        const dataUrl = await toPng(ticketElement, { 
+            quality: 1.0, 
+            pixelRatio: 3,
+            fetchRequestInit: { mode: 'cors', credentials: 'omit' }
+        });
+        
+        const pdf = new jsPDF({
+            orientation: "p", // portrait
+            unit: "mm",
+            format: "a4"
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
         }
+
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+
+    } catch (error) {
+        console.error('Error al generar el PDF del ticket:', error);
     }
   };
 
@@ -270,7 +268,7 @@ export default function EmployeeTicketsPage() {
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
                                                     <div className="w-[794px]">
-                                                        <div className="transform scale-[1]">
+                                                        <div className="transform scale-[1]" ref={el => ticketRefs.current[ticket.id] = el}>
                                                             <TravelTicket 
                                                                 ticket={ticket} 
                                                                 tour={tour} 
@@ -281,7 +279,7 @@ export default function EmployeeTicketsPage() {
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
-                                                    <Button onClick={() => handleDownload(ticket)}>
+                                                    <Button onClick={() => handleDownload(ticket.id)}>
                                                         <Download className="mr-2 h-4 w-4" />
                                                         Descargar / Imprimir
                                                     </Button>
