@@ -40,7 +40,7 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
     </div>
 )
 
-function QRCodeDisplay({ url, onQrLoad }: { url: string, onQrLoad: () => void }) {
+function QRCodeDisplay({ url }: { url: string }) {
     const [qrUrl, setQrUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -52,14 +52,16 @@ function QRCodeDisplay({ url, onQrLoad }: { url: string, onQrLoad: () => void })
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
+                // The proxy is not strictly needed if the QR server allows CORS,
+                // but it's a good practice to avoid such issues.
+                // We assume the QR server is public and accessible.
+                const response = await fetch(url, { mode: 'cors' });
                 if (!response.ok) {
                     throw new Error(`Error al cargar el código QR: ${response.statusText}`);
                 }
                 const blob = await response.blob();
                 if (isMounted) {
                     setQrUrl(URL.createObjectURL(blob));
-                    onQrLoad();
                 }
             } catch (e) {
                 if (isMounted) {
@@ -81,7 +83,6 @@ function QRCodeDisplay({ url, onQrLoad }: { url: string, onQrLoad: () => void })
                 URL.revokeObjectURL(qrUrl);
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);
 
     if (isLoading) {
@@ -108,7 +109,6 @@ function QRCodeDisplay({ url, onQrLoad }: { url: string, onQrLoad: () => void })
 
 export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(({ ticket, tour, seller, boardingPoint, pension }, ref) => {
   const reservation = ticket.reservation;
-  const [isQrLoaded, setIsQrLoaded] = useState(false);
 
   const assignedLocations = [
     ...(reservation.assignedSeats || []).map(s => s.seatId),
@@ -124,7 +124,6 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
       "bg-slate-100 text-black rounded-lg overflow-hidden shadow-2xl border",
       "w-[794px] min-h-[1123px] p-6 font-sans flex flex-col gap-4"
     )}
-    data-qr-loaded={isQrLoaded}
     >
         <header className="flex justify-between items-center border-b-2 border-primary/20 pb-4">
            <Logo />
@@ -190,7 +189,7 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
                     <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md p-2">
-                        <QRCodeDisplay url={ticket.qrCodeUrl} onQrLoad={() => setIsQrLoaded(true)} />
+                        <QRCodeDisplay url={ticket.qrCodeUrl} />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">
@@ -202,5 +201,3 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
-
-    

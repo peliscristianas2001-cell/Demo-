@@ -143,24 +143,15 @@ export default function TicketsAdminPage() {
     const ticketElement = ticketRefs.current[ticketId];
     if (!ticketElement) return;
 
-    // Wait for the QR code to be fully loaded.
-    const pollForQr = (resolve: () => void, reject: (reason?: any) => void) => {
-        let attempts = 0;
-        const interval = setInterval(() => {
-            const qrLoaded = ticketElement.getAttribute('data-qr-loaded') === 'true';
-            if (qrLoaded) {
-                clearInterval(interval);
-                resolve();
-            } else if (attempts > 30) { // Timeout after ~3 seconds
-                clearInterval(interval);
-                reject(new Error('Timeout esperando el código QR.'));
-            }
-            attempts++;
-        }, 100);
-    };
-
     try {
-        await new Promise<void>(pollForQr);
+        const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
+        if (qrImg && !qrImg.complete) {
+            await new Promise<void>((resolve, reject) => {
+                qrImg.onload = () => resolve();
+                qrImg.onerror = () => reject(new Error("No se pudo cargar el código QR para el PDF."));
+                setTimeout(() => reject(new Error("Timeout esperando el código QR.")), 5000);
+            });
+        }
 
         const dataUrl = await toPng(ticketElement, { 
             quality: 1.0, 
