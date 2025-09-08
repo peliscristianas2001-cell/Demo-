@@ -116,7 +116,8 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               costs: {
                 ...defaultCosts,
                 ...tour.costs,
-                transport: tour.costs?.transport || [] // Ensure transport is always an array
+                transport: tour.costs?.transport || [],
+                extras: tour.costs?.extras || []
               },
               vehicles: tour.vehicles || {},
               airplanes: tour.airplanes || {},
@@ -190,13 +191,13 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   }
 
   const handleTierChange = (id: string, field: 'name' | 'price', value: string | number) => {
-    setFormData(prev => ({...prev, pricingTiers: prev.pricingTiers?.map(tier => 
+    setFormData(prev => ({...prev, pricingTiers: (prev.pricingTiers || []).map(tier => 
         tier.id === id ? { ...tier, [field]: value } : tier
     )}));
   }
 
   const handleRemoveTier = (id: string) => {
-    setFormData(prev => ({...prev, pricingTiers: prev.pricingTiers?.filter(tier => tier.id !== id)}));
+    setFormData(prev => ({...prev, pricingTiers: (prev.pricingTiers || []).filter(tier => tier.id !== id)}));
   }
   
   const handleHotelCostChange = (value: string) => {
@@ -209,11 +210,11 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
   }
 
   const handleExtraCostChange = (id: string, field: 'description' | 'amount', value: string | number) => {
-    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: prev.costs?.extras?.map(c => c.id === id ? {...c, [field]: value} : c)}}));
+    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: (prev.costs?.extras || []).map(c => c.id === id ? {...c, [field]: value} : c)}}));
   }
 
   const handleRemoveExtraCost = (id: string) => {
-    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: prev.costs?.extras?.filter(c => c.id !== id)}}));
+    setFormData(prev => ({ ...prev, costs: {...prev.costs, extras: (prev.costs?.extras || []).filter(c => c.id !== id)}}));
   }
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -416,7 +417,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                 <div className="space-y-4 p-4 border rounded-lg">
                                   <Label className="text-lg font-medium">Tarifas por Pasajero</Label>
                                   <div className="space-y-3">
-                                    {formData.pricingTiers?.map(tier => (
+                                    {(formData.pricingTiers || []).map(tier => (
                                       <div key={tier.id} className="flex items-center gap-2">
                                         <Input 
                                           placeholder="Nombre (Ej: Niño)" 
