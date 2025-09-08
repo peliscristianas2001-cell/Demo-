@@ -27,9 +27,11 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
+import { useToast } from "@/hooks/use-toast"
 
 
 export default function EmployeeTicketsPage() {
+  const { toast } = useToast();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
@@ -137,20 +139,25 @@ export default function EmployeeTicketsPage() {
       return tours.filter(t => tripIdsWithTickets.has(t.id) && new Date(t.date) >= new Date());
   }, [allTickets, tours]);
 
-  const handleDownload = async (ticketId: string) => {
-    const ticketElement = ticketRefs.current[ticketId];
+ const handleDownload = async (ticket: Ticket) => {
+    const ticketElement = ticketRefs.current[ticket.id];
     if (!ticketElement) return;
 
     try {
-        if (ticketElement.getAttribute("data-qr-loaded") !== "true") {
-          const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
-          if (qrImg && !qrImg.complete) {
-            await new Promise<void>((resolve, reject) => {
-              qrImg.onload = () => resolve();
-              qrImg.onerror = () => reject(new Error("No se pudo cargar la imagen del código QR."));
+        // Wait for all images inside the ticket to be loaded
+        const images = Array.from(ticketElement.getElementsByTagName('img'));
+        await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                // If it's the logo that fails to load, reject with a specific error
+                if (img.alt.includes('Logo')) {
+                   img.onerror = () => reject(new Error("Logo not loaded"));
+                } else {
+                   img.onerror = reject;
+                }
             });
-          }
-        }
+        }));
 
         const dataUrl = await toPng(ticketElement, { 
             quality: 1.0, 
@@ -169,17 +176,22 @@ export default function EmployeeTicketsPage() {
         const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
         pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
+        pdf.save(`Ticket_${ticket.passengerName.replace(/\s+/g, '_')}.pdf`);
 
-        const pdfBlob = pdf.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        
-        window.open(pdfUrl, '_blank');
-
-    } catch (error) {
-        console.error('Error al generar el PDF del ticket:', error);
+    } catch (error: any) {
+        if (error.message === "Logo not loaded") {
+            toast({
+                title: "Error al generar PDF",
+                description: "No se puede generar el PDF: Falta el logo de la empresa. Por favor, sube un logo en la sección de Configuración.",
+                variant: "destructive",
+                duration: 7000
+            });
+        } else {
+            console.error('Error al generar el PDF del ticket:', error);
+            toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+        }
     }
   };
-
 
   if (!isClient) {
     return null;
@@ -261,9 +273,9 @@ export default function EmployeeTicketsPage() {
                                                         />
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
-                                                    <Button onClick={() => handleDownload(ticket.id)}>
+                                                    <Button onClick={() => handleDownload(ticket)}>
                                                         <Download className="mr-2 h-4 w-4" />
-                                                        Descargar / Imprimir
+                                                        Descargar PDF
                                                     </Button>
                                                     </div>
                                                 </div>

@@ -60,21 +60,15 @@ function QRCodeDisplay({ url }: { url: string; }) {
             )}
             <Image 
                 src={url} 
-                alt="Código QR" 
+                alt="Código QR del Ticket" 
                 width={150} 
                 height={150}
                 unoptimized // Important for external URLs that don't need Next.js optimization
                 className={cn(isLoading || error ? "opacity-0" : "opacity-100")}
-                onLoad={(e) => {
-                    setIsLoading(false);
-                    const container = e.currentTarget.closest('[data-ticket]');
-                    if (container) container.setAttribute('data-qr-loaded', 'true');
-                }}
+                onLoad={() => setIsLoading(false)}
                 onError={() => {
                     setIsLoading(false);
                     setError("Error al cargar QR");
-                    const container = document.querySelector('[data-ticket]');
-                    if (container) container.setAttribute('data-qr-loaded', 'error');
                 }}
             />
         </div>
