@@ -65,10 +65,16 @@ function QRCodeDisplay({ url }: { url: string; }) {
                 height={150}
                 unoptimized // Important for external URLs that don't need Next.js optimization
                 className={cn(isLoading || error ? "opacity-0" : "opacity-100")}
-                onLoad={() => setIsLoading(false)}
+                onLoad={(e) => {
+                    setIsLoading(false);
+                    const container = e.currentTarget.closest('[data-ticket]');
+                    if (container) container.setAttribute('data-qr-loaded', 'true');
+                }}
                 onError={() => {
                     setIsLoading(false);
                     setError("Error al cargar QR");
+                    const container = e.currentTarget.closest('[data-ticket]');
+                    if (container) container.setAttribute('data-qr-loaded', 'error');
                 }}
             />
         </div>
