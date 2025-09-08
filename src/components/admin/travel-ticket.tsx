@@ -73,7 +73,7 @@ function QRCodeDisplay({ url }: { url: string; }) {
                 onError={() => {
                     setIsLoading(false);
                     setError("Error al cargar QR");
-                    const container = e.currentTarget.closest('[data-ticket]');
+                    const container = document.querySelector('[data-ticket]');
                     if (container) container.setAttribute('data-qr-loaded', 'error');
                 }}
             />

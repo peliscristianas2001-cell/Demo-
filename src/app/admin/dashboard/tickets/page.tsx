@@ -143,13 +143,14 @@ export default function TicketsAdminPage() {
     if (!ticketElement) return;
 
     try {
-        const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
-        
-        if (qrImg && !qrImg.complete) {
+        if (ticketElement.getAttribute("data-qr-loaded") !== "true") {
+          const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
+          if (qrImg && !qrImg.complete) {
             await new Promise<void>((resolve, reject) => {
-                qrImg.onload = () => resolve();
-                qrImg.onerror = () => reject(new Error("No se pudo cargar la imagen del código QR."));
+              qrImg.onload = () => resolve();
+              qrImg.onerror = () => reject(new Error("No se pudo cargar la imagen del código QR."));
             });
+          }
         }
         
         const dataUrl = await toPng(ticketElement, { 
