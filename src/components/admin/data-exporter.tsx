@@ -71,9 +71,10 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
 
   useEffect(() => {
     if (isOpen) {
-      // Load data from localStorage every time the dialog opens
-      setTours(JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours)));
+      const currentTours = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
       const currentReservations = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
+      
+      setTours(currentTours);
       setReservations(currentReservations);
       setPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
       setBoardingPoints(JSON.parse(localStorage.getItem("ytl_boarding_points") || "[]"));
@@ -81,7 +82,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
       const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
       const generatedTickets = confirmedReservations.map((res: Reservation): Ticket => {
         const ticketId = `${res.id}-TKT`;
-        const tour = tours.find(t => t.id === res.tripId);
+        const tour = currentTours.find((t: Tour) => t.id === res.tripId);
         const qrData = { tId: ticketId, rId: res.id, pax: res.passenger, dest: tour?.destination };
         return {
             id: ticketId,
@@ -95,7 +96,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
       });
       setTickets(generatedTickets);
     }
-  }, [isOpen, tours]);
+  }, [isOpen]);
 
   const exportableData = useMemo(() => {
     const tripsToExport = tours.filter((t) => selectedTripIds.includes(t.id));
