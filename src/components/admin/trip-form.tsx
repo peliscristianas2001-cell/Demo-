@@ -114,8 +114,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               cancellationPolicy: tour.cancellationPolicy || "",
               pricingTiers: tour.pricingTiers || [],
               costs: {
-                ...defaultCosts,
-                ...tour.costs,
+                hotel: tour.costs?.hotel || 0,
                 transport: tour.costs?.transport || [],
                 extras: tour.costs?.extras || []
               },
