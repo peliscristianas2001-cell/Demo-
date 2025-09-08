@@ -113,7 +113,11 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               observations: tour.observations || "",
               cancellationPolicy: tour.cancellationPolicy || "",
               pricingTiers: tour.pricingTiers || [],
-              costs: tour.costs || defaultCosts,
+              costs: {
+                ...defaultCosts,
+                ...tour.costs,
+                transport: tour.costs?.transport || [] // Ensure transport is always an array
+              },
               vehicles: tour.vehicles || {},
               airplanes: tour.airplanes || {},
               cruises: tour.cruises || {},
@@ -364,7 +368,7 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                </div>
                                <div className="space-y-2">
                                     <Label>Costos de Transporte</Label>
-                                    {formData.costs?.transport?.map((cost, index) => {
+                                    {(formData.costs?.transport || []).map((cost, index) => {
                                         const unit = transportUnits.find(u => u.id === cost.unitId);
                                         if (!unit) return null;
                                         const unitName = layoutConfig[unit.category]?.[unit.type]?.name || `Unidad ${unit.id}`;
@@ -453,4 +457,3 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
     </Dialog>
   )
 }
-
