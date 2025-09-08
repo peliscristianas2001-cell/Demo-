@@ -40,70 +40,42 @@ const InfoRow = ({ label, value }: { label: string, value?: React.ReactNode }) =
     </div>
 )
 
-function QRCodeDisplay({ url }: { url: string }) {
-    const [qrUrl, setQrUrl] = useState<string | null>(null);
+function QRCodeDisplay({ url, onQrLoad }: { url: string; onQrLoad: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        let isMounted = true;
-        
-        const fetchQrCode = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // The proxy is not strictly needed if the QR server allows CORS,
-                // but it's a good practice to avoid such issues.
-                // We assume the QR server is public and accessible.
-                const response = await fetch(url, { mode: 'cors' });
-                if (!response.ok) {
-                    throw new Error(`Error al cargar el código QR: ${response.statusText}`);
-                }
-                const blob = await response.blob();
-                if (isMounted) {
-                    setQrUrl(URL.createObjectURL(blob));
-                }
-            } catch (e) {
-                if (isMounted) {
-                    setError('No se pudo cargar el QR.');
-                    console.error("QR Code Error:", e);
-                }
-            } finally {
-                if (isMounted) {
+    return (
+        <div className="relative w-[150px] h-[150px]">
+            {isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                    <Loader2 className="w-8 h-8 animate-spin"/>
+                    <p className="text-xs mt-2">Cargando QR...</p>
+                </div>
+            )}
+            {error && (
+                 <div className="absolute inset-0 flex flex-col items-center justify-center text-destructive">
+                    <QrCode className="w-8 h-8"/>
+                    <p className="text-xs mt-2 text-center">{error}</p>
+                </div>
+            )}
+            <Image 
+                src={url} 
+                alt="Código QR" 
+                width={150} 
+                height={150}
+                unoptimized // Important for external URLs that don't need Next.js optimization
+                className={cn(isLoading || error ? "opacity-0" : "opacity-100")}
+                onLoad={(e) => {
                     setIsLoading(false);
-                }
-            }
-        };
-
-        fetchQrCode();
-
-        return () => {
-            isMounted = false;
-            if (qrUrl) {
-                URL.revokeObjectURL(qrUrl);
-            }
-        };
-    }, [url]);
-
-    if (isLoading) {
-        return (
-            <div className="text-center">
-                <Loader2 className="w-16 h-16 mx-auto text-gray-600 animate-spin"/>
-                <p className="text-xs text-gray-600 mt-2">Cargando QR...</p>
-            </div>
-        );
-    }
-
-    if (error || !qrUrl) {
-         return (
-            <div className="text-center">
-                <QrCode className="w-16 h-16 mx-auto text-destructive"/>
-                <p className="text-xs text-destructive mt-2">{error || 'Error QR'}</p>
-            </div>
-        );
-    }
-
-    return <Image src={qrUrl} alt="Código QR" width={150} height={150} />;
+                    onQrLoad(e);
+                }}
+                onError={() => {
+                    setIsLoading(false);
+                    setError("Error al cargar QR");
+                }}
+            />
+        </div>
+    );
 }
 
 
@@ -188,8 +160,13 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
                      <p>{tour.observations || "Obligatorio llevar D.N.I."}</p>
                  </InfoSection>
                  <div className="flex-grow flex items-center justify-center">
-                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-200 rounded-md p-2">
-                        <QRCodeDisplay url={ticket.qrCodeUrl} />
+                    <div className="flex items-center justify-center bg-gray-200 rounded-md p-2">
+                        <QRCodeDisplay 
+                            url={ticket.qrCodeUrl} 
+                            onQrLoad={(e) => {
+                                (e.currentTarget.closest('[data-ticket]') as HTMLElement | null)?.setAttribute('data-qr-loaded', 'true');
+                            }}
+                        />
                     </div>
                  </div>
                   <InfoSection title="Importante" icon={AlertTriangle} titleClassName="bg-destructive text-destructive-foreground" contentClassName="text-center font-bold text-lg text-destructive">

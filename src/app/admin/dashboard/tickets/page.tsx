@@ -143,19 +143,26 @@ export default function TicketsAdminPage() {
     const ticketElement = ticketRefs.current[ticketId];
     if (!ticketElement) return;
 
+    const pollForQr = () => new Promise<void>((resolve, reject) => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            if (ticketElement.getAttribute('data-qr-loaded') === 'true') {
+                clearInterval(interval);
+                resolve();
+            } else if (attempts > 30) { // Timeout after 3 seconds
+                clearInterval(interval);
+                reject(new Error("Timeout esperando el código QR."));
+            }
+            attempts++;
+        }, 100);
+    });
+
     try {
-        const qrImg = ticketElement.querySelector("img[src*='qrserver.com']");
-        if (qrImg && !qrImg.complete) {
-            await new Promise<void>((resolve, reject) => {
-                qrImg.onload = () => resolve();
-                qrImg.onerror = () => reject(new Error("No se pudo cargar el código QR para el PDF."));
-                setTimeout(() => reject(new Error("Timeout esperando el código QR.")), 5000);
-            });
-        }
+        await pollForQr();
 
         const dataUrl = await toPng(ticketElement, { 
             quality: 1.0, 
-            pixelRatio: 3,
+            pixelRatio: 2.5,
             fetchRequestInit: { mode: 'cors', credentials: 'omit' }
         });
         
@@ -166,25 +173,14 @@ export default function TicketsAdminPage() {
         });
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgProps = pdf.getImageProperties(dataUrl);
         const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-        }
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeight);
 
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
+        
         window.open(pdfUrl, '_blank');
 
     } catch (error) {
@@ -260,16 +256,18 @@ export default function TicketsAdminPage() {
                                             </AccordionTrigger>
                                             <AccordionContent>
                                                 <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
-                                                    <div className="w-[794px]">
-                                                        <div className="transform scale-[1]" ref={el => ticketRefs.current[ticket.id] = el}>
-                                                            <TravelTicket 
-                                                                ticket={ticket} 
-                                                                tour={tour} 
-                                                                seller={sellers.find(s => s.id === ticket.reservation.sellerId)} 
-                                                                boardingPoint={boardingPoints.find(bp => bp.id === ticket.boardingPointId)} 
-                                                                pension={pensions.find(p => p.id === ticket.reservation.pensionId)}
-                                                            />
-                                                        </div>
+                                                    <div
+                                                        data-ticket
+                                                        className="w-[794px]"
+                                                        ref={el => ticketRefs.current[ticket.id] = el}
+                                                    >
+                                                        <TravelTicket 
+                                                            ticket={ticket} 
+                                                            tour={tour} 
+                                                            seller={sellers.find(s => s.id === ticket.reservation.sellerId)} 
+                                                            boardingPoint={boardingPoints.find(bp => bp.id === ticket.boardingPointId)} 
+                                                            pension={pensions.find(p => p.id === ticket.reservation.pensionId)}
+                                                        />
                                                     </div>
                                                     <div className="flex justify-end w-full px-4">
                                                     <Button onClick={() => handleDownload(ticket.id)}>
