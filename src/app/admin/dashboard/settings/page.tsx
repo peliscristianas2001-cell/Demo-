@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder, ShieldCheck } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
@@ -335,6 +335,19 @@ export default function SettingsPage() {
                     Guardar Ajustes
                 </Button>
             </div>
+
+            <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ShieldCheck className="w-6 h-6"/> Seguridad de la Cuenta</CardTitle>
+                  <CardDescription>Vincula tu cuenta de administrador a un correo para mayor seguridad y un inicio de sesión más rápido.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className="p-4 border rounded-lg bg-muted/50 text-center">
+                    <p className="text-muted-foreground mb-4">Actualmente inicias sesión con tu usuario y contraseña de administrador.</p>
+                    <Button variant="outline" disabled>Vincular con Google (Próximamente)</Button>
+                  </div>
+              </CardContent>
+          </Card>
 
              <Card>
                 <CardHeader>

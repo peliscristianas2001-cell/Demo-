@@ -61,29 +61,30 @@ function UnifiedLoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
+    const lowerIdentifier = identifier.toLowerCase();
+    
+    // 1. Admin login check
+    const adminUser = localEmployees.find(emp => emp.dni === '99999999');
+    if (adminUser && (lowerIdentifier === adminUser.dni || lowerIdentifier === adminUser.name.toLowerCase()) && password === adminUser.password) {
+        localStorage.setItem("ytl_admin_id", adminUser.id);
+        toast({ title: "¡Bienvenida, Admin!", description: "Has iniciado sesión correctamente." });
+        router.push("/admin/dashboard");
+        return;
+    }
+
+    // 2. Employee login check (by DNI)
     const isDNI = /^\d+$/.test(identifier);
-
-    // 1. Employee/Admin Login by DNI
     if (isDNI) {
-      const employeeUser = localEmployees.find(
-        (emp) => emp.dni === identifier && emp.password === password
-      );
-
+      const employeeUser = localEmployees.find(emp => emp.dni === identifier && emp.password === password);
       if (employeeUser) {
-        if (employeeUser.dni === '99999999') {
-          localStorage.setItem("ytl_admin_id", employeeUser.id);
-          toast({ title: "¡Bienvenida, Admin!", description: "Has iniciado sesión correctamente." });
-          router.push("/admin/dashboard");
-        } else {
-          localStorage.setItem("ytl_employee_id", employeeUser.id);
-          toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
-          router.push("/employee/dashboard");
-        }
-        return; // Termina la ejecución
+        localStorage.setItem("ytl_employee_id", employeeUser.id);
+        toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
+        router.push("/employee/dashboard");
+        return; 
       }
     }
     
-    // Si no es un DNI de empleado, podría ser un nombre de usuario o un email
+    // 3. Passenger Login (by Email or Username)
     if (!app) {
         toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
         setIsLoading(false);
@@ -93,19 +94,17 @@ function UnifiedLoginForm() {
     let emailToAuth = identifier;
     const isEmail = identifier.includes('@');
     
-    // 2. Passenger Login by Username (fullName)
     if (!isEmail) {
-        const passengerByUsername = localPassengers.find(p => p.fullName.toLowerCase() === identifier.toLowerCase());
+        const passengerByUsername = localPassengers.find(p => p.fullName.toLowerCase() === lowerIdentifier);
         if (passengerByUsername && passengerByUsername.email) {
             emailToAuth = passengerByUsername.email;
-        } else if (!isDNI) { // If it's not a username, not a DNI, and not an email, it's invalid.
+        } else { 
             toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
             setIsLoading(false);
             return;
         }
     }
 
-    // 3. Passenger Login by Email (o el email encontrado por username)
     try {
         await signInWithEmailAndPassword(auth, emailToAuth, password);
         const loggedInPassenger = localPassengers.find(p => p.email === emailToAuth);
@@ -116,7 +115,7 @@ function UnifiedLoginForm() {
         router.push("/");
     } catch (error: any) {
         console.error(error);
-        if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
         } else {
             toast({ title: "Error de inicio de sesión", description: "Ocurrió un problema al intentar iniciar sesión.", variant: "destructive" });
