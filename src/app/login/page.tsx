@@ -82,7 +82,7 @@ function UnifiedLoginForm() {
         return; // Termina la ejecución
       }
     }
-
+    
     // Si no es un DNI de empleado, podría ser un nombre de usuario o un email
     if (!app) {
         toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
@@ -91,12 +91,17 @@ function UnifiedLoginForm() {
     }
 
     let emailToAuth = identifier;
+    const isEmail = identifier.includes('@');
     
     // 2. Passenger Login by Username (fullName)
-    if (!identifier.includes('@')) { // Asume que no es un email
+    if (!isEmail) {
         const passengerByUsername = localPassengers.find(p => p.fullName.toLowerCase() === identifier.toLowerCase());
         if (passengerByUsername && passengerByUsername.email) {
             emailToAuth = passengerByUsername.email;
+        } else if (!isDNI) { // If it's not a username, not a DNI, and not an email, it's invalid.
+            toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
+            setIsLoading(false);
+            return;
         }
     }
 
@@ -111,7 +116,11 @@ function UnifiedLoginForm() {
         router.push("/");
     } catch (error: any) {
         console.error(error);
-        toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
+        if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
+        } else {
+            toast({ title: "Error de inicio de sesión", description: "Ocurrió un problema al intentar iniciar sesión.", variant: "destructive" });
+        }
     } finally {
         setIsLoading(false);
     }
@@ -167,17 +176,35 @@ function PassengerRegisterForm() {
             await updateProfile(userCredential.user, { displayName: fullName });
             
             const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
-            const newPassenger: Passenger = {
-                id: userCredential.user.uid,
-                fullName: fullName,
-                email: email,
-                dni: "",
-                nationality: "Argentina",
-                tierId: "adult"
-            };
-            localPassengers.push(newPassenger);
+            
+            // Check if passenger with that email already exists from a non-auth creation
+            const existingPassengerIndex = localPassengers.findIndex(p => p.email?.toLowerCase() === email.toLowerCase());
+
+            if (existingPassengerIndex !== -1) {
+                // Update existing passenger with Firebase UID and new details
+                localPassengers[existingPassengerIndex] = {
+                    ...localPassengers[existingPassengerIndex],
+                    id: userCredential.user.uid,
+                    fullName: fullName,
+                    // keep other details like DNI if they exist
+                };
+                 localStorage.setItem("ytl_user_id", userCredential.user.uid);
+            } else {
+                // Create brand new passenger
+                const newPassenger: Passenger = {
+                    id: userCredential.user.uid,
+                    fullName: fullName,
+                    email: email,
+                    dni: "",
+                    nationality: "Argentina",
+                    tierId: "adult"
+                };
+                localPassengers.push(newPassenger);
+                localStorage.setItem("ytl_user_id", newPassenger.id);
+            }
+            
             localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
-            localStorage.setItem("ytl_user_id", newPassenger.id);
+            window.dispatchEvent(new Event('storage'));
 
 
             toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. ¡Bienvenido/a!" });
@@ -212,7 +239,7 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = async () => {
     if (!app) {
-        toast({ title: "Servicio no disponible", description: "La autenticación con Google no está configurada.", variant: "destructive" });
+        toast({ title: "Servicio no disponible", description: "La autenticación con Google no está disponible.", variant: "destructive" });
         return;
     }
     const provider = new GoogleAuthProvider();
@@ -221,10 +248,17 @@ export default function AuthPage() {
         const user = result.user;
 
         const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
-        const existingPassenger = localPassengers.find(p => p.email === user.email);
+        let userRecord = localPassengers.find(p => p.email?.toLowerCase() === user.email?.toLowerCase());
 
-        if (!existingPassenger) {
-            const newPassenger: Passenger = {
+        if (userRecord) {
+             // If user exists, ensure their ID matches Firebase UID for consistency
+            if (userRecord.id !== user.uid) {
+                userRecord.id = user.uid;
+            }
+            localStorage.setItem("ytl_user_id", userRecord.id);
+        } else {
+             // If user doesn't exist, create a new record
+            userRecord = {
                 id: user.uid,
                 fullName: user.displayName || 'Usuario de Google',
                 email: user.email || '',
@@ -232,19 +266,19 @@ export default function AuthPage() {
                 nationality: "Argentina",
                 tierId: "adult"
             };
-            localPassengers.push(newPassenger);
-            localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
-            localStorage.setItem("ytl_user_id", newPassenger.id);
-        } else {
-             localStorage.setItem("ytl_user_id", existingPassenger.id);
+            localPassengers.push(userRecord);
+            localStorage.setItem("ytl_user_id", userRecord.id);
         }
+        
+        localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
+        window.dispatchEvent(new Event('storage'));
         
         toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión con Google." });
         router.push('/');
 
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {
-            console.log("Google Sign-In popup closed by user.");
+            // Silently ignore this error as it's a user action
             return;
         }
         console.error(error);
