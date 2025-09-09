@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-rea
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 import type { Passenger, Employee } from "@/lib/types";
-import { mockEmployees } from "@/lib/mock-data";
+import { mockEmployees, mockPassengers } from "@/lib/mock-data";
 
 import { app, auth } from "@/lib/firebase";
 import { 
@@ -47,6 +47,15 @@ function UnifiedLoginForm() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [localPassengers, setLocalPassengers] = useState<Passenger[]>([]);
+  const [localEmployees, setLocalEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    // Cargar los datos desde localStorage solo en el cliente
+    setLocalPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
+    setLocalEmployees(JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees)));
+  }, []);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,16 +63,15 @@ function UnifiedLoginForm() {
 
     const isDNI = /^\d+$/.test(identifier);
 
+    // 1. Employee/Admin Login by DNI
     if (isDNI) {
-      // --- Employee/Admin Login Logic ---
-      const employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
-      const adminUser = employees.find(emp => emp.dni === '99999999');
+      const adminUser = localEmployees.find(emp => emp.dni === '99999999');
       let targetUser: Employee | undefined;
 
       if (identifier === adminUser?.dni) {
         targetUser = adminUser;
       } else {
-        targetUser = employees.find(emp => emp.dni === identifier);
+        targetUser = localEmployees.find(emp => emp.dni === identifier);
       }
       
       if (targetUser && targetUser.password === password) {
@@ -76,35 +84,49 @@ function UnifiedLoginForm() {
           toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
           router.push("/employee/dashboard");
         }
-      } else {
-        toast({ title: "Credenciales incorrectas", description: "El DNI o la contraseña son incorrectos.", variant: "destructive" });
+        return; // Termina la ejecución
+      }
+    }
+
+    // Si no es un DNI de empleado, podría ser un nombre de usuario o un email
+    if (!app) {
+        toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
         setIsLoading(false);
-      }
-    } else {
-      // --- Passenger Login Logic ---
-      if (!app) {
-          toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
-          setIsLoading(false);
-          return;
-      }
-      try {
-        await signInWithEmailAndPassword(auth, identifier, password);
+        return;
+    }
+
+    let emailToAuth = identifier;
+    
+    // 2. Passenger Login by Username (fullName)
+    if (!identifier.includes('@')) { // Asume que no es un email
+        const passengerByUsername = localPassengers.find(p => p.fullName.toLowerCase() === identifier.toLowerCase());
+        if (passengerByUsername && passengerByUsername.email) {
+            emailToAuth = passengerByUsername.email;
+        }
+    }
+
+    // 3. Passenger Login by Email (o el email encontrado por username)
+    try {
+        await signInWithEmailAndPassword(auth, emailToAuth, password);
+        const loggedInPassenger = localPassengers.find(p => p.email === emailToAuth);
+        if (loggedInPassenger) {
+            localStorage.setItem("ytl_user_id", loggedInPassenger.id);
+        }
         toast({ title: "¡Bienvenido/a de nuevo!", description: "Has iniciado sesión correctamente." });
         router.push("/");
-      } catch (error: any) {
+    } catch (error: any) {
         console.error(error);
-        toast({ title: "Error de autenticación", description: "El email o la contraseña son incorrectos.", variant: "destructive" });
-      } finally {
+        toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
+    } finally {
         setIsLoading(false);
-      }
     }
   };
 
   return (
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="identifier">Email o DNI</Label>
-        <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="tu@email.com o 12345678" required className="h-11"/>
+        <Label htmlFor="identifier">Email, DNI o Nombre de Usuario</Label>
+        <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="tu@email.com, DNI o nombre" required className="h-11"/>
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
@@ -246,7 +268,7 @@ export default function AuthPage() {
                 <CardHeader className="text-center">
                     <div className="flex justify-center mb-4"><Logo /></div>
                     <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
-                    <CardDescription>Ingresa o crea tu cuenta de pasajero.</CardDescription>
+                    <CardDescription>Ingresa a tu cuenta o regístrate para la mejor experiencia.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Tabs defaultValue={mode} className="w-full">
