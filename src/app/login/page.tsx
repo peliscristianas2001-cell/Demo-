@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,164 +9,64 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogInIcon, UserPlus, Eye, EyeOff, UserCog, UserRound, Plane, ArrowLeft } from "lucide-react";
+import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { mockEmployees, mockPassengers } from "@/lib/mock-data";
-import type { Employee, Passenger } from "@/lib/types";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Separator } from "@/components/ui/separator";
 
-function RoleSelector({ onSelectRole }: { onSelectRole: (role: 'admin' | 'employee' | 'client') => void }) {
-    return (
-        <Dialog open={true}>
-            <DialogContent onInteractOutside={(e) => e.preventDefault()} hideCloseButton>
-                <DialogHeader>
-                    <DialogTitle>Seleccionar Rol</DialogTitle>
-                    <DialogDescription>
-                        Hemos detectado múltiples perfiles asociados a tus credenciales. ¿Cómo quieres continuar?
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col space-y-4 py-4">
-                    <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('admin')}>
-                        <UserCog className="mr-4 w-6 h-6" />
-                        <div>
-                            <p className="font-bold">Panel de Administrador</p>
-                            <p className="font-normal text-sm text-muted-foreground">Acceso total al sistema.</p>
-                        </div>
-                    </Button>
-                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('employee')}>
-                        <UserRound className="mr-4 w-6 h-6" />
-                        <div>
-                             <p className="font-bold">Panel de Empleado</p>
-                             <p className="font-normal text-sm text-muted-foreground">Gestionar mis ventas.</p>
-                        </div>
-                    </Button>
-                     <Button variant="outline" size="lg" className="h-16 text-lg justify-start" onClick={() => onSelectRole('client')}>
-                        <Plane className="mr-4 w-6 h-6" />
-                        <div>
-                             <p className="font-bold">Navegar como Cliente</p>
-                             <p className="font-normal text-sm text-muted-foreground">Explorar viajes y destinos.</p>
-                        </div>
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
-}
+import { auth } from "@/lib/firebase";
+import { 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    updateProfile
+} from "firebase/auth";
+
+const GoogleIcon = () => (
+    <svg className="w-4 h-4" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.712,34.464,44,28.756,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+    </svg>
+);
+
 
 function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const [credential, setCredential] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const [matchedUser, setMatchedUser] = useState< (Employee | Passenger) & { isEmployee?: boolean; isPassenger?: boolean; isAdmin?: boolean } | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    let employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
-    let passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
-
-    const GodoyDNI = "43580345";
-    const godoyEmployee = mockEmployees.find(s => s.dni === GodoyDNI);
-    const godoyPassenger = mockPassengers.find(p => p.dni === GodoyDNI);
-    
-    if (godoyEmployee && !employees.some(s => s.dni === GodoyDNI)) {
-        employees.push(godoyEmployee);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "¡Bienvenido/a de nuevo!", description: "Has iniciado sesión correctamente." });
+      router.push("/");
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Error de autenticación", description: "El email o la contraseña son incorrectos.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
-    if (godoyPassenger && !passengers.some(p => p.dni === GodoyDNI)) {
-        passengers.push(godoyPassenger);
-    }
-
-    const foundEmployee = employees.find(s => (s.dni === credential || s.name === credential) && s.password === password);
-    const foundPassenger = passengers.find(p => p.dni === credential && p.password === password);
-    const isAdmin = (credential === "Angela Rojas" && password === "AngelaRojasYTL") || (credential === "99999999" && password === "AngelaRojasYTL");
-
-    localStorage.removeItem("ytl_employee_id");
-    localStorage.removeItem("ytl_user_id");
-    
-    let userRoles: any = {};
-    if (foundEmployee) userRoles.isEmployee = true;
-    if (foundPassenger) userRoles.isPassenger = true;
-    if (isAdmin) userRoles.isAdmin = true;
-
-    const roleCount = Object.keys(userRoles).length;
-    
-    const userObject = { 
-        ...(foundPassenger || {}), 
-        ...(foundEmployee || {}),
-        id: foundEmployee?.id || foundPassenger?.id || '',
-        name: foundEmployee?.name || (foundPassenger as any)?.fullName || '',
-        fullName: (foundPassenger as any)?.fullName || foundEmployee?.name || ''
-    };
-
-
-    if (roleCount > 1) {
-        setMatchedUser({ ...userObject!, ...userRoles });
-        setShowRoleSelector(true);
-    } else if (roleCount === 1) {
-        if(userRoles.isAdmin) handleRoleSelection('admin', userObject);
-        else if (userRoles.isEmployee) handleRoleSelection('employee', userObject);
-        else if (userRoles.isPassenger) handleRoleSelection('client', userObject);
-    } else {
-        toast({ title: "Error de autenticación", description: "Las credenciales son incorrectas.", variant: "destructive" });
-    }
-    
-    setIsLoading(false);
   };
 
-  const handleRoleSelection = (role: 'admin' | 'employee' | 'client', userInfo?: any) => {
-      setShowRoleSelector(false);
-      const userToLogin = userInfo || matchedUser;
-
-      switch(role) {
-          case 'admin':
-              toast({ title: "¡Bienvenida, Angela!", description: "Has iniciado sesión como administradora." });
-              router.push("/admin/dashboard");
-              break;
-          case 'employee':
-              if (userToLogin) {
-                toast({ title: `¡Bienvenido/a, ${userToLogin.name || userToLogin.fullName}!`, description: "Has iniciado sesión en tu panel." });
-                localStorage.setItem("ytl_employee_id", userToLogin.id);
-                router.push("/employee/dashboard");
-              }
-              break;
-          case 'client':
-              if (userToLogin) {
-                 toast({ title: "¡Inicio de sesión exitoso!", description: `Bienvenido/a de nuevo, ${userToLogin.fullName || userToLogin.name}.` });
-                 localStorage.setItem("ytl_user_id", userToLogin.id);
-                 router.push("/");
-              }
-              break;
-      }
-  }
-  
-  if (showRoleSelector && matchedUser) {
-      return <RoleSelector onSelectRole={(role) => handleRoleSelection(role, matchedUser)} />
-  }
-
   return (
-    <form onSubmit={handleLogin} className="space-y-6">
+    <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="login-credential">Nombre de Usuario o DNI</Label>
-        <Input id="login-credential" type="text" value={credential} onChange={(e) => setCredential(e.target.value)} placeholder="Tu nombre o DNI" required className="h-11"/>
+        <Label htmlFor="login-email">Email</Label>
+        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" required className="h-11"/>
       </div>
       <div className="space-y-2">
         <Label htmlFor="login-password">Contraseña</Label>
@@ -177,62 +77,56 @@ function LoginForm() {
           </button>
         </div>
       </div>
-      <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? "Ingresando..." : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
+      <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
     </form>
   );
 }
 
 function RegisterForm() {
     const { toast } = useToast();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({ fullName: '', dni: '', dob: undefined, phone: '', password: ''});
+    const [formData, setFormData] = useState({ fullName: '', email: '', password: '' });
 
     const handleFormChange = (id: keyof typeof formData, value: any) => {
         setFormData(prev => ({...prev, [id]: value}));
     }
 
-    const handleRegister = (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        const { fullName, dni, password } = formData;
-        if (!fullName || !dni || !password || password.length < 6) {
-            toast({ title: "Datos inválidos", description: "Nombre, DNI y una contraseña de 6+ caracteres son obligatorios.", variant: "destructive"});
+        const { fullName, email, password } = formData;
+        if (!fullName || !email || !password || password.length < 6) {
+            toast({ title: "Datos inválidos", description: "Nombre, email y una contraseña de 6+ caracteres son obligatorios.", variant: "destructive"});
             setIsLoading(false);
             return;
         }
 
-        const passengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
-        if (passengers.some(p => p.dni === dni)) {
-            toast({ title: "DNI ya registrado", description: "Ya existe una cuenta con ese DNI. Intenta iniciar sesión.", variant: "destructive"});
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCredential.user, { displayName: fullName });
+            
+            toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. ¡Bienvenido/a!" });
+            router.push('/');
+        } catch (error: any) {
+            if (error.code === 'auth/email-already-in-use') {
+                 toast({ title: "Email ya registrado", description: "Ya existe una cuenta con ese email. Intenta iniciar sesión.", variant: "destructive"});
+            } else {
+                 toast({ title: "Error de registro", description: "No se pudo crear la cuenta. Inténtalo de nuevo.", variant: "destructive"});
+            }
+            console.error(error);
+        } finally {
             setIsLoading(false);
-            return;
         }
-
-        const newPassenger: Passenger = {
-            id: `P-${Math.random().toString(36).substring(2, 11)}`,
-            family: fullName.split(' ').pop() || 'Familia',
-            nationality: 'Argentina',
-            tierId: 'adult',
-            ...formData,
-        }
-
-        const updatedPassengers = [...passengers, newPassenger];
-        localStorage.setItem("ytl_passengers", JSON.stringify(updatedPassengers));
-        
-        toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión." });
-        
-        setTimeout(() => { setIsLoading(false); }, 1500)
     }
 
     return (
-        <form onSubmit={handleRegister} className="space-y-6">
+        <form onSubmit={handleRegister} className="space-y-4">
              <div className="space-y-2"><Label htmlFor="register-name">Nombre Completo</Label><Input id="register-name" placeholder="Ej: Juan Pérez" required className="h-11" value={formData.fullName} onChange={e => handleFormChange('fullName', e.target.value)}/></div>
-             <div className="space-y-2"><Label htmlFor="register-dni">DNI</Label><Input id="register-dni" placeholder="Tu DNI sin puntos" required className="h-11" value={formData.dni} onChange={e => handleFormChange('dni', e.target.value)}/></div>
-             <div className="space-y-2"><Label htmlFor="register-dob">Fecha de Nacimiento</Label><DatePicker id="register-dob" date={formData.dob} setDate={d => handleFormChange('dob', d)} className="h-11 w-full" placeholder="Tu fecha de nacimiento"/></div>
-             <div className="space-y-2"><Label htmlFor="register-phone">Teléfono</Label><Input id="register-phone" type="tel" placeholder="Opcional" className="h-11" value={formData.phone} onChange={e => handleFormChange('phone', e.target.value)}/></div>
+             <div className="space-y-2"><Label htmlFor="register-email">Email</Label><Input id="register-email" type="email" placeholder="tu@email.com" required className="h-11" value={formData.email} onChange={e => handleFormChange('email', e.target.value)}/></div>
              <div className="space-y-2"><Label htmlFor="register-password">Contraseña</Label><Input id="register-password" type="password" placeholder="Crea una contraseña segura (mín. 6)" required className="h-11" value={formData.password} onChange={e => handleFormChange('password', e.target.value)}/></div>
-             <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? "Creando cuenta..." : <> <UserPlus className="mr-2 h-4 w-4" /> Registrarse </>}</Button>
+             <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <UserPlus className="mr-2 h-4 w-4" /> Registrarse </>}</Button>
         </form>
     )
 }
@@ -241,30 +135,54 @@ function RegisterForm() {
 export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const mode = searchParams.get('mode') || 'login';
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión con Google." });
+        router.push('/');
+    } catch (error) {
+        console.error(error);
+        toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 p-4">
-       <div className="w-full max-w-md">
-            <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+       <div className="w-full max-w-sm">
+            <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver a la tienda
+                Volver al Inicio
             </Button>
             <Tabs defaultValue={mode} className="w-full">
                 <Card className="shadow-2xl">
-                <CardHeader className="text-center">
-                    <div className="flex justify-center mb-4"><Logo /></div>
-                    <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
-                    <CardDescription>Ingresá a tu cuenta o registrate para una nueva aventura.</CardDescription>
-                    <TabsList className="grid w-full grid-cols-2 mt-4">
-                        <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                        <TabsTrigger value="register">Registro</TabsTrigger>
-                    </TabsList>
-                </CardHeader>
-                <CardContent>
-                    <TabsContent value="login"><LoginForm /></TabsContent>
-                    <TabsContent value="register"><RegisterForm /></TabsContent>
-                </CardContent>
+                    <CardHeader className="text-center">
+                        <div className="flex justify-center mb-4"><Logo /></div>
+                        <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
+                        <CardDescription>Ingresa a tu cuenta o regístrate para una nueva aventura.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Button variant="outline" className="w-full h-11" onClick={handleGoogleSignIn}>
+                            <GoogleIcon /> Continuar con Google
+                        </Button>
+                        <div className="flex items-center">
+                            <Separator className="flex-1" />
+                            <span className="px-4 text-xs text-muted-foreground uppercase">O</span>
+                            <Separator className="flex-1" />
+                        </div>
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                            <TabsTrigger value="register">Registro</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="login"><LoginForm /></TabsContent>
+                        <TabsContent value="register"><RegisterForm /></TabsContent>
+                    </CardContent>
+                    <CardFooter>
+                         <p className="text-xs text-muted-foreground text-center px-4">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.</p>
+                    </CardFooter>
                 </Card>
             </Tabs>
         </div>

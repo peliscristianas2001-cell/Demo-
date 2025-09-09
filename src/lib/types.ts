@@ -167,16 +167,17 @@ export interface Installment {
 }
 
 export interface Passenger {
-  id: string;
+  id: string; // Firebase Auth UID
   fullName: string;
+  email?: string;
   dni: string;
   dob?: Date;
   phone?: string;
   family?: string;
   nationality: string;
   tierId: string; // 'adult' or one of the pricingTier IDs
-  password?: string;
   boardingPointId?: string;
+  // password field is no longer needed here as it's handled by Firebase Auth
 }
 
 export type Reservation = {

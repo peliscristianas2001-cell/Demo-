@@ -6,9 +6,30 @@ import React from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { MenuIcon, LogInIcon, UserPlus } from "lucide-react"
+import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut } from "lucide-react"
+import { useAuth } from "./auth/auth-provider"
+import { auth } from "@/lib/firebase"
+import { signOut } from "firebase/auth"
+import { useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 
 export function SiteHeader() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  }
+
   const navLinks = [
     { href: "/", label: "Inicio" },
     { href: "/tours", label: "Viajes" },
@@ -61,35 +82,70 @@ export function SiteHeader() {
                   ))}
                 </nav>
                 <div className="p-6 mt-auto space-y-4 border-t">
-                    <Button asChild className="w-full" variant="outline">
-                      <Link href="/login">
-                        <LogInIcon className="w-4 h-4 mr-2" />
-                        Iniciar Sesión
-                      </Link>
-                    </Button>
-                    <Button asChild className="w-full">
-                      <Link href="/login?mode=register">
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Registro
-                      </Link>
-                    </Button>
+                    {user ? (
+                         <Button onClick={handleLogout} className="w-full" variant="outline">
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Cerrar Sesión
+                         </Button>
+                    ) : (
+                        <>
+                            <Button asChild className="w-full" variant="outline">
+                            <Link href="/login">
+                                <LogInIcon className="w-4 h-4 mr-2" />
+                                Iniciar Sesión
+                            </Link>
+                            </Button>
+                            <Button asChild className="w-full">
+                            <Link href="/login?mode=register">
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Registro
+                            </Link>
+                            </Button>
+                        </>
+                    )}
                 </div>
               </div>
             </SheetContent>
           </Sheet>
            <div className="hidden md:flex items-center gap-2">
-             <Button asChild variant="ghost">
-                <Link href="/login">
-                  <LogInIcon className="w-4 h-4 mr-2" />
-                  Iniciar Sesión
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link href="/login?mode=register">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Registro
-                </Link>
-              </Button>
+            {user ? (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Usuario'} />
+                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuItem>Mi Perfil</DropdownMenuItem>
+                        <DropdownMenuItem>Mis Viajes</DropdownMenuItem>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                            <LogOut className="mr-2"/>
+                            Cerrar Sesión
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ) : (
+                <>
+                    <Button asChild variant="ghost">
+                        <Link href="/login">
+                        <LogInIcon className="w-4 h-4 mr-2" />
+                        Iniciar Sesión
+                        </Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/login?mode=register">
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Registro
+                        </Link>
+                    </Button>
+                </>
+            )}
            </div>
         </div>
       </div>
