@@ -105,11 +105,11 @@ export const mockSellers: Seller[] = [
 export const mockPassengers: Passenger[] = [
     // Familia Perez
     { id: 'P-30M-PER', fullName: 'Juan Perez', dni: '30123456', dob: new Date('1983-04-12'), phone: '11-3030-4040', family: 'Perez', nationality: 'Argentina', tierId: 'adult' },
-    { id: 'P-32F-PER', fullName: 'Maria Lopez de Perez', dni: '32456789', dob: new Date('1986-07-25'), phone: '11-3030-4040', family: 'Perez', nationality: 'Argentina', tierId: 'adult', password: 'password' },
+    { id: 'P-32F-PER', fullName: 'Maria Lopez de Perez', dni: '32456789', dob: new Date('1986-07-25'), phone: '11-3030-4040', family: 'Perez', nationality: 'Argentina', tierId: 'adult', email: 'maria.perez@example.com' },
     { id: 'P-50M-PER', fullName: 'Lucas Perez', dni: '50123456', dob: new Date('2011-01-10'), phone: '', family: 'Perez', nationality: 'Argentina', tierId: 'adult' },
     
     // Familia Garcia
-    { id: 'P-28M-GAR', fullName: 'Carlos Garcia', dni: '28987654', dob: new Date('1980-01-15'), phone: '341-505-6060', family: 'Garcia', nationality: 'Argentina', tierId: 'adult', password: 'password' },
+    { id: 'P-28M-GAR', fullName: 'Carlos Garcia', dni: '28987654', dob: new Date('1980-01-15'), phone: '341-505-6060', family: 'Garcia', nationality: 'Argentina', tierId: 'adult', email: 'carlos.garcia@example.com' },
     { id: 'P-29F-GAR', fullName: 'Ana Martinez', dni: '29876543', dob: new Date('1982-10-30'), phone: '341-505-6060', family: 'Garcia', nationality: 'Argentina', tierId: 'adult' },
 
     // Familia Rodriguez
@@ -135,7 +135,7 @@ export const mockReservations: Reservation[] = [
   { id: "R-26-003", tripId: "T-2026-BARILOCHE", passenger: "Marta Rodriguez", passengerIds: ["P-17F-ROD"], paxCount: 1, assignedSeats: [{seatId: "4", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "SELL-EXT-01", finalPrice: 350000, boardingPointId: 'BP03' },
   
   // Reserva Grupo Amigos para Patagonia
-  { id: "R-26-004", tripId: "T-2026-PATAGONIA", passenger: "Valeria Gomez", passengerIds: ["P-35F-GOM", "P-36F-ROM"], paxCount: 2, assignedSeats: [{seatId: "10A", unit: 1}, {seatId: "10B", unit: 1}], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-03", finalPrice: 1100000, roomTypeId: "RT02" },
+  { id: "R-26-004", tripId: "T-2026-PATAGONIA", passenger: "Valeria Gomez", passengerIds: ["P-35F-GOM", "P-36F-ROM"], paxCount: 2, assignedSeats: [], assignedCabins: [], status: "Confirmado", paymentStatus: "Pagado", sellerId: "EMP-03", finalPrice: 1100000, roomTypeId: "RT02" },
 
   // Reserva individual pendiente para Cataratas
   { id: "R-26-005", tripId: "T-2026-CATARATAS", passenger: "Ricardo Flores", passengerIds: ["P-25M-FLO"], paxCount: 1, assignedSeats: [], assignedCabins: [], status: "Pendiente", paymentStatus: "Pendiente", sellerId: "unassigned", finalPrice: 280000 },
