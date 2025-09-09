@@ -223,6 +223,7 @@ export interface Employee {
   phone: string;
   password?: string;
   fixedSalary?: number;
+  email?: string;
 }
 
 export interface Seller {
