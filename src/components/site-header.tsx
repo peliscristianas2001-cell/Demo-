@@ -6,7 +6,7 @@ import React from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut } from "lucide-react"
+import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut, Settings } from "lucide-react"
 import { useAuth } from "./auth/auth-provider"
 import { auth } from "@/lib/firebase"
 import { signOut } from "firebase/auth"
@@ -121,7 +121,9 @@ export function SiteHeader() {
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem>Mi Perfil</DropdownMenuItem>
+                         <DropdownMenuItem asChild>
+                            <Link href="/profile"><Settings className="mr-2"/>Mi Perfil</Link>
+                         </DropdownMenuItem>
                         <DropdownMenuItem>Mis Viajes</DropdownMenuItem>
                         <DropdownMenuSeparator/>
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive">

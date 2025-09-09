@@ -9,13 +9,22 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder, ShieldCheck } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder, ShieldCheck, KeyRound } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType, Employee } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 import { mockBoardingPoints, mockPensions, mockRoomTypes, mockEmployees } from "@/lib/mock-data"
 import { auth } from "@/lib/firebase"
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updatePassword } from "firebase/auth"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger
+} from "@/components/ui/dialog"
 
 const MapSelector = dynamic(
   () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
@@ -37,6 +46,71 @@ const GoogleIcon = () => (
 
 type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
 
+function ChangePasswordDialog() {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const { toast } = useToast();
+
+  const handleChangePassword = () => {
+     if (newPassword.length < 6) {
+        toast({ title: "Error", description: "La contraseña debe tener al menos 6 caracteres.", variant: "destructive"});
+        return;
+    }
+    if (newPassword !== confirmPassword) {
+        toast({ title: "Error", description: "Las contraseñas no coinciden.", variant: "destructive"});
+        return;
+    }
+
+    const adminUser = JSON.parse(localStorage.getItem('ytl_employees') || '[]').find((e: Employee) => e.dni === '99999999');
+    if (!adminUser) {
+        toast({ title: "Error", description: "No se encontró el usuario administrador.", variant: "destructive"});
+        return;
+    }
+
+    // Update Firebase Auth user if linked
+    if (auth.currentUser && auth.currentUser.email === adminUser.email) {
+        updatePassword(auth.currentUser, newPassword).catch(err => {
+            console.error("Error updating firebase password", err);
+             toast({ title: "Error en Firebase", description: "No se pudo actualizar la contraseña en Firebase. Puede que necesites volver a iniciar sesión.", variant: "destructive"});
+        })
+    }
+
+    // Update local storage password
+    const allEmployees: Employee[] = JSON.parse(localStorage.getItem('ytl_employees') || '[]');
+    const updatedEmployees = allEmployees.map(e => e.id === adminUser.id ? { ...e, password: newPassword } : e);
+    localStorage.setItem('ytl_employees', JSON.stringify(updatedEmployees));
+    
+    toast({ title: "Éxito", description: "Contraseña actualizada."});
+    setNewPassword("");
+    setConfirmPassword("");
+  }
+  
+  return (
+    <DialogContent>
+        <DialogHeader>
+            <DialogTitle>Cambiar Contraseña de Administrador</DialogTitle>
+            <DialogDescription>
+                Ingresa una nueva contraseña para tu cuenta de administrador.
+            </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+            <div className="space-y-2">
+                <Label htmlFor="new-password">Nueva Contraseña</Label>
+                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmar Nueva Contraseña</Label>
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+            </div>
+        </div>
+        <DialogFooter>
+            <Button variant="outline">Cancelar</Button>
+            <DialogTrigger asChild><Button onClick={handleChangePassword}>Guardar Contraseña</Button></DialogTrigger>
+        </DialogFooter>
+    </DialogContent>
+  )
+}
+
 export default function SettingsPage() {
     const { toast } = useToast()
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -51,7 +125,6 @@ export default function SettingsPage() {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
     const [adminAuthEmail, setAdminAuthEmail] = useState('');
-    const [adminAuthPassword, setAdminAuthPassword] = useState('');
     const [adminUser, setAdminUser] = useState<Employee | null>(null);
 
     useEffect(() => {
@@ -284,12 +357,12 @@ export default function SettingsPage() {
     
     const handleEmailLink = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!adminAuthEmail || !adminAuthPassword) {
-            toast({ title: 'Error', description: 'Email y contraseña son requeridos.', variant: 'destructive'});
+        if (!adminAuthEmail || !adminUser?.password) {
+            toast({ title: 'Error', description: 'El email es requerido y el administrador debe tener una contraseña.', variant: 'destructive'});
             return;
         }
         try {
-            await createUserWithEmailAndPassword(auth, adminAuthEmail, adminAuthPassword);
+            await createUserWithEmailAndPassword(auth, adminAuthEmail, adminUser.password);
             updateAdminEmail(adminAuthEmail);
             toast({ title: '¡Éxito!', description: 'Cuenta de administrador vinculada con email.'});
         } catch (error: any) {
@@ -317,7 +390,7 @@ export default function SettingsPage() {
     }
     
   return (
-    <>
+    <Dialog>
      <LayoutEditor
         isOpen={isEditorOpen}
         onOpenChange={setIsEditorOpen}
@@ -404,20 +477,18 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                   {adminUser && adminUser.email ? (
-                      <div className="p-4 border rounded-lg bg-green-50 text-green-800">
+                      <div className="p-4 border rounded-lg bg-green-50 text-green-800 space-y-4">
                           <p>Esta cuenta de administrador está vinculada al correo: <span className="font-bold">{adminUser.email}</span></p>
+                          <DialogTrigger asChild><Button variant="secondary"><KeyRound className="mr-2 h-4 w-4"/>Cambiar Contraseña</Button></DialogTrigger>
                       </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <form onSubmit={handleEmailLink} className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold">Vincular con Email y Contraseña</h3>
+                            <h3 className="font-semibold">Vincular con Email</h3>
+                            <p className="text-xs text-muted-foreground">Se usará tu contraseña de administrador actual.</p>
                             <div className="space-y-2">
                                 <Label htmlFor="admin-email">Email</Label>
                                 <Input id="admin-email" type="email" value={adminAuthEmail} onChange={e => setAdminAuthEmail(e.target.value)} required/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="admin-password">Contraseña</Label>
-                                <Input id="admin-password" type="password" value={adminAuthPassword} onChange={e => setAdminAuthPassword(e.target.value)} required/>
                             </div>
                             <Button type="submit">Vincular Cuenta</Button>
                         </form>
@@ -625,7 +696,8 @@ export default function SettingsPage() {
             })}
         </CardContent>
       </Card>
+      <ChangePasswordDialog />
     </div>
-    </>
+    </Dialog>
   )
 }

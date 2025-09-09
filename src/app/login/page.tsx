@@ -21,14 +21,24 @@ import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 import type { Passenger, Employee } from "@/lib/types";
 import { mockEmployees, mockPassengers } from "@/lib/mock-data";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { app, auth } from "@/lib/firebase";
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
     signInWithPopup,
     GoogleAuthProvider,
-    updateProfile
+    updateProfile,
+    sendPasswordResetEmail
 } from "firebase/auth";
 
 const GoogleIcon = () => (
@@ -73,15 +83,12 @@ function UnifiedLoginForm() {
     }
 
     // 2. Employee login check (by DNI)
-    const isDNI = /^\d+$/.test(identifier);
-    if (isDNI) {
-      const employeeUser = localEmployees.find(emp => emp.dni === identifier && emp.password === password);
-      if (employeeUser) {
-        localStorage.setItem("ytl_employee_id", employeeUser.id);
-        toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
-        router.push("/employee/dashboard");
-        return; 
-      }
+    const employeeUser = localEmployees.find(emp => emp.dni === identifier && emp.password === password);
+    if (employeeUser) {
+      localStorage.setItem("ytl_employee_id", employeeUser.id);
+      toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
+      router.push("/employee/dashboard");
+      return; 
     }
     
     // 3. Passenger Login (by Email or Username)
@@ -230,6 +237,50 @@ function PassengerRegisterForm() {
     )
 }
 
+function ForgotPasswordDialog() {
+    const { toast } = useToast();
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePasswordReset = async () => {
+        if (!email) {
+            toast({ title: "Falta el email", description: "Por favor, ingresa tu correo electrónico.", variant: "destructive" });
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await sendPasswordResetEmail(auth, email);
+            toast({ title: "Correo enviado", description: "Si tu cuenta existe, recibirás un enlace para restablecer tu contraseña." });
+        } catch (error) {
+            console.error("Password reset error:", error);
+            toast({ title: "Error", description: "No se pudo enviar el correo de restablecimiento. Inténtalo de nuevo.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    return (
+         <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Recuperar Contraseña</DialogTitle>
+                <DialogDescription>
+                    Ingresa tu correo electrónico registrado y te enviaremos un enlace para que puedas crear una nueva contraseña.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input id="reset-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com"/>
+            </div>
+            <DialogFooter>
+                 <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                <Button onClick={handlePasswordReset} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin" /> : "Enviar Correo"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
+
 export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -277,7 +328,6 @@ export default function AuthPage() {
 
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {
-            // Silently ignore this error as it's a user action
             return;
         }
         console.error(error);
@@ -286,6 +336,7 @@ export default function AuthPage() {
   }
 
   return (
+    <Dialog>
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 p-4">
        <div className="w-full max-w-sm">
             <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
@@ -315,6 +366,9 @@ export default function AuthPage() {
                                 <Separator className="flex-1" />
                             </div>
                            <UnifiedLoginForm />
+                            <DialogTrigger asChild>
+                               <Button variant="link" className="w-full mt-2 text-xs">¿Olvidaste tu contraseña?</Button>
+                           </DialogTrigger>
                         </TabsContent>
                        <TabsContent value="register" className="pt-4">
                            <PassengerRegisterForm />
@@ -327,5 +381,7 @@ export default function AuthPage() {
             </Card>
         </div>
     </div>
+    <ForgotPasswordDialog />
+    </Dialog>
   );
 }
