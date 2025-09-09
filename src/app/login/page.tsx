@@ -65,22 +65,17 @@ function UnifiedLoginForm() {
 
     // 1. Employee/Admin Login by DNI
     if (isDNI) {
-      const adminUser = localEmployees.find(emp => emp.dni === '99999999');
-      let targetUser: Employee | undefined;
+      const employeeUser = localEmployees.find(
+        (emp) => emp.dni === identifier && emp.password === password
+      );
 
-      if (identifier === adminUser?.dni) {
-        targetUser = adminUser;
-      } else {
-        targetUser = localEmployees.find(emp => emp.dni === identifier);
-      }
-      
-      if (targetUser && targetUser.password === password) {
-        if (targetUser.dni === '99999999') {
-          localStorage.setItem("ytl_admin_id", targetUser.id);
+      if (employeeUser) {
+        if (employeeUser.dni === '99999999') {
+          localStorage.setItem("ytl_admin_id", employeeUser.id);
           toast({ title: "¡Bienvenida, Admin!", description: "Has iniciado sesión correctamente." });
           router.push("/admin/dashboard");
         } else {
-          localStorage.setItem("ytl_employee_id", targetUser.id);
+          localStorage.setItem("ytl_employee_id", employeeUser.id);
           toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
           router.push("/employee/dashboard");
         }
