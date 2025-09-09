@@ -20,7 +20,7 @@ import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-rea
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 
-import { auth } from "@/lib/firebase";
+import { app, auth } from "@/lib/firebase";
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
@@ -49,6 +49,10 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!app) {
+        toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -94,6 +98,10 @@ function RegisterForm() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!app) {
+            toast({ title: "Servicio no disponible", description: "El registro no está configurado.", variant: "destructive" });
+            return;
+        }
         setIsLoading(true);
 
         const { fullName, email, password } = formData;
@@ -139,6 +147,10 @@ export default function AuthPage() {
   const mode = searchParams.get('mode') || 'login';
 
   const handleGoogleSignIn = async () => {
+    if (!app) {
+        toast({ title: "Servicio no disponible", description: "La autenticación con Google no está configurada.", variant: "destructive" });
+        return;
+    }
     const provider = new GoogleAuthProvider();
     try {
         await signInWithPopup(auth, provider);
