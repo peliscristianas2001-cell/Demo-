@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
+import type { Passenger } from "@/lib/types";
 
 import { app, auth } from "@/lib/firebase";
 import { 
@@ -115,6 +116,21 @@ function RegisterForm() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(userCredential.user, { displayName: fullName });
             
+            // Sync with local passenger list
+            const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
+            const newPassenger: Passenger = {
+                id: userCredential.user.uid,
+                fullName: fullName,
+                email: email,
+                dni: "", // User will need to complete this
+                nationality: "Argentina",
+                tierId: "adult"
+            };
+            localPassengers.push(newPassenger);
+            localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
+            localStorage.setItem("ytl_user_id", newPassenger.id);
+
+
             toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. ¡Bienvenido/a!" });
             router.push('/');
         } catch (error: any) {
@@ -153,13 +169,34 @@ export default function AuthPage() {
     }
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Sync with local passenger list
+        const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
+        const existingPassenger = localPassengers.find(p => p.email === user.email);
+
+        if (!existingPassenger) {
+            const newPassenger: Passenger = {
+                id: user.uid,
+                fullName: user.displayName || 'Usuario de Google',
+                email: user.email || '',
+                dni: "", // User will need to complete this
+                nationality: "Argentina",
+                tierId: "adult"
+            };
+            localPassengers.push(newPassenger);
+            localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
+            localStorage.setItem("ytl_user_id", newPassenger.id);
+        } else {
+             localStorage.setItem("ytl_user_id", existingPassenger.id);
+        }
+        
         toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión con Google." });
         router.push('/');
+
     } catch (error: any) {
         if (error.code === 'auth/popup-closed-by-user') {
-            // This error is expected when the user closes the popup.
-            // We can ignore it or log it for debugging.
             console.log("Google Sign-In popup closed by user.");
             return;
         }
