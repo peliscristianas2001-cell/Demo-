@@ -156,7 +156,13 @@ export default function AuthPage() {
         await signInWithPopup(auth, provider);
         toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión con Google." });
         router.push('/');
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'auth/popup-closed-by-user') {
+            // This error is expected when the user closes the popup.
+            // We can ignore it or log it for debugging.
+            console.log("Google Sign-In popup closed by user.");
+            return;
+        }
         console.error(error);
         toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
     }
