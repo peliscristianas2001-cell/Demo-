@@ -12,20 +12,27 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app: FirebaseApp;
+let app: FirebaseApp | null = null;
 let auth: Auth;
 
 // Check if all required environment variables are set
 const firebaseKeysAreSet = firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId;
 
 if (firebaseKeysAreSet) {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
+    }
+} else {
+    console.warn("Firebase config is missing or incomplete. Firebase services will be disabled.");
+}
+
+// Initialize auth only if the app was successfully initialized
+if (app) {
     auth = getAuth(app);
 } else {
-    // Provide mock instances if Firebase is not configured
-    // This allows the app to run without crashing
-    console.warn("Firebase config is missing or incomplete. Firebase services will be disabled.");
-    app = {} as FirebaseApp;
+    // Provide a mock instance if Firebase is not configured
     auth = {} as Auth;
 }
 
