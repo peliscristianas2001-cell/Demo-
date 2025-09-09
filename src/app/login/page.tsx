@@ -16,10 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft, UserCog, Briefcase } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
-import type { Passenger } from "@/lib/types";
+import type { Passenger, Employee } from "@/lib/types";
+import { mockEmployees } from "@/lib/mock-data";
 
 import { app, auth } from "@/lib/firebase";
 import { 
@@ -40,7 +41,7 @@ const GoogleIcon = () => (
 );
 
 
-function LoginForm() {
+function PassengerLoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
@@ -87,7 +88,7 @@ function LoginForm() {
   );
 }
 
-function RegisterForm() {
+function PassengerRegisterForm() {
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -116,13 +117,12 @@ function RegisterForm() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(userCredential.user, { displayName: fullName });
             
-            // Sync with local passenger list
             const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
             const newPassenger: Passenger = {
                 id: userCredential.user.uid,
                 fullName: fullName,
                 email: email,
-                dni: "", // User will need to complete this
+                dni: "",
                 nationality: "Argentina",
                 tierId: "adult"
             };
@@ -155,6 +155,65 @@ function RegisterForm() {
     )
 }
 
+function EmployeeLoginForm() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [dni, setDni] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+    const adminUser = employees.find(emp => emp.dni === '99999999');
+    
+    let targetUser: Employee | undefined;
+
+    if (dni === adminUser?.dni) {
+      targetUser = adminUser;
+    } else {
+      targetUser = employees.find(emp => emp.dni === dni);
+    }
+    
+    if (targetUser && targetUser.password === password) {
+      if (targetUser.dni === '99999999') {
+        localStorage.setItem("ytl_admin_id", targetUser.id);
+        toast({ title: "¡Bienvenida, Admin!", description: "Has iniciado sesión correctamente." });
+        router.push("/admin/dashboard");
+      } else {
+        localStorage.setItem("ytl_employee_id", targetUser.id);
+        toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
+        router.push("/employee/dashboard");
+      }
+    } else {
+      toast({ title: "Credenciales incorrectas", description: "El DNI o la contraseña son incorrectos.", variant: "destructive" });
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="employee-dni">DNI</Label>
+        <Input id="employee-dni" type="text" value={dni} onChange={(e) => setDni(e.target.value)} placeholder="Tu número de DNI" required className="h-11"/>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="employee-password">Contraseña</Label>
+        <div className="relative">
+          <Input id="employee-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" required className="pr-10 h-11"/>
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+      <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
+    </form>
+  );
+}
+
 
 export default function AuthPage() {
   const router = useRouter();
@@ -172,7 +231,6 @@ export default function AuthPage() {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Sync with local passenger list
         const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
         const existingPassenger = localPassengers.find(p => p.email === user.email);
 
@@ -181,7 +239,7 @@ export default function AuthPage() {
                 id: user.uid,
                 fullName: user.displayName || 'Usuario de Google',
                 email: user.email || '',
-                dni: "", // User will need to complete this
+                dni: "",
                 nationality: "Argentina",
                 tierId: "adult"
             };
@@ -212,34 +270,52 @@ export default function AuthPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al Inicio
             </Button>
-            <Tabs defaultValue={mode} className="w-full">
-                <Card className="shadow-2xl">
-                    <CardHeader className="text-center">
-                        <div className="flex justify-center mb-4"><Logo /></div>
-                        <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
-                        <CardDescription>Ingresa a tu cuenta o regístrate para una nueva aventura.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Button variant="outline" className="w-full h-11" onClick={handleGoogleSignIn}>
-                            <GoogleIcon /> Continuar con Google
-                        </Button>
-                        <div className="flex items-center">
-                            <Separator className="flex-1" />
-                            <span className="px-4 text-xs text-muted-foreground uppercase">O</span>
-                            <Separator className="flex-1" />
-                        </div>
+            <Card className="shadow-2xl">
+                <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4"><Logo /></div>
+                    <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Tabs defaultValue="passenger" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                            <TabsTrigger value="register">Registro</TabsTrigger>
+                            <TabsTrigger value="passenger"><UserCog className="mr-2"/> Soy Pasajero</TabsTrigger>
+                            <TabsTrigger value="employee"><Briefcase className="mr-2"/> Soy Empleado</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="login"><LoginForm /></TabsContent>
-                        <TabsContent value="register"><RegisterForm /></TabsContent>
-                    </CardContent>
-                    <CardFooter>
-                         <p className="text-xs text-muted-foreground text-center px-4">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.</p>
-                    </CardFooter>
-                </Card>
-            </Tabs>
+                        
+                        <TabsContent value="passenger">
+                           <Tabs defaultValue={mode} className="w-full">
+                               <TabsList className="grid w-full grid-cols-2">
+                                   <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                                   <TabsTrigger value="register">Registro</TabsTrigger>
+                               </TabsList>
+                               <TabsContent value="login" className="pt-4">
+                                   <Button variant="outline" className="w-full h-11 mb-4" onClick={handleGoogleSignIn}>
+                                        <GoogleIcon /> Continuar con Google
+                                    </Button>
+                                    <div className="flex items-center mb-4">
+                                        <Separator className="flex-1" />
+                                        <span className="px-4 text-xs text-muted-foreground uppercase">O</span>
+                                        <Separator className="flex-1" />
+                                    </div>
+                                   <PassengerLoginForm />
+                                </TabsContent>
+                               <TabsContent value="register" className="pt-4">
+                                   <PassengerRegisterForm />
+                                </TabsContent>
+                           </Tabs>
+                        </TabsContent>
+
+                        <TabsContent value="employee">
+                           <div className="pt-4">
+                            <EmployeeLoginForm />
+                           </div>
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+                <CardFooter>
+                     <p className="text-xs text-muted-foreground text-center px-4">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.</p>
+                </CardFooter>
+            </Card>
         </div>
     </div>
   );
