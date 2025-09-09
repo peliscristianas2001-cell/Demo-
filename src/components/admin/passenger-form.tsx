@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -111,7 +110,16 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="dob">Fecha de Nacimiento</Label>
-                        <DatePicker id="dob" date={formData.dob} setDate={(d) => handleFormChange('dob', d)} className="h-10 w-full" placeholder="Seleccionar fecha..." />
+                        <DatePicker 
+                            id="dob" 
+                            date={formData.dob} 
+                            setDate={(d) => handleFormChange('dob', d)} 
+                            className="h-10 w-full" 
+                            placeholder="Seleccionar fecha..."
+                            captionLayout="dropdown-buttons"
+                            fromYear={new Date().getFullYear() - 100}
+                            toYear={new Date().getFullYear()}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="phone">Teléfono</Label>
