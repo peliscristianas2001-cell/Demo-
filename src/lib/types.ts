@@ -111,13 +111,17 @@ export interface Insurance {
     maxAge: number;
 }
 
+export interface Flyer {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+}
+
 export interface Tour {
   id: string;
   destination: string;
   date: Date;
   price: number;
-  flyerUrl: string;
-  flyerType?: 'image' | 'video';
   backgroundImage?: string;
   
   origin?: string;
@@ -139,8 +143,11 @@ export interface Tour {
   cancellationPolicy?: string;
   
   transportUnits?: TransportUnit[];
+  flyers?: Flyer[];
 
   // Deprecated fields, kept for potential data migration but should not be used for new logic
+  flyerUrl?: string;
+  flyerType?: 'image' | 'video';
   vehicles?: Partial<Record<LayoutItemType, number>>;
   airplanes?: Partial<Record<LayoutItemType, number>>;
   cruises?: Partial<Record<LayoutItemType, number>>;

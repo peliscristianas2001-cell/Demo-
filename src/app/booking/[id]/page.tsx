@@ -104,7 +104,21 @@ export default function BookingPage() {
     
     const foundTour = storedTours.find((t) => t.id === id)
     setTour(foundTour && new Date(foundTour.date) >= new Date() ? foundTour : null);
-
+    
+    const handleStorageChange = () => {
+        const newStoredTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
+        const newCurrentReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
+        const newCurrentSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+        const newCurrentPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+        
+        setReservations(newCurrentReservations);
+        setSellers(newCurrentSellers);
+        setAllPassengers(newCurrentPassengers);
+        const newFoundTour = newStoredTours.find((t) => t.id === id)
+        setTour(newFoundTour && new Date(newFoundTour.date) >= new Date() ? newFoundTour : null);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [id])
 
   // --- Logic for non-logged-in users ---
@@ -219,6 +233,8 @@ export default function BookingPage() {
 
     const updatedReservations = [...reservations, newReservation];
     localStorage.setItem('ytl_reservations', JSON.stringify(updatedReservations));
+    window.dispatchEvent(new Event('storage'));
+
 
     toast({ title: "¡Solicitud Enviada!", description: `Tu reserva para ${tour?.destination} ha sido recibida.`, duration: 3000 });
 
@@ -260,6 +276,8 @@ export default function BookingPage() {
   }, [tour, loggedInPassenger, insuredMemberIds, insuredGuestIds]);
 
   const totalPrice = tourBasePrice + insuranceCost;
+  const mainFlyer = (tour?.flyers && tour.flyers.length > 0) ? tour.flyers[0] : null;
+
 
   if (!isClient) return null;
 
@@ -292,7 +310,7 @@ export default function BookingPage() {
               <Card className="overflow-hidden shadow-lg">
                 <div className="relative h-48 sm:h-64">
                    <Image 
-                    src={tour.backgroundImage || tour.flyerUrl} 
+                    src={mainFlyer?.url || tour.backgroundImage || "https://placehold.co/800x400.png"} 
                     alt={tour.destination} 
                     layout="fill" 
                     objectFit="cover" 

@@ -35,14 +35,13 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
-    if (storedTours) {
-      setTours(JSON.parse(storedTours, (key, value) => {
-        if (key === 'date') return new Date(value);
-        return value;
-      }));
-    } else {
-      setTours(mockTours)
-    }
+    setTours(storedTours ? JSON.parse(storedTours) : mockTours);
+    const handleStorageChange = () => {
+        const newStoredTours = localStorage.getItem("ytl_tours");
+        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [])
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
@@ -53,6 +52,11 @@ export default function Home() {
       router.push(`/booking/${tourId}`)
     }
   }
+
+  const carouselFlyers = useMemo(() => {
+    return activeTours.flatMap(tour => tour.flyers || []).slice(0, 5); // Show up to 5 flyers in carousel
+  }, [activeTours]);
+
 
   if (!isClient) {
     return null; // Or a loading skeleton
@@ -70,16 +74,16 @@ export default function Home() {
             onMouseLeave={plugin.current.reset}
           >
             <CarouselContent>
-              {activeTours.length > 0 ? activeTours.map((tour) => (
-                <CarouselItem key={tour.id}>
+              {carouselFlyers.length > 0 ? carouselFlyers.map((flyer) => (
+                <CarouselItem key={flyer.id}>
                   <Image
-                    src={tour.flyerUrl}
-                    alt={tour.destination}
+                    src={flyer.url}
+                    alt="Destino destacado"
                     layout="fill"
                     objectFit="cover"
                     className="brightness-[0.6]"
                     data-ai-hint="travel destination"
-                    priority={tour.id === activeTours[0].id}
+                    priority={flyer.id === carouselFlyers[0].id}
                   />
                 </CarouselItem>
               )) : (

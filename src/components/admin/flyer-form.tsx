@@ -21,13 +21,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import type { Tour } from "@/lib/types"
+import type { Tour, Flyer } from "@/lib/types"
 
 interface FlyerFormProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   tours: Tour[]
-  onSave: (tripId: string, flyerUrl: string, flyerType: 'image' | 'video') => void
+  onSave: (tripId: string, newFlyer: Flyer) => void
 }
 
 export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProps) {
@@ -75,9 +75,12 @@ export function FlyerForm({ isOpen, onOpenChange, tours, onSave }: FlyerFormProp
       })
       return
     }
-    // In a real app, you would upload the file to a storage service and get a URL.
-    // For this mock, we'll just use the local data URL from the preview.
-    onSave(selectedTrip, previewUrl, fileType)
+    const newFlyer: Flyer = {
+        id: `FLYER-${Date.now()}`,
+        url: previewUrl,
+        type: fileType
+    };
+    onSave(selectedTrip, newFlyer)
   }
 
   return (

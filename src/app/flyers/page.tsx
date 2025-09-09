@@ -16,17 +16,19 @@ export default function FlyersPage() {
   useEffect(() => {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
-    if (storedTours) {
-      setTours(JSON.parse(storedTours, (key, value) => {
-        if (key === 'date') return new Date(value);
-        return value;
-      }));
-    } else {
-      setTours(mockTours)
-    }
+    setTours(storedTours ? JSON.parse(storedTours) : mockTours);
+    const handleStorageChange = () => {
+        const newStoredTours = localStorage.getItem("ytl_tours");
+        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [])
 
-  const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
+  const activeToursWithFlyers = useMemo(() => {
+    return tours.filter(tour => new Date(tour.date) >= new Date() && tour.flyers && tour.flyers.length > 0)
+  }, [tours]);
+
 
   if (!isClient) {
     return null; // Or a loading skeleton
@@ -47,35 +49,42 @@ export default function FlyersPage() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {activeTours.map((tour) => (
-              <Card key={tour.id} className="overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
-                <CardContent className="p-0">
-                  <div className="relative aspect-[4/5] w-full bg-muted">
-                    {tour.flyerType === 'video' ? (
-                       <video
-                        src={tour.flyerUrl}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      >
-                        Tu navegador no soporta videos.
-                      </video>
-                    ) : (
-                      <Image
-                        src={tour.flyerUrl}
-                        alt={`Flyer de ${tour.destination}`}
-                        width={400}
-                        height={500}
-                        className="w-full h-auto object-cover aspect-[4/5]"
-                        data-ai-hint="travel flyer"
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="space-y-12">
+            {activeToursWithFlyers.map((tour) => (
+               <div key={tour.id}>
+                <h2 className="text-2xl font-bold tracking-tighter mb-6 text-center sm:text-left">{tour.destination}</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {(tour.flyers || []).map(flyer => (
+                    <Card key={flyer.id} className="overflow-hidden transition-transform duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl">
+                        <CardContent className="p-0">
+                        <div className="relative aspect-[4/5] w-full bg-muted">
+                            {flyer.type === 'video' ? (
+                            <video
+                                src={flyer.url}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            >
+                                Tu navegador no soporta videos.
+                            </video>
+                            ) : (
+                            <Image
+                                src={flyer.url}
+                                alt={`Flyer de ${tour.destination}`}
+                                width={400}
+                                height={500}
+                                className="w-full h-auto object-cover aspect-[4/5]"
+                                data-ai-hint="travel flyer"
+                            />
+                            )}
+                        </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>

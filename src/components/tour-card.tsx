@@ -12,13 +12,16 @@ interface TourCardProps {
 }
 
 export function TourCard({ tour, canPurchase = true }: TourCardProps) {
+  
+  const mainFlyer = (tour.flyers && tour.flyers.length > 0) ? tour.flyers[0] : null;
+
   return (
       <Card className="w-full overflow-hidden transition-all duration-300 ease-in-out border-2 border-transparent rounded-2xl group hover:shadow-2xl hover:border-primary hover:-translate-y-2">
         <CardContent className="p-0">
           <Link href={`/booking/${tour.id}`} prefetch={false} className="block cursor-pointer">
             <div className="relative overflow-hidden">
               <Image
-                  src={tour.flyerUrl}
+                  src={mainFlyer?.url || "https://placehold.co/400x300.png"}
                   alt={`Flyer for ${tour.destination}`}
                   width={400}
                   height={300}

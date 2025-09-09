@@ -65,14 +65,13 @@ export default function ToursPage() {
   useEffect(() => {
     setIsClient(true);
     const storedTours = localStorage.getItem("ytl_tours");
-    if (storedTours) {
-      setTours(JSON.parse(storedTours, (key, value) => {
-        if (key === 'date') return new Date(value);
-        return value;
-      }));
-    } else {
-      setTours(mockTours);
-    }
+    setTours(storedTours ? JSON.parse(storedTours) : mockTours);
+     const handleStorageChange = () => {
+        const newStoredTours = localStorage.getItem("ytl_tours")
+        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
