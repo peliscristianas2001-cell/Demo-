@@ -26,6 +26,7 @@ interface PassengerFormProps {
   onSave: (passenger: Passenger) => void
   passenger: Passenger | null
   prefilledFamily?: string
+  prefilledData?: { name: string; dni: string } | null;
   allPassengers?: Passenger[]
 }
 
@@ -38,7 +39,7 @@ const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
     boardingPointId: undefined
 }
 
-export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily, allPassengers = [] }: PassengerFormProps) {
+export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily, prefilledData, allPassengers = [] }: PassengerFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
   const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const { toast } = useToast();
@@ -62,11 +63,13 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
         } else {
             setFormData({
                 ...defaultPassenger,
-                family: prefilledFamily || ""
+                family: prefilledFamily || "",
+                fullName: prefilledData?.name || "",
+                dni: prefilledData?.dni || "",
             })
         }
     }
-  }, [passenger, isOpen, prefilledFamily])
+  }, [passenger, isOpen, prefilledFamily, prefilledData])
 
 
   const handleFormChange = (id: keyof typeof formData, value: any) => {
@@ -83,8 +86,13 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
         ...(passenger || { id: '', nationality: 'Argentina', tierId: 'adult' }),
         ...formData
     }
+    
+    if (!passengerToSave.id) {
+        passengerToSave.id = `P-${Math.random().toString(36).substring(2, 11)}`;
+    }
 
     onSave(passengerToSave);
+    onOpenChange(false);
   }
 
   return (
@@ -161,3 +169,5 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
     </Dialog>
   )
 }
+
+    

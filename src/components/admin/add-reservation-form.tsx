@@ -8,8 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogTrigger
+  DialogFooter
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,8 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect } from "@/components/searchable-select"
 import { PlusCircle, UserPlus, XCircle } from "lucide-react"
 import { Checkbox } from "../ui/checkbox"
-import { AddPassengerSubForm } from "./add-passenger-subform"
 import { ScrollArea } from "../ui/scroll-area"
+import { PassengerForm } from "./passenger-form"
 
 interface AddReservationFormProps {
   isOpen: boolean
@@ -40,7 +39,6 @@ const defaultReservation = {
     mainPassengerId: "",
     paxCount: 1,
     sellerId: "unassigned",
-    finalPrice: 0,
     paymentStatus: "Pendiente" as PaymentStatus,
     selectedPassengerIds: [] as string[],
     boardingPointId: undefined,
@@ -51,6 +49,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const [mainPassengerSearch, setMainPassengerSearch] = useState("");
+  const [prefillData, setPrefillData] = useState<{name: string, dni: string} | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,6 +60,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         });
         setMainPassengerSearch("");
         setIsAddingNewPassenger(false);
+        setPrefillData(null);
     }
   }, [isOpen, tour])
 
@@ -121,6 +121,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         boardingPointId: passenger.boardingPointId,
     }));
     setMainPassengerSearch(passenger.fullName);
+    setIsAddingNewPassenger(false);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -136,27 +137,19 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
      });
   }
   
-  const handleAddNewPassenger = (newPassengerData: Omit<Passenger, 'id'>, isMain: boolean) => {
-    const newPassenger: Passenger = {
-      ...newPassengerData,
-      id: `P-${Math.random().toString(36).substring(2, 11)}`,
-      family: selectedMainPassenger?.family || `Familia ${newPassengerData.fullName.split(' ').pop()}`,
-      nationality: 'Argentina',
-      tierId: 'adult'
-    };
-    onPassengerCreated(newPassenger);
-    
-    if (isMain) {
-        handleMainPassengerSelect(newPassenger);
-        setIsAddingNewPassenger(false);
-    } else {
-        setFormData(prev => ({
-            ...prev,
-            selectedPassengerIds: [...prev.selectedPassengerIds, newPassenger.id]
-        }));
-    }
-  };
+  const handleTriggerNewPassengerForm = () => {
+    const isDNI = /^\d+$/.test(mainPassengerSearch);
+    setPrefillData({
+        name: isDNI ? "" : mainPassengerSearch,
+        dni: isDNI ? mainPassengerSearch : ""
+    });
+    setIsAddingNewPassenger(true);
+  }
 
+  const handleNewPassengerSaved = (newPassenger: Passenger) => {
+      onPassengerCreated(newPassenger);
+      handleMainPassengerSelect(newPassenger);
+  }
 
   const handleSubmit = () => {
     if (!selectedMainPassenger) {
@@ -230,21 +223,25 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
                         <div className="text-center p-4 border-dashed border-2 rounded-md">
                             <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
-                            <Button onClick={() => setIsAddingNewPassenger(true)}>
+                            <Button onClick={handleTriggerNewPassengerForm}>
                                 <UserPlus className="mr-2 h-4 w-4"/>
-                                Registrar Nuevo Pasajero Principal
+                                Registrar Nuevo Pasajero
                             </Button>
                         </div>
                     )}
                 </div>
 
                 {isAddingNewPassenger && !selectedMainPassenger && (
-                    <div className="p-4 border rounded-lg bg-secondary/30">
-                        <DialogHeader className="mb-4">
-                            <DialogTitle>Registrar Nuevo Pasajero Principal</DialogTitle>
-                        </DialogHeader>
-                        <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, true)} onCancel={() => setIsAddingNewPassenger(false)} />
-                    </div>
+                    <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
+                        <PassengerForm
+                            isOpen={isAddingNewPassenger}
+                            onOpenChange={setIsAddingNewPassenger}
+                            passenger={null}
+                            onSave={handleNewPassengerSaved}
+                            allPassengers={passengers}
+                            prefilledData={prefillData}
+                        />
+                    </Dialog>
                 )}
                 
                 {selectedMainPassenger && (
@@ -270,15 +267,18 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                             Añadir Nuevo
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
-                                            <DialogDescription>
-                                                El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, false)} />
-                                    </DialogContent>
+                                    <PassengerForm 
+                                        isOpen={true} 
+                                        onOpenChange={(open) => { if (!open) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })) }} 
+                                        onSave={(p) => {
+                                            onPassengerCreated(p);
+                                            setFormData(prev => ({ ...prev, selectedPassengerIds: [...prev.selectedPassengerIds, p.id] }));
+                                            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                                        }}
+                                        passenger={null} 
+                                        allPassengers={passengers}
+                                        prefilledFamily={selectedMainPassenger.family}
+                                    />
                                 </Dialog>
                             </div>
                             <ScrollArea className="h-40">
@@ -354,3 +354,5 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
+
+    
