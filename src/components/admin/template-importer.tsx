@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { mockTours, mockPassengers, mockReservations, mockSellers } from "@/lib/mock-data"
-import type { Tour, Passenger, Reservation, Seller, PricingTier, Installment } from "@/lib/types"
+import { mockTours, mockPassengers, mockReservations, mockSellers, mockBoardingPoints } from "@/lib/mock-data"
+import type { Tour, Passenger, Reservation, Seller, PricingTier, Installment, BoardingPoint } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 import { CheckCircle, Loader2, UploadCloud, Calendar as CalendarIcon, Save } from "lucide-react"
 import { DatePicker } from "../ui/date-picker"
@@ -59,7 +59,7 @@ const normalizeHeader = (header: string) => (header || '').trim().toUpperCase().
 
 const toTitleCase = (str: string): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  return str.toLowerCase().replace(/\b\w+/g, char => char.charAt(0).toUpperCase() + char.substring(1));
 }
 
 
@@ -87,7 +87,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
 
         try {
             const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data);
+            const workbook = XLSX.read(data, { cellStyles: true });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
@@ -104,12 +104,14 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
             let allReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
             const allSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
+            let allBoardingPoints: BoardingPoint[] = JSON.parse(localStorage.getItem("ytl_boarding_points") || JSON.stringify(mockBoardingPoints));
             
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const nameParts = fileName.split(' ');
             const monthWord = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
             const detectedMonth = monthMap[monthWord];
-            const tripName = typeof detectedMonth !== 'undefined' ? nameParts.slice(0, -1).join(' ') : fileName;
+            const tripNameRaw = typeof detectedMonth !== 'undefined' ? nameParts.slice(0, -1).join(' ') : fileName;
+            const tripName = toTitleCase(tripNameRaw);
 
             let trip = allTours.find(t => t.destination.toLowerCase() === tripName.toLowerCase());
             let newTourCreated = false;
@@ -137,8 +139,9 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let resultCounts = { newTours: 0, newReservations: 0, newPassengers: 0, updatedPassengers: 0, createdTripId: trip.id, preselectedMonth: detectedMonth };
             const updatedPassengersMap = new Map<string, Passenger>();
             const newReservationsList: Reservation[] = [];
+            const colorToFamilyName = new Map<string, string>();
 
-            for (const row of passengerData) {
+            for (const [rowIndex, row] of passengerData.entries()) {
                 const passengerNameRaw = row[colMap['PASAJERO']];
                 if (!passengerNameRaw) continue; // Skip empty rows
 
@@ -146,14 +149,47 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
 
                 if (!passengerName || !passengerDNI) continue;
+                
+                // Family by color logic
+                let familyName = "";
+                const cellRef = `${colMap['PASAJERO']}${rowIndex + 7}`;
+                const cell = worksheet[cellRef];
+                const cellColor = cell?.s?.fgColor?.rgb;
+                
+                if (cellColor && cellColor !== 'FFFFFFFF' && cellColor !== '00000000') { // Ignore white/transparent
+                    if (colorToFamilyName.has(cellColor)) {
+                        familyName = colorToFamilyName.get(cellColor)!;
+                    } else {
+                        familyName = `Familia ${passengerName.split(' ')[1] || passengerName}`;
+                        colorToFamilyName.set(cellColor, familyName);
+                    }
+                }
 
                 let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
+                
+                // Boarding Point Logic
+                const boardingPointRaw = row[colMap['EMBARQUE']] ? String(row[colMap['EMBARQUE']]) : undefined;
+                let boardingPointId: string | undefined;
+
+                if (boardingPointRaw && /^[A-Z]-/.test(boardingPointRaw)) {
+                    const bpId = boardingPointRaw.charAt(0);
+                    const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
+                    boardingPointId = bpId;
+                    
+                    const existingBp = allBoardingPoints.find(bp => bp.id === bpId);
+                    if (!existingBp) {
+                        allBoardingPoints.push({ id: bpId, name: bpName });
+                    } else if (existingBp.name !== bpName) {
+                        existingBp.name = bpName; // Update name if it changed
+                    }
+                }
                 
                 const passengerUpdate: Partial<Passenger> & { fullName: string } = {
                     fullName: passengerName,
                     dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
                     phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
-                    family: passenger?.family || "" // Keep existing family, or default to empty for new passengers
+                    family: familyName || passenger?.family || "", // Prioritize new color family, then existing, then default
+                    boardingPointId: boardingPointId
                 };
 
                 if (passenger) {
@@ -209,7 +245,8 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     },
                     assignedSeats: [],
                     assignedCabins: [],
-                    sellerId: seller?.id || 'unassigned'
+                    sellerId: seller?.id || 'unassigned',
+                    boardingPointId: boardingPointId
                 };
                 newReservationsList.push(reservation);
             }
@@ -246,6 +283,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             localStorage.setItem("ytl_tours", JSON.stringify(allTours));
             localStorage.setItem("ytl_passengers", JSON.stringify(allPassengers));
             localStorage.setItem("ytl_reservations", JSON.stringify(allReservations));
+            localStorage.setItem("ytl_boarding_points", JSON.stringify(allBoardingPoints));
             
             window.dispatchEvent(new Event('storage'));
 
@@ -380,7 +418,3 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
         </Dialog>
     )
 }
-
-    
-
-    
