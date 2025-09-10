@@ -24,12 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { mockTours, mockReservations, mockPassengers } from "@/lib/mock-data";
-import type { Tour, Reservation, Passenger, Ticket } from "@/lib/types";
+import { mockTours, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data";
+import type { Tour, Reservation, Passenger, Ticket, BoardingPoint } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Users } from "lucide-react";
+import { Download, Copy, Users, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+
 
 interface DataExporterProps {
   isOpen: boolean;
@@ -62,12 +65,14 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const [tours, setTours] = useState<Tour[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
-  const [boardingPoints, setBoardingPoints] = useState<any[]>([]);
+  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>(["ticketId", "fullName", "dni"]);
   const [showInsuredOnly, setShowInsuredOnly] = useState(false);
+  const [boardingSortOrder, setBoardingSortOrder] = useState<"asc" | "desc" | "custom">("asc");
+  const [customBoardingOrder, setCustomBoardingOrder] = useState<BoardingPoint[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -98,13 +103,34 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (boardingSortOrder === "custom") {
+        const tripsToExport = tours.filter(t => selectedTripIds.includes(t.id));
+        const boardingPointIdsInSelectedTrips = new Set(
+            reservations
+                .filter(r => selectedTripIds.includes(r.tripId) && r.boardingPointId)
+                .map(r => r.boardingPointId)
+        );
+        const relevantBoardingPoints = boardingPoints.filter(bp => boardingPointIdsInSelectedTrips.has(bp.id));
+        setCustomBoardingOrder(relevantBoardingPoints);
+    }
+  }, [boardingSortOrder, selectedTripIds, tours, reservations, boardingPoints]);
+
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
+    const items = Array.from(customBoardingOrder);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    setCustomBoardingOrder(items);
+  };
+
   const exportableData = useMemo(() => {
     const tripsToExport = tours.filter((t) => selectedTripIds.includes(t.id));
     
     return tripsToExport.map((trip) => {
       let tripReservations = reservations.filter((r) => r.tripId === trip.id);
       
-      const passengerData = tripReservations
+      let passengerData = tripReservations
         .flatMap((res) => {
           const reservationPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
           const filteredPassengers = showInsuredOnly
@@ -129,12 +155,29 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
               age: calculateAge(p.dob),
               dob: dobString,
               boardingPoint,
+              boardingPointId: r.boardingPointId,
           };
       });
 
+      // Sorting logic
+      if (boardingSortOrder === 'asc') {
+          passengerData.sort((a, b) => a.boardingPoint.localeCompare(b.boardingPoint));
+      } else if (boardingSortOrder === 'desc') {
+          passengerData.sort((a, b) => b.boardingPoint.localeCompare(a.boardingPoint));
+      } else if (boardingSortOrder === 'custom' && customBoardingOrder.length > 0) {
+          const customOrderMap = new Map(customBoardingOrder.map((bp, index) => [bp.id, index]));
+          passengerData.sort((a, b) => {
+              const orderA = a.boardingPointId ? customOrderMap.get(a.boardingPointId) : Infinity;
+              const orderB = b.boardingPointId ? customOrderMap.get(b.boardingPointId) : Infinity;
+              if (orderA === undefined || orderB === undefined) return 0;
+              return orderA - orderB;
+          });
+      }
+
+
       return { trip, passengers: passengerData };
     });
-  }, [selectedTripIds, passengers, reservations, tours, showInsuredOnly, boardingPoints, tickets]);
+  }, [selectedTripIds, passengers, reservations, tours, showInsuredOnly, boardingPoints, tickets, boardingSortOrder, customBoardingOrder]);
 
   const handleCopy = (tripId: string) => {
     const tripData = exportableData.find(d => d.trip.id === tripId);
@@ -199,6 +242,49 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
                   ))}
                 </ScrollArea>
               </div>
+               <div className="space-y-2">
+                <Label className="font-semibold">Ordenar embarcaciones por:</Label>
+                 <RadioGroup value={boardingSortOrder} onValueChange={(v) => setBoardingSortOrder(v as any)}>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="asc" id="sort-asc"/><Label htmlFor="sort-asc">Abecedario ascendente</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="desc" id="sort-desc"/><Label htmlFor="sort-desc">Abecedario descendente</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id="sort-custom"/><Label htmlFor="sort-custom">Personalizado</Label></div>
+                 </RadioGroup>
+              </div>
+
+              {boardingSortOrder === 'custom' && (
+                  <div className="space-y-2 p-2 border rounded-md bg-muted/50">
+                    <Label className="font-semibold">Orden Personalizado</Label>
+                    <p className="text-xs text-muted-foreground">Arrastra para reordenar los puntos de embarque. El orden se aplicará a la tabla.</p>
+                     <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="boardingPoints">
+                        {(provided) => (
+                            <div {...provided.droppableProps} ref={provided.innerRef}>
+                                <ScrollArea className="h-40 border rounded-md bg-background">
+                                    {customBoardingOrder.map((bp, index) => (
+                                        <Draggable key={bp.id} draggableId={bp.id} index={index}>
+                                            {(provided) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    {...provided.dragHandleProps}
+                                                    className="p-2 flex items-center gap-2 border-b"
+                                                >
+                                                   <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                                   <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
+                                                   <span className="font-medium">{bp.name}</span>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </ScrollArea>
+                            </div>
+                        )}
+                        </Droppable>
+                    </DragDropContext>
+                  </div>
+              )}
+
               <div className="space-y-2">
                 <Label className="font-semibold">Columnas</Label>
                 <div className="space-y-2">
