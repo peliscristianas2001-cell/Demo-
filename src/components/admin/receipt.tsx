@@ -96,12 +96,12 @@ export function Receipt({ reservation }: ReceiptProps) {
             {/* Info Section */}
             <section className="mt-8 grid grid-cols-3 gap-8">
                 <div className="col-span-2 space-y-4">
-                    <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="passengerName" className="text-gray-600">Recibí de:</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="passengerName" className="text-gray-600 flex-shrink-0">Recibí de:</Label>
                         <Input type="text" id="passengerName" value={receiptData.passengerName} onChange={e => handleDataChange('passengerName', e.target.value)} className="font-medium text-base bg-transparent border-0 border-b border-dashed rounded-none px-1 h-8"/>
                     </div>
-                     <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="passengerPhone" className="text-gray-600">Teléfono:</Label>
+                     <div className="flex items-center gap-2">
+                        <Label htmlFor="passengerPhone" className="text-gray-600 flex-shrink-0">Teléfono:</Label>
                         <Input type="text" id="passengerPhone" value={receiptData.passengerPhone} onChange={e => handleDataChange('passengerPhone', e.target.value)} className="font-medium bg-transparent border-0 border-b border-dashed rounded-none px-1 h-8"/>
                     </div>
                 </div>
@@ -112,7 +112,7 @@ export function Receipt({ reservation }: ReceiptProps) {
             </section>
             
             {/* Details Section */}
-            <section className="mt-8 flex-grow space-y-4 rounded-lg bg-gray-50 p-6 border border-gray-200">
+            <section className="mt-8 space-y-4 rounded-lg bg-gray-50 p-6 border border-gray-200">
                 <h2 className="text-lg font-bold text-center mb-4 text-gray-700">Detalles del Pago</h2>
                  <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                      <div className="space-y-1.5">
@@ -145,6 +145,17 @@ export function Receipt({ reservation }: ReceiptProps) {
                     </div>
                 </div>
             </section>
+             
+            {/* Terms and Conditions */}
+             <section className="mt-8 space-y-2 flex-grow">
+                <Label htmlFor="cancellationPolicy" className="text-xs font-bold text-gray-500">Términos y Condiciones</Label>
+                <Textarea 
+                    id="cancellationPolicy"
+                    value={receiptData.cancellationPolicy}
+                    onChange={e => handleDataChange('cancellationPolicy', e.target.value)}
+                    className="text-[10px] leading-snug text-gray-600 h-full resize-none bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+             </section>
 
             {/* Footer and Signatures */}
             <footer className="mt-auto pt-8 space-y-6">
@@ -156,22 +167,8 @@ export function Receipt({ reservation }: ReceiptProps) {
                         <p className="font-semibold">Firma y Aclaración (Agencia)</p>
                     </div>
                  </div>
-
-                 <Separator />
-
-                 <div className="space-y-2">
-                    <Label htmlFor="cancellationPolicy" className="text-xs font-bold text-gray-500">Términos y Condiciones</Label>
-                    <Textarea 
-                        id="cancellationPolicy"
-                        value={receiptData.cancellationPolicy}
-                        onChange={e => handleDataChange('cancellationPolicy', e.target.value)}
-                        className="text-[10px] leading-snug text-gray-600 h-40 resize-none bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                 </div>
                  <p className="text-center font-bold text-gray-700">AGENCIA YO TE LLEVO</p>
             </footer>
         </div>
     );
 }
-
-    
