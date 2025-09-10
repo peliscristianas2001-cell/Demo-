@@ -199,153 +199,152 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow pr-6 -mr-6">
-          <div className="py-4 space-y-4">
-              <div className="space-y-2 relative">
-                <Label htmlFor="passenger-search">Pasajero Principal</Label>
-                <Input
-                    id="passenger-search"
-                    value={mainPassengerSearch}
-                    onChange={e => setMainPassengerSearch(e.target.value)}
-                    placeholder="Buscar por nombre o DNI..."
-                    disabled={!!selectedMainPassenger}
-                />
-                 {selectedMainPassenger && (
-                    <Button variant="ghost" size="icon" className="absolute top-6 right-0" onClick={() => {
-                        setMainPassengerSearch("");
-                        setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}))
-                    }}>
-                        <XCircle className="w-5 h-5 text-muted-foreground"/>
-                    </Button>
-                )}
-                {mainPassengerSearch && !selectedMainPassenger && searchResults.length > 0 && (
-                    <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
-                        {searchResults.map(p => (
-                            <div key={p.id} className="p-2 hover:bg-accent cursor-pointer" onClick={() => handleMainPassengerSelect(p)}>
-                                {p.fullName} ({p.dni})
-                            </div>
-                        ))}
+        <div className="flex-grow overflow-y-auto pr-2">
+            <div className="py-4 space-y-4">
+                <div className="space-y-2 relative">
+                    <Label htmlFor="passenger-search">Pasajero Principal</Label>
+                    <Input
+                        id="passenger-search"
+                        value={mainPassengerSearch}
+                        onChange={e => setMainPassengerSearch(e.target.value)}
+                        placeholder="Buscar por nombre o DNI..."
+                        disabled={!!selectedMainPassenger}
+                    />
+                    {selectedMainPassenger && (
+                        <Button variant="ghost" size="icon" className="absolute top-6 right-0" onClick={() => {
+                            setMainPassengerSearch("");
+                            setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}))
+                        }}>
+                            <XCircle className="w-5 h-5 text-muted-foreground"/>
+                        </Button>
+                    )}
+                    {mainPassengerSearch && !selectedMainPassenger && searchResults.length > 0 && (
+                        <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
+                            {searchResults.map(p => (
+                                <div key={p.id} className="p-2 hover:bg-accent cursor-pointer" onClick={() => handleMainPassengerSelect(p)}>
+                                    {p.fullName} ({p.dni})
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
+                        <div className="text-center p-4 border-dashed border-2 rounded-md">
+                            <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
+                            <Button onClick={() => setIsAddingNewPassenger(true)}>
+                                <UserPlus className="mr-2 h-4 w-4"/>
+                                Registrar Nuevo Pasajero Principal
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
+                {isAddingNewPassenger && !selectedMainPassenger && (
+                    <div className="p-4 border rounded-lg bg-secondary/30">
+                        <DialogHeader className="mb-4">
+                            <DialogTitle>Registrar Nuevo Pasajero Principal</DialogTitle>
+                        </DialogHeader>
+                        <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, true)} onCancel={() => setIsAddingNewPassenger(false)} />
                     </div>
                 )}
-                 {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
-                     <div className="text-center p-4 border-dashed border-2 rounded-md">
-                        <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
-                        <Button onClick={() => setIsAddingNewPassenger(true)}>
-                            <UserPlus className="mr-2 h-4 w-4"/>
-                            Registrar Nuevo Pasajero Principal
-                        </Button>
-                     </div>
-                 )}
-              </div>
+                
+                {selectedMainPassenger && (
+                    <>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
+                                <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="finalPrice">Precio Final (Total)</Label>
+                                <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
+                            </div>
+                        </div>
+                        
+                        <div className="p-4 border rounded-md space-y-3">
+                            <div className="flex justify-between items-center">
+                                <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm">
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Añadir Nuevo
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
+                                            <DialogDescription>
+                                                El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, false)} />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <ScrollArea className="h-40">
+                                <div className="space-y-2 pr-2">
+                                    {familyMembers.map(member => (
+                                        <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                            <Checkbox
+                                                id={`member-${member.id}`}
+                                                checked={formData.selectedPassengerIds.includes(member.id)}
+                                                onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
+                                                disabled={member.id === selectedMainPassenger.id}
+                                            />
+                                            <Label htmlFor={`member-${member.id}`} className="font-normal flex-1 cursor-pointer">
+                                                {member.fullName} <span className="text-muted-foreground"> (DNI: {member.dni})</span>
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </div>
 
-               {isAddingNewPassenger && !selectedMainPassenger && (
-                 <div className="p-4 border rounded-lg bg-secondary/30">
-                    <DialogHeader className="mb-4">
-                        <DialogTitle>Registrar Nuevo Pasajero Principal</DialogTitle>
-                    </DialogHeader>
-                    <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, true)} onCancel={() => setIsAddingNewPassenger(false)} />
-                 </div>
-               )}
-              
-              {selectedMainPassenger && (
-                  <>
-                      <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                              <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
-                              <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="finalPrice">Precio Final (Total)</Label>
-                              <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
-                          </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md space-y-3">
-                          <div className="flex justify-between items-center">
-                              <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
-                              <Dialog>
-                                  <DialogTrigger asChild>
-                                      <Button variant="outline" size="sm">
-                                          <PlusCircle className="mr-2 h-4 w-4" />
-                                          Añadir Nuevo
-                                      </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                      <DialogHeader>
-                                          <DialogTitle>Añadir Nuevo Integrante</DialogTitle>
-                                          <DialogDescription>
-                                              El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
-                                          </DialogDescription>
-                                      </DialogHeader>
-                                      <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, false)} />
-                                  </DialogContent>
-                              </Dialog>
-                          </div>
-                          <ScrollArea className="h-40">
-                              <div className="space-y-2 pr-2">
-                                {familyMembers.map(member => (
-                                    <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
-                                        <Checkbox
-                                            id={`member-${member.id}`}
-                                            checked={formData.selectedPassengerIds.includes(member.id)}
-                                            onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
-                                            disabled={member.id === selectedMainPassenger.id}
-                                        />
-                                        <Label htmlFor={`member-${member.id}`} className="font-normal flex-1 cursor-pointer">
-                                            {member.fullName} <span className="text-muted-foreground"> (DNI: {member.dni})</span>
-                                        </Label>
-                                    </div>
-                                ))}
-                              </div>
-                          </ScrollArea>
-                      </div>
-
-
-                      <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                              <Label htmlFor="seller">Vendedor/a</Label>
-                              <SearchableSelect
-                                  options={sellerOptions}
-                                  value={formData.sellerId}
-                                  onChange={(value) => handleFormChange('sellerId', value)}
-                                  placeholder="Buscar vendedor..."
-                                  listHeight="h-32"
-                              />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="paymentStatus">Estado de Pago</Label>
-                              <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
-                                  <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                      <SelectItem value="Pendiente">Pendiente</SelectItem>
-                                      <SelectItem value="Parcial">Parcial</SelectItem>
-                                      <SelectItem value="Pagado">Pagado</SelectItem>
-                                  </SelectContent>
-                              </Select>
-                          </div>
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
-                          <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
-                              <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
-                              <SelectContent>
-                                  {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
-                              </SelectContent>
-                          </Select>
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="boardingPointId">Punto de Embarque</Label>
-                          <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
-                              <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
-                              <SelectContent>
-                                  {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                              </SelectContent>
-                          </Select>
-                      </div>
-                  </>
-              )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="seller">Vendedor/a</Label>
+                                <SearchableSelect
+                                    options={sellerOptions}
+                                    value={formData.sellerId}
+                                    onChange={(value) => handleFormChange('sellerId', value)}
+                                    placeholder="Buscar vendedor..."
+                                    listHeight="h-32"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="paymentStatus">Estado de Pago</Label>
+                                <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
+                                    <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                        <SelectItem value="Parcial">Parcial</SelectItem>
+                                        <SelectItem value="Pagado">Pagado</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
+                            <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
+                                <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
+                                <SelectContent>
+                                    {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="boardingPointId">Punto de Embarque</Label>
+                            <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                                <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                                <SelectContent>
+                                    {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </>
+                )}
             </div>
-        </ScrollArea>
+        </div>
         
         <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

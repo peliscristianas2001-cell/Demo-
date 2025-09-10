@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -18,7 +19,6 @@ import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { mockBoardingPoints } from "@/lib/mock-data"
 import { ScrollArea } from "../ui/scroll-area"
-import { cn } from "@/lib/utils"
 
 interface PassengerFormProps {
   isOpen: boolean
@@ -97,62 +97,60 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-hidden">
-            <ScrollArea className="h-full pr-6">
-                <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="fullName">Nombre Completo</Label>
-                        <Input id="fullName" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="dni">DNI</Label>
-                        <Input id="dni" value={formData.dni} onChange={(e) => handleFormChange('dni', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="dob">Fecha de Nacimiento</Label>
-                        <DatePicker 
-                            id="dob" 
-                            date={formData.dob} 
-                            setDate={(d) => handleFormChange('dob', d)} 
-                            className="h-10 w-full" 
-                            placeholder="Seleccionar fecha..."
-                            captionLayout="dropdown-buttons"
-                            fromYear={new Date().getFullYear() - 100}
-                            toYear={new Date().getFullYear()}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="phone">Teléfono</Label>
-                        <Input id="phone" value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="family">Familia</Label>
-                        <div className="flex gap-2">
-                            <Input id="family" value={formData.family || ''} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario) o seleccionar"/>
-                            {existingFamilies.length > 0 && (
-                                <Select onValueChange={(val) => handleFormChange('family', val)}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Familias existentes" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {existingFamilies.map(fam => <SelectItem key={fam} value={fam}>{fam}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="boardingPointId">Punto de Embarque (por defecto)</Label>
-                        <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val === 'none' ? undefined : val)}>
-                            <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Ninguno</SelectItem>
-                                {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+        <div className="flex-grow overflow-y-auto pr-2">
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="fullName">Nombre Completo</Label>
+                    <Input id="fullName" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="dni">DNI</Label>
+                    <Input id="dni" value={formData.dni} onChange={(e) => handleFormChange('dni', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="dob">Fecha de Nacimiento</Label>
+                    <DatePicker 
+                        id="dob" 
+                        date={formData.dob} 
+                        setDate={(d) => handleFormChange('dob', d)} 
+                        className="h-10 w-full" 
+                        placeholder="Seleccionar fecha..."
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear() - 100}
+                        toYear={new Date().getFullYear()}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input id="phone" value={formData.phone || ''} onChange={(e) => handleFormChange('phone', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="family">Familia</Label>
+                    <div className="flex gap-2">
+                        <Input id="family" value={formData.family || ''} onChange={(e) => handleFormChange('family', e.target.value)} placeholder="Ej: Pérez (Rosario) o seleccionar"/>
+                        {existingFamilies.length > 0 && (
+                            <Select onValueChange={(val) => handleFormChange('family', val)}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Familias existentes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {existingFamilies.map(fam => <SelectItem key={fam} value={fam}>{fam}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </div>
-            </ScrollArea>
+                <div className="space-y-2">
+                    <Label htmlFor="boardingPointId">Punto de Embarque (por defecto)</Label>
+                    <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val === 'none' ? undefined : val)}>
+                        <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Ninguno</SelectItem>
+                            {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
         </div>
         
         <DialogFooter className="mt-auto pt-4 border-t shrink-0">

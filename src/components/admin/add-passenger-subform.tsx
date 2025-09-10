@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/date-picker"
 import type { Passenger } from "@/lib/types"
-import { ScrollArea } from "../ui/scroll-area"
 
 interface AddPassengerSubFormProps {
   onSave: (passengerData: Omit<Passenger, 'id'>) => void;
@@ -35,8 +34,7 @@ export function AddPassengerSubForm({ onSave, onCancel }: AddPassengerSubFormPro
   }
 
   return (
-    <form onSubmit={handleSubmit} className="py-4 space-y-4">
-      <ScrollArea className="h-72 pr-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="sub-fullName">Nombre Completo</Label>
@@ -64,8 +62,7 @@ export function AddPassengerSubForm({ onSave, onCancel }: AddPassengerSubFormPro
                 <Input id="sub-phone" type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
             </div>
         </div>
-      </ScrollArea>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-4">
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>}
         <Button type="submit">Guardar Integrante</Button>
       </div>
