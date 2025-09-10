@@ -27,7 +27,7 @@ export function Receipt({ reservation }: ReceiptProps) {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const year = today.getFullYear();
     
-    const receiptNumber = reservation.id.substring(0, 8);
+    const receiptNumber = reservation.id.substring(0, 8).toUpperCase();
 
     const paidAmount = reservation.installments?.details
         .filter(inst => inst.isPaid)
