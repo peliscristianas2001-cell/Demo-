@@ -186,6 +186,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   }
 
   const canSubmit = formData.paxCount === formData.selectedPassengerIds.length && formData.mainPassengerId;
+  const showNewPassengerForm = isAddingNewPassenger && !selectedMainPassenger;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -204,14 +205,17 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     <Input
                         id="passenger-search"
                         value={mainPassengerSearch}
-                        onChange={e => setMainPassengerSearch(e.target.value)}
+                        onChange={e => {
+                            setMainPassengerSearch(e.target.value);
+                            if(isAddingNewPassenger) setIsAddingNewPassenger(false);
+                        }}
                         placeholder="Buscar por nombre o DNI..."
                         disabled={!!selectedMainPassenger}
                     />
                     {selectedMainPassenger && (
                         <Button variant="ghost" size="icon" className="absolute top-6 right-0" onClick={() => {
                             setMainPassengerSearch("");
-                            setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}))
+                            setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}));
                         }}>
                             <XCircle className="w-5 h-5 text-muted-foreground"/>
                         </Button>
@@ -230,13 +234,13 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                             <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
                             <Button onClick={handleTriggerNewPassengerForm}>
                                 <UserPlus className="mr-2 h-4 w-4"/>
-                                Registrar Nuevo Pasajero
+                                Registrar Nuevo Pasajero Principal
                             </Button>
                         </div>
                     )}
                 </div>
 
-                {isAddingNewPassenger && !selectedMainPassenger && prefillData && (
+                {showNewPassengerForm && prefillData && (
                     <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
                          <PassengerForm
                             isOpen={isAddingNewPassenger}
@@ -353,7 +357,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
             </div>
         </div>
         
-        <DialogFooter className="mt-auto pt-4 border-t">
+        <DialogFooter className="mt-auto pt-4 border-t shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>Guardar Reserva</Button>
         </DialogFooter>
