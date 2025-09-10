@@ -55,6 +55,17 @@ const newPassengerDefaultState = {
     boardingPointId: undefined as string | undefined,
 }
 
+const generateNextReservationId = () => {
+    const counters = JSON.parse(localStorage.getItem('ytl_reservation_counters') || '{}');
+    const year = new Date().getFullYear().toString().slice(-2);
+    const currentCount = counters[year] || 0;
+    const nextCount = currentCount + 1;
+    counters[year] = nextCount;
+    localStorage.setItem('ytl_reservation_counters', JSON.stringify(counters));
+    return `R-${year}-${String(nextCount).padStart(3, '0')}`;
+}
+
+
 export function AddReservationForm({ 
     isOpen, onOpenChange, onSave, tour, passengers, allReservations, 
     onPassengerCreated, sellers, boardingPoints, roomTypes 
@@ -198,7 +209,7 @@ export function AddReservationForm({
     }
     
     const reservationToSave: Reservation = {
-        id: `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        id: generateNextReservationId(),
         tripId: tour.id,
         passenger: selectedMainPassenger.fullName,
         passengerIds: reservationData.selectedPassengerIds,
@@ -409,5 +420,3 @@ export function AddReservationForm({
     </Dialog>
   )
 }
-
-    

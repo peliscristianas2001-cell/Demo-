@@ -42,6 +42,16 @@ const calculateAge = (dob?: Date | string) => {
     return age;
 }
 
+const generateNextReservationId = () => {
+    const counters = JSON.parse(localStorage.getItem('ytl_reservation_counters') || '{}');
+    const year = new Date().getFullYear().toString().slice(-2);
+    const currentCount = counters[year] || 0;
+    const nextCount = currentCount + 1;
+    counters[year] = nextCount;
+    localStorage.setItem('ytl_reservation_counters', JSON.stringify(counters));
+    return `R-${year}-${String(nextCount).padStart(3, '0')}`;
+}
+
 export default function BookingPage() {
   const { id } = useParams()
   const router = useRouter();
@@ -214,10 +224,8 @@ export default function BookingPage() {
         }
     }
     
-    const reservationId = `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-    
     const newReservation: Reservation = {
-        id: reservationId,
+        id: generateNextReservationId(),
         tripId: tour!.id,
         passenger: mainPassenger.fullName,
         passengerIds: newPassengerList.map(p => p.id),

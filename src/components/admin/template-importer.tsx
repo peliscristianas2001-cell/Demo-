@@ -62,6 +62,15 @@ const toTitleCase = (str: string): string => {
   return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.substring(1)).join(' ').trim();
 }
 
+const generateNextReservationId = () => {
+    const counters = JSON.parse(localStorage.getItem('ytl_reservation_counters') || '{}');
+    const year = new Date().getFullYear().toString().slice(-2);
+    const currentCount = counters[year] || 0;
+    const nextCount = currentCount + 1;
+    counters[year] = nextCount;
+    localStorage.setItem('ytl_reservation_counters', JSON.stringify(counters));
+    return `R-${year}-${String(nextCount).padStart(3, '0')}`;
+}
 
 export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps) {
     const { toast } = useToast();
@@ -186,11 +195,10 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
 
                     if (boardingPointRaw && /^[A-Z]-/.test(boardingPointRaw)) {
                         const bpId = boardingPointRaw.charAt(0);
-                        const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
                         
-                        // Add boarding point only if ID doesn't already exist
                         if (!allBoardingPoints.some(bp => bp.id === bpId)) {
-                            allBoardingPoints.push({ id: bpId, name: bpName });
+                           const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
+                           allBoardingPoints.push({ id: bpId, name: bpName });
                         }
                         boardingPointId = bpId;
                     }
@@ -248,7 +256,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     const seller = allSellers.find(s => s.name.toLowerCase() === (payerRow[colMap['VENDEDOR']] || '').toLowerCase());
 
                     const reservation: Reservation = {
-                        id: `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+                        id: generateNextReservationId(),
                         tripId: trip!.id,
                         passenger: payer.fullName,
                         passengerIds: reservationMembers.map(m => m.id),
@@ -422,5 +430,3 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
         </Dialog>
     )
 }
-
-    
