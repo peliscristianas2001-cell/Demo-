@@ -28,6 +28,15 @@ interface ReceiptData {
     cancellationPolicy: string;
 }
 
+// A simple editable field component to avoid repetition
+const EditableField = ({ value, onChange }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+    <Input 
+        value={value} 
+        onChange={onChange} 
+        className="font-medium bg-transparent border-0 border-b-2 border-dotted rounded-none px-1 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-solid"
+    />
+);
+
 export function Receipt({ reservation }: ReceiptProps) {
     const [allPassengers, setAllPassengers] = useState<Passenger[]>([]);
     const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -58,7 +67,7 @@ export function Receipt({ reservation }: ReceiptProps) {
             passengerName: passenger?.fullName || '',
             passengerPhone: passenger?.phone || '',
             paidAmountText: paidAmount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }),
-            concept: 'Seña/Pago de viaje',
+            concept: `Viaje a ${tour?.destination || ''} para ${reservation.paxCount} pasajero(s).`,
             destination: tour?.destination || '',
             paxCount: reservation.paxCount,
             tourDate: tour ? new Date(tour.date).toLocaleDateString('es-AR') : '',
@@ -80,94 +89,66 @@ export function Receipt({ reservation }: ReceiptProps) {
     }
 
     return (
-        <div className="bg-white w-[210mm] min-h-[297mm] text-black font-serif text-sm p-8 shadow-lg flex flex-col">
+        <div className="bg-white w-[210mm] h-[297mm] text-black font-serif text-sm p-12 shadow-lg flex flex-col">
             {/* Header */}
-            <header className="flex justify-between items-start pb-4 border-b-2 border-gray-300">
+            <header className="flex justify-between items-start pb-4 border-b border-gray-400">
                 <div className="w-24 h-24 flex-shrink-0">
                     <Logo/>
                 </div>
                 <div className="text-right">
                     <h1 className="text-4xl font-bold tracking-tight text-gray-800">RECIBO</h1>
                     <p className="font-mono text-lg text-gray-600 tracking-wider">N° {receiptData.receiptNumber}</p>
-                    <p className="text-xs text-gray-500 mt-1">Documento no válido como factura</p>
                 </div>
             </header>
 
             {/* Info Section */}
-            <section className="mt-8 grid grid-cols-3 gap-8">
-                <div className="col-span-2 space-y-4">
-                    <div className="flex items-center gap-2">
-                        <Label htmlFor="passengerName" className="text-gray-600 flex-shrink-0">Recibí de:</Label>
-                        <Input type="text" id="passengerName" value={receiptData.passengerName} onChange={e => handleDataChange('passengerName', e.target.value)} className="font-medium text-base bg-transparent border-0 border-b border-dashed rounded-none px-1 h-8"/>
+            <section className="mt-8 grid grid-cols-2 gap-8">
+                <div className="space-y-4">
+                    <div className="flex items-end gap-2">
+                        <span className="text-gray-600 flex-shrink-0">Recibí de:</span>
+                        <EditableField value={receiptData.passengerName} onChange={e => handleDataChange('passengerName', e.target.value)} />
                     </div>
-                     <div className="flex items-center gap-2">
-                        <Label htmlFor="passengerPhone" className="text-gray-600 flex-shrink-0">Teléfono:</Label>
-                        <Input type="text" id="passengerPhone" value={receiptData.passengerPhone} onChange={e => handleDataChange('passengerPhone', e.target.value)} className="font-medium bg-transparent border-0 border-b border-dashed rounded-none px-1 h-8"/>
+                     <div className="flex items-end gap-2">
+                        <span className="text-gray-600 flex-shrink-0">La suma de:</span>
+                        <EditableField value={receiptData.paidAmountText} onChange={e => handleDataChange('paidAmountText', e.target.value)} />
                     </div>
                 </div>
                 <div className="text-right space-y-2">
-                     <Label className="text-gray-600 block">Fecha de Emisión</Label>
+                     <span className="text-gray-600 block">Fecha</span>
                      <Input value={receiptData.date} onChange={e => handleDataChange('date', e.target.value)} className="text-lg font-semibold text-center bg-transparent border-0 border-b border-dashed rounded-none h-10"/>
                 </div>
             </section>
             
-            {/* Details Section */}
-            <section className="mt-8 space-y-4 rounded-lg bg-gray-50 p-6 border border-gray-200">
-                <h2 className="text-lg font-bold text-center mb-4 text-gray-700">Detalles del Pago</h2>
-                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                     <div className="space-y-1.5">
-                        <Label htmlFor="paidAmountText">Importe Recibido</Label>
-                        <Input id="paidAmountText" value={receiptData.paidAmountText} onChange={e => handleDataChange('paidAmountText', e.target.value)} className="text-lg font-bold bg-white h-9" />
-                    </div>
-                     <div className="space-y-1.5">
-                        <Label htmlFor="concept">En concepto de</Label>
-                        <Input id="concept" value={receiptData.concept} onChange={e => handleDataChange('concept', e.target.value)} className="bg-white h-9" />
-                    </div>
-                     <div className="space-y-1.5">
-                        <Label htmlFor="destination">Destino del Viaje</Label>
-                        <Input id="destination" value={receiptData.destination} onChange={e => handleDataChange('destination', e.target.value)} className="bg-white h-9"/>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="tourDate">Fecha del Viaje</Label>
-                            <Input id="tourDate" value={receiptData.tourDate} onChange={e => handleDataChange('tourDate', e.target.value)} className="bg-white h-9"/>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="paxCount">N° Pasajeros</Label>
-                            <Input id="paxCount" type="number" value={receiptData.paxCount} onChange={e => handleDataChange('paxCount', parseInt(e.target.value) || 1)} className="bg-white h-9"/>
-                        </div>
-                    </div>
-                 </div>
-                 <div className="flex justify-end pt-4">
-                    <div className="space-y-1.5 w-1/2">
-                        <Label htmlFor="totalAmountText" className="text-base">Monto Total del Viaje</Label>
-                        <Input id="totalAmountText" value={receiptData.totalAmountText} onChange={e => handleDataChange('totalAmountText', e.target.value)} className="text-2xl font-bold text-right h-12 bg-transparent border-0 border-b-2 rounded-none px-2 focus-visible:ring-0 focus-visible:ring-offset-0"/>
+            {/* Concept Section */}
+            <section className="mt-8 space-y-4">
+                 <div className="flex items-end gap-2">
+                    <span className="text-gray-600 flex-shrink-0">En concepto de:</span>
+                    <EditableField value={receiptData.concept} onChange={e => handleDataChange('concept', e.target.value)} />
+                </div>
+                <div className="flex justify-end pt-4">
+                    <div className="w-1/2 flex items-baseline gap-4">
+                        <span className="text-base font-bold text-gray-800">TOTAL:</span>
+                        <EditableField value={receiptData.totalAmountText} onChange={e => handleDataChange('totalAmountText', e.target.value)} />
                     </div>
                 </div>
             </section>
              
             {/* Terms and Conditions */}
-             <section className="mt-8 space-y-2 flex-grow">
-                <Label htmlFor="cancellationPolicy" className="text-xs font-bold text-gray-500">Términos y Condiciones</Label>
-                <Textarea 
-                    id="cancellationPolicy"
-                    value={receiptData.cancellationPolicy}
-                    onChange={e => handleDataChange('cancellationPolicy', e.target.value)}
-                    className="text-[10px] leading-snug text-gray-600 h-full resize-none bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
+             <section className="mt-8 text-[9px] text-gray-600 leading-tight flex-grow">
+                <h4 className="font-bold text-xs mb-1 uppercase">Política de Cancelación</h4>
+                <p className="whitespace-pre-line">
+                   {receiptData.cancellationPolicy}
+                </p>
              </section>
 
             {/* Footer and Signatures */}
-            <footer className="mt-auto pt-8 space-y-6">
-                 <div className="pt-8 grid grid-cols-2 gap-16">
-                    <div className="border-t-2 border-gray-400 pt-2 text-center">
-                        <p className="font-semibold">Firma del Pasajero</p>
-                    </div>
-                     <div className="border-t-2 border-gray-400 pt-2 text-center">
-                        <p className="font-semibold">Firma y Aclaración (Agencia)</p>
-                    </div>
-                 </div>
-                 <p className="text-center font-bold text-gray-700">AGENCIA YO TE LLEVO</p>
+            <footer className="mt-auto pt-8 flex justify-around">
+                 <div className="border-t-2 border-gray-400 pt-2 text-center w-64">
+                    <p className="font-semibold">Firma del Pasajero</p>
+                </div>
+                 <div className="border-t-2 border-gray-400 pt-2 text-center w-64">
+                    <p className="font-semibold">Firma y Aclaración</p>
+                </div>
             </footer>
         </div>
     );
