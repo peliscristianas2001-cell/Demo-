@@ -6,8 +6,6 @@ import type { Reservation, Passenger, Tour } from "@/lib/types";
 import { Logo } from "../logo";
 import { mockPassengers, mockTours } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ReceiptProps {
@@ -29,11 +27,11 @@ interface ReceiptData {
 }
 
 // A simple editable field component to avoid repetition
-const EditableField = ({ value, onChange }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+const EditableField = ({ value, onChange, className }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, className?: string }) => (
     <Input 
         value={value} 
         onChange={onChange} 
-        className="font-medium bg-transparent border-0 border-b-2 border-dotted rounded-none px-1 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-solid"
+        className={`font-serif bg-transparent border-0 border-b border-dotted rounded-none px-1 h-7 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-solid focus:border-b-black ${className}`}
     />
 );
 
@@ -66,12 +64,12 @@ export function Receipt({ reservation }: ReceiptProps) {
             date: `${day}/${month}/${year}`,
             passengerName: passenger?.fullName || '',
             passengerPhone: passenger?.phone || '',
-            paidAmountText: paidAmount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }),
+            paidAmountText: `$ ${paidAmount.toLocaleString('es-AR')}`,
             concept: `Viaje a ${tour?.destination || ''} para ${reservation.paxCount} pasajero(s).`,
             destination: tour?.destination || '',
             paxCount: reservation.paxCount,
             tourDate: tour ? new Date(tour.date).toLocaleDateString('es-AR') : '',
-            totalAmountText: reservation.finalPrice.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }),
+            totalAmountText: `$ ${reservation.finalPrice.toLocaleString('es-AR')}`,
             cancellationPolicy: tour?.cancellationPolicy || globalCancellationPolicy,
         };
 
@@ -83,71 +81,81 @@ export function Receipt({ reservation }: ReceiptProps) {
         if (!receiptData) return;
         setReceiptData(prev => ({...prev!, [field]: value}));
     }
+     
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (!receiptData) return;
+        setReceiptData(prev => ({...prev!, cancellationPolicy: e.target.value}));
+    }
 
     if (!receiptData) {
         return <div className="bg-white w-[210mm] min-h-[297mm] flex items-center justify-center">Cargando recibo...</div>
     }
 
     return (
-        <div className="bg-white w-[210mm] h-[297mm] text-black font-serif text-sm p-12 shadow-lg flex flex-col">
+        <div className="bg-white w-[210mm] h-[297mm] text-black font-serif text-xs p-12 shadow-lg flex flex-col">
             {/* Header */}
-            <header className="flex justify-between items-start pb-4 border-b border-gray-400">
+            <header className="flex justify-between items-start pb-4 border-b border-black">
                 <div className="w-24 h-24 flex-shrink-0">
                     <Logo/>
                 </div>
                 <div className="text-right">
-                    <h1 className="text-4xl font-bold tracking-tight text-gray-800">RECIBO</h1>
-                    <p className="font-mono text-lg text-gray-600 tracking-wider">N° {receiptData.receiptNumber}</p>
+                    <h1 className="text-3xl font-bold tracking-tight">RECIBO</h1>
+                    <p className="font-mono text-base tracking-wider">N° {receiptData.receiptNumber}</p>
                 </div>
             </header>
 
             {/* Info Section */}
-            <section className="mt-8 grid grid-cols-2 gap-8">
-                <div className="space-y-4">
-                    <div className="flex items-end gap-2">
-                        <span className="text-gray-600 flex-shrink-0">Recibí de:</span>
-                        <EditableField value={receiptData.passengerName} onChange={e => handleDataChange('passengerName', e.target.value)} />
+            <section className="mt-6">
+                <div className="flex justify-between">
+                    <div className="w-3/5 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <span>Recibí de:</span>
+                            <EditableField value={receiptData.passengerName} onChange={e => handleDataChange('passengerName', e.target.value)} className="flex-grow" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <span>La suma de:</span>
+                           <EditableField value={receiptData.paidAmountText} onChange={e => handleDataChange('paidAmountText', e.target.value)} className="flex-grow" />
+                        </div>
                     </div>
-                     <div className="flex items-end gap-2">
-                        <span className="text-gray-600 flex-shrink-0">La suma de:</span>
-                        <EditableField value={receiptData.paidAmountText} onChange={e => handleDataChange('paidAmountText', e.target.value)} />
+                    <div className="w-1/3">
+                        <div className="border border-black p-2 text-center">
+                            <span className="block text-xs">Fecha</span>
+                            <EditableField value={receiptData.date} onChange={e => handleDataChange('date', e.target.value)} className="text-lg font-bold text-center !h-8" />
+                        </div>
                     </div>
-                </div>
-                <div className="text-right space-y-2">
-                     <span className="text-gray-600 block">Fecha</span>
-                     <Input value={receiptData.date} onChange={e => handleDataChange('date', e.target.value)} className="text-lg font-semibold text-center bg-transparent border-0 border-b border-dashed rounded-none h-10"/>
                 </div>
             </section>
             
             {/* Concept Section */}
-            <section className="mt-8 space-y-4">
-                 <div className="flex items-end gap-2">
-                    <span className="text-gray-600 flex-shrink-0">En concepto de:</span>
-                    <EditableField value={receiptData.concept} onChange={e => handleDataChange('concept', e.target.value)} />
-                </div>
-                <div className="flex justify-end pt-4">
-                    <div className="w-1/2 flex items-baseline gap-4">
-                        <span className="text-base font-bold text-gray-800">TOTAL:</span>
-                        <EditableField value={receiptData.totalAmountText} onChange={e => handleDataChange('totalAmountText', e.target.value)} />
-                    </div>
+            <section className="mt-4">
+                 <div className="flex items-center gap-2">
+                    <span>En concepto de:</span>
+                    <EditableField value={receiptData.concept} onChange={e => handleDataChange('concept', e.target.value)} className="flex-grow" />
                 </div>
             </section>
+
+             <section className="mt-8 flex justify-end">
+                <div className="w-1/3 flex items-baseline gap-2">
+                    <span className="font-bold">TOTAL:</span>
+                    <EditableField value={receiptData.totalAmountText} onChange={e => handleDataChange('totalAmountText', e.target.value)} className="text-base font-bold flex-grow text-right"/>
+                </div>
+             </section>
              
             {/* Terms and Conditions */}
-             <section className="mt-8 text-[9px] text-gray-600 leading-tight flex-grow">
-                <h4 className="font-bold text-xs mb-1 uppercase">Política de Cancelación</h4>
-                <p className="whitespace-pre-line">
+             <section className="mt-8 text-[8px] leading-tight flex-grow">
+                <h4 className="font-bold text-[9px] mb-1 uppercase underline">Política de Cancelación</h4>
+                <div className="whitespace-pre-line">
                    {receiptData.cancellationPolicy}
-                </p>
+                </div>
              </section>
 
             {/* Footer and Signatures */}
-            <footer className="mt-auto pt-8 flex justify-around">
-                 <div className="border-t-2 border-gray-400 pt-2 text-center w-64">
-                    <p className="font-semibold">Firma del Pasajero</p>
+            <footer className="pt-8 flex justify-around">
+                 <div className="border-t border-black pt-2 text-center w-64">
+                    <p>Firma del Pasajero</p>
                 </div>
-                 <div className="border-t-2 border-gray-400 pt-2 text-center w-64">
-                    <p className="font-semibold">Firma y Aclaración</p>
+                 <div className="border-t border-black pt-2 text-center w-64">
+                    <p>Firma y Aclaración</p>
                 </div>
             </footer>
         </div>
