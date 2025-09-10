@@ -27,7 +27,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockTours, mockReservations, mockPassengers, mockBoardingPoints } from "@/lib/mock-data";
 import type { Tour, Reservation, Passenger, Ticket, BoardingPoint } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Users, GripVertical } from "lucide-react";
+import { Download, Copy, Users, GripVertical, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
@@ -73,6 +73,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const [showInsuredOnly, setShowInsuredOnly] = useState(false);
   const [boardingSortOrder, setBoardingSortOrder] = useState<"asc" | "desc" | "custom">("asc");
   const [customBoardingOrder, setCustomBoardingOrder] = useState<BoardingPoint[]>([]);
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -103,18 +104,16 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (boardingSortOrder === "custom") {
-        const tripsToExport = tours.filter(t => selectedTripIds.includes(t.id));
-        const boardingPointIdsInSelectedTrips = new Set(
-            reservations
-                .filter(r => selectedTripIds.includes(r.tripId) && r.boardingPointId)
-                .map(r => r.boardingPointId)
-        );
-        const relevantBoardingPoints = boardingPoints.filter(bp => boardingPointIdsInSelectedTrips.has(bp.id));
-        setCustomBoardingOrder(relevantBoardingPoints);
-    }
-  }, [boardingSortOrder, selectedTripIds, tours, reservations, boardingPoints]);
+  
+  const relevantBoardingPoints = useMemo(() => {
+    const boardingPointIdsInSelectedTrips = new Set(
+        reservations
+            .filter(r => selectedTripIds.includes(r.tripId) && r.boardingPointId)
+            .map(r => r.boardingPointId)
+    );
+    return boardingPoints.filter(bp => boardingPointIdsInSelectedTrips.has(bp.id));
+  }, [selectedTripIds, reservations, boardingPoints]);
+  
 
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -123,6 +122,11 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
     items.splice(result.destination.index, 0, reorderedItem);
     setCustomBoardingOrder(items);
   };
+  
+  const handleOpenSortModal = () => {
+    setCustomBoardingOrder(relevantBoardingPoints);
+    setIsSortModalOpen(true);
+  }
 
   const exportableData = useMemo(() => {
     const tripsToExport = tours.filter((t) => selectedTripIds.includes(t.id));
@@ -210,6 +214,56 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   };
 
   return (
+    <>
+    <Dialog open={isSortModalOpen} onOpenChange={setIsSortModalOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+            <DialogTitle>Orden Personalizado de Embarques</DialogTitle>
+            <DialogDescription>
+                Arrastra y suelta los puntos de embarque para definir el orden de la lista de pasajeros.
+            </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+             {relevantBoardingPoints.length > 0 ? (
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="boardingPoints">
+                    {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef}>
+                            <ScrollArea className="h-64 border rounded-md bg-background">
+                                {customBoardingOrder.map((bp, index) => (
+                                    <Draggable key={bp.id} draggableId={bp.id} index={index}>
+                                        {(provided) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                className="p-2 flex items-center gap-2 border-b bg-card hover:bg-muted"
+                                            >
+                                                <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                                <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
+                                                <span className="font-medium">{bp.name}</span>
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </ScrollArea>
+                        </div>
+                    )}
+                    </Droppable>
+                </DragDropContext>
+             ) : (
+                <div className="text-center text-muted-foreground p-8 border rounded-md">
+                    Selecciona al menos un viaje con pasajeros para poder ordenar los puntos de embarque.
+                </div>
+             )}
+        </div>
+        <DialogFooter>
+             <Button variant="outline" onClick={() => setIsSortModalOpen(false)}>Cerrar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
@@ -243,47 +297,19 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
                 </ScrollArea>
               </div>
                <div className="space-y-2">
-                <Label className="font-semibold">Ordenar embarcaciones por:</Label>
+                <Label className="font-semibold">Ordenar embarques por:</Label>
                  <RadioGroup value={boardingSortOrder} onValueChange={(v) => setBoardingSortOrder(v as any)}>
                     <div className="flex items-center space-x-2"><RadioGroupItem value="asc" id="sort-asc"/><Label htmlFor="sort-asc">Abecedario ascendente</Label></div>
                     <div className="flex items-center space-x-2"><RadioGroupItem value="desc" id="sort-desc"/><Label htmlFor="sort-desc">Abecedario descendente</Label></div>
                     <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id="sort-custom"/><Label htmlFor="sort-custom">Personalizado</Label></div>
                  </RadioGroup>
+                  {boardingSortOrder === 'custom' && (
+                     <Button variant="outline" size="sm" className="w-full mt-2" onClick={handleOpenSortModal}>
+                        <Settings2 className="mr-2 h-4 w-4"/>
+                        Personalizar Orden
+                    </Button>
+                  )}
               </div>
-
-              {boardingSortOrder === 'custom' && (
-                  <div className="space-y-2 p-2 border rounded-md bg-muted/50">
-                    <Label className="font-semibold">Orden Personalizado</Label>
-                    <p className="text-xs text-muted-foreground">Arrastra para reordenar los puntos de embarque. El orden se aplicará a la tabla.</p>
-                     <DragDropContext onDragEnd={onDragEnd}>
-                        <Droppable droppableId="boardingPoints">
-                        {(provided) => (
-                            <div {...provided.droppableProps} ref={provided.innerRef}>
-                                <ScrollArea className="h-40 border rounded-md bg-background">
-                                    {customBoardingOrder.map((bp, index) => (
-                                        <Draggable key={bp.id} draggableId={bp.id} index={index}>
-                                            {(provided) => (
-                                                <div
-                                                    ref={provided.innerRef}
-                                                    {...provided.draggableProps}
-                                                    {...provided.dragHandleProps}
-                                                    className="p-2 flex items-center gap-2 border-b"
-                                                >
-                                                   <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                                                   <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
-                                                   <span className="font-medium">{bp.name}</span>
-                                                </div>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </ScrollArea>
-                            </div>
-                        )}
-                        </Droppable>
-                    </DragDropContext>
-                  </div>
-              )}
 
               <div className="space-y-2">
                 <Label className="font-semibold">Columnas</Label>
@@ -367,5 +393,6 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
