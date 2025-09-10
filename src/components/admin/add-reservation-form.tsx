@@ -151,6 +151,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   const handleNewPassengerSaved = (newPassenger: Passenger) => {
       onPassengerCreated(newPassenger);
       handleMainPassengerSelect(newPassenger);
+      setIsAddingNewPassenger(false);
   }
 
   const handleSubmit = () => {
@@ -235,7 +236,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
 
                 {isAddingNewPassenger && !selectedMainPassenger && (
                     <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
-                        <PassengerForm
+                         <PassengerForm
                             isOpen={isAddingNewPassenger}
                             onOpenChange={setIsAddingNewPassenger}
                             passenger={null}
