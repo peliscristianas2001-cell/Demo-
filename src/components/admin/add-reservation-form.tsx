@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -207,7 +208,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         onChange={e => {
                             setMainPassengerSearch(e.target.value);
                             if(isAddingNewPassenger) setIsAddingNewPassenger(false);
-                            if (formData.mainPassengerId) setFormData(prev => ({...prev, mainPassengerId: ""}))
+                            if (formData.mainPassengerId) setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}));
                         }}
                         placeholder="Buscar por nombre o DNI..."
                         disabled={!!selectedMainPassenger}
