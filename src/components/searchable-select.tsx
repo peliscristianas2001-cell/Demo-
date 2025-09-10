@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface SearchableSelectOption {
     value: string;
@@ -19,9 +20,10 @@ interface SearchableSelectProps {
     onChange: (value: string) => void;
     placeholder?: string;
     listHeight?: string;
+    disabled?: boolean;
 }
 
-export function SearchableSelect({ options, value, onChange, placeholder, listHeight = 'h-60' }: SearchableSelectProps) {
+export function SearchableSelect({ options, value, onChange, placeholder, listHeight = 'h-60', disabled = false }: SearchableSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -50,6 +52,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, listHe
     };
 
     const handleFocus = () => {
+        if (disabled) return;
         setIsOpen(true);
         if (selectedOption) {
             setSearchTerm(''); // Clear search term to show all options
@@ -68,19 +71,22 @@ export function SearchableSelect({ options, value, onChange, placeholder, listHe
                     }}
                     onFocus={handleFocus}
                     onBlur={() => setTimeout(() => setIsOpen(false), 200)} // Delay to allow click
+                    disabled={disabled}
                 />
-                {selectedOption && !isOpen && (
-                    <button
+                {selectedOption && !disabled && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleClear}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                        className="absolute inset-y-0 right-0 flex items-center h-full w-10 text-muted-foreground hover:text-foreground"
                         aria-label="Clear selection"
                     >
                         <X className="w-4 h-4" />
-                    </button>
+                    </Button>
                 )}
             </div>
 
-            {isOpen && (
+            {isOpen && !disabled && (
                 <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
                     <ScrollArea className={listHeight}>
                         {filteredOptions.length > 0 ? (

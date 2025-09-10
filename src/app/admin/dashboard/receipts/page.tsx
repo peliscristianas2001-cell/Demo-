@@ -17,19 +17,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Receipt as ReceiptIcon, Printer } from "lucide-react"
-import { mockTours, mockReservations } from "@/lib/mock-data"
-import type { Tour, Reservation } from "@/lib/types"
+import { mockTours, mockReservations, mockPassengers } from "@/lib/mock-data"
+import type { Tour, Reservation, Passenger } from "@/lib/types"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Receipt } from "@/components/admin/receipt"
 import { useReactToPrint } from 'react-to-print';
+import { SearchableSelect } from "@/components/searchable-select"
 
 
 export default function ReceiptsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
-  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
+  const [selectedReservationId, setSelectedReservationId] = useState<string>("");
   const [isClient, setIsClient] = useState(false)
   const receiptRef = useRef(null);
 
@@ -41,15 +43,19 @@ export default function ReceiptsPage() {
     setIsClient(true);
     const storedReservations = localStorage.getItem("ytl_reservations");
     const storedTours = localStorage.getItem("ytl_tours");
+    const storedPassengers = localStorage.getItem("ytl_passengers");
 
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
     setTours(storedTours ? JSON.parse(storedTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
+    setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
 
     const handleStorageChange = () => {
         const newStoredReservations = localStorage.getItem("ytl_reservations");
         const newStoredTours = localStorage.getItem("ytl_tours");
+        const newStoredPassengers = localStorage.getItem("ytl_passengers");
         setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
+        setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -60,10 +66,21 @@ export default function ReceiptsPage() {
     return tours.filter(t => reservationTripIds.has(t.id));
   }, [tours, reservations]);
 
-  const reservationsForSelectedTrip = useMemo(() => {
+  const reservationOptions = useMemo(() => {
     if (!selectedTripId) return [];
-    return reservations.filter(r => r.tripId === selectedTripId);
-  }, [reservations, selectedTripId]);
+    
+    return reservations
+        .filter(r => r.tripId === selectedTripId)
+        .map(res => {
+            const mainPassenger = passengers.find(p => p.id === res.passengerIds[0]);
+            return {
+                value: res.id,
+                label: `${res.passenger} (ID: ${res.id.substring(0, 8)})`,
+                keywords: [mainPassenger?.dni || '']
+            }
+        });
+
+  }, [reservations, selectedTripId, passengers]);
   
   const selectedReservation = useMemo(() => {
       if (!selectedReservationId) return null;
@@ -95,12 +112,12 @@ export default function ReceiptsPage() {
        <Card>
         <CardHeader>
             <CardTitle>Selección de Reserva</CardTitle>
-            <CardDescription>Elige el viaje y luego la reserva para la que deseas generar el recibo.</CardDescription>
+            <CardDescription>Elige el viaje y luego busca la reserva por nombre o DNI del pasajero.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row items-start gap-4">
             <div className="space-y-2 w-full sm:w-1/2">
                 <Label htmlFor="trip-filter">1. Selecciona un Viaje</Label>
-                <Select onValueChange={(val) => { setSelectedTripId(val); setSelectedReservationId(null); }} value={selectedTripId || ''}>
+                <Select onValueChange={(val) => { setSelectedTripId(val); setSelectedReservationId(""); }} value={selectedTripId || ''}>
                     <SelectTrigger id="trip-filter">
                         <SelectValue placeholder="Seleccionar viaje..." />
                     </SelectTrigger>
@@ -113,18 +130,13 @@ export default function ReceiptsPage() {
             </div>
              <div className="space-y-2 w-full sm:w-1/2">
                 <Label htmlFor="reservation-filter">2. Selecciona una Reserva</Label>
-                <Select onValueChange={setSelectedReservationId} value={selectedReservationId || ''} disabled={!selectedTripId}>
-                    <SelectTrigger id="reservation-filter">
-                        <SelectValue placeholder="Seleccionar reserva..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {reservationsForSelectedTrip.map(res => (
-                            <SelectItem key={res.id} value={res.id}>
-                                {res.passenger} (ID: {res.id.substring(0, 8)})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                 <SearchableSelect 
+                    options={reservationOptions}
+                    value={selectedReservationId}
+                    onChange={setSelectedReservationId}
+                    placeholder="Buscar reserva por pasajero..."
+                    disabled={!selectedTripId}
+                />
             </div>
         </CardContent>
        </Card>

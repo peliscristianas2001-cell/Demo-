@@ -27,7 +27,6 @@ export function Receipt({ reservation }: ReceiptProps) {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const year = today.getFullYear();
     
-    // Simplistic receipt number for now
     const receiptNumber = reservation.id.substring(0, 8);
 
     const paidAmount = reservation.installments?.details
@@ -39,17 +38,12 @@ export function Receipt({ reservation }: ReceiptProps) {
         {/* Header */}
         <div className="flex justify-between items-start pb-4 border-b border-gray-300">
             <div className="flex items-center gap-4">
-                {/* Logo and Agency Info */}
                  <div className="w-20 h-20 flex-shrink-0">
                     <Logo/>
                 </div>
-                <div>
-                    <h1 className="font-bold text-xl">AGENCIA DE VIAJES</h1>
-                    <p className="text-xs">BERMUDEZ | CEL.: 341-5040710</p>
-                </div>
             </div>
             <div className="border border-black p-2 text-center w-48">
-                <h2 className="font-bold text-lg">RECIBO X</h2>
+                <h2 className="font-bold text-lg">RECIBO</h2>
                 <p className="font-bold text-2xl">{receiptNumber}</p>
                 <p className="text-xs mt-1">Doc. No válido como factura</p>
                 <p className="text-xs font-semibold">DINERO EN TRANSITO</p>
