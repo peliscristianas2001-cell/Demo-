@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +20,7 @@ import { SearchableSelect } from "@/components/searchable-select"
 import { PlusCircle, UserPlus, XCircle } from "lucide-react"
 import { Checkbox } from "../ui/checkbox"
 import { ScrollArea } from "../ui/scroll-area"
-import { PassengerForm } from "./passenger-form"
+import { DatePicker } from "../ui/date-picker"
 
 interface AddReservationFormProps {
   isOpen: boolean
@@ -36,33 +35,47 @@ interface AddReservationFormProps {
   roomTypes: RoomType[]
 }
 
-const defaultReservation = {
+const defaultReservationState = {
     mainPassengerId: "",
     paxCount: 1,
     sellerId: "unassigned",
     paymentStatus: "Pendiente" as PaymentStatus,
     selectedPassengerIds: [] as string[],
-    boardingPointId: undefined,
-    roomTypeId: undefined,
+    boardingPointId: undefined as string | undefined,
+    roomTypeId: undefined as string | undefined,
     finalPrice: 0,
 }
 
-export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints, roomTypes }: AddReservationFormProps) {
-  const [formData, setFormData] = useState(defaultReservation);
-  const [mainPassengerSearch, setMainPassengerSearch] = useState("");
-  const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
-  const [prefillData, setPrefillData] = useState<{name: string, dni: string} | null>(null);
+const newPassengerDefaultState = {
+    fullName: "",
+    dni: "",
+    dob: undefined as Date | undefined,
+    phone: "",
+    family: "",
+    boardingPointId: undefined as string | undefined,
+}
+
+export function AddReservationForm({ 
+    isOpen, onOpenChange, onSave, tour, passengers, allReservations, 
+    onPassengerCreated, sellers, boardingPoints, roomTypes 
+}: AddReservationFormProps) {
+  const [reservationData, setReservationData] = useState(defaultReservationState);
+  const [newPassengerData, setNewPassengerData] = useState(newPassengerDefaultState);
+  
+  const [isCreatingPassenger, setIsCreatingPassenger] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-        setFormData({
-            ...defaultReservation,
+        setReservationData({
+            ...defaultReservationState,
             finalPrice: tour.price // Default to base price
         });
-        setMainPassengerSearch("");
-        setIsAddingNewPassenger(false);
-        setPrefillData(null);
+        setNewPassengerData(newPassengerDefaultState);
+        setSearchTerm("");
+        setIsCreatingPassenger(false);
     }
   }, [isOpen, tour])
 
@@ -72,19 +85,18 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         .filter(r => r.tripId === tour.id)
         .flatMap(r => r.passengerIds || [])
     );
-
     return passengers.filter(p => !bookedPassengerIdsForThisTour.has(p.id));
   }, [passengers, allReservations, tour.id]);
 
 
   const searchResults = useMemo(() => {
-    if (!mainPassengerSearch) return [];
-    const lowercasedTerm = mainPassengerSearch.toLowerCase();
+    if (!searchTerm) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
     return availablePassengers.filter(p => 
         p.fullName.toLowerCase().includes(lowercasedTerm) || 
         p.dni.includes(lowercasedTerm)
     );
-  }, [mainPassengerSearch, availablePassengers]);
+  }, [searchTerm, availablePassengers]);
 
   const sellerOptions = useMemo(() => {
     return sellers.map(s => ({
@@ -94,10 +106,9 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     }));
   }, [sellers]);
 
-
   const selectedMainPassenger = useMemo(() => {
-    return passengers.find(p => p.id === formData.mainPassengerId);
-  }, [formData.mainPassengerId, passengers]);
+    return passengers.find(p => p.id === reservationData.mainPassengerId);
+  }, [reservationData.mainPassengerId, passengers]);
   
   const familyMembers = useMemo(() => {
     if (!selectedMainPassenger?.family) return [];
@@ -110,25 +121,57 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
   }, [selectedMainPassenger, passengers, allReservations, tour.id]);
 
 
-  const handleFormChange = (id: keyof typeof formData, value: any) => {
-    setFormData(prev => ({ ...prev, [id]: value }));
+  const handleReservationDataChange = (id: keyof typeof reservationData, value: any) => {
+    setReservationData(prev => ({ ...prev, [id]: value }));
+  }
+  
+  const handleNewPassengerDataChange = (id: keyof typeof newPassengerData, value: any) => {
+    setNewPassengerData(prev => ({...prev, [id]: value}));
   }
 
-  const handleMainPassengerSelect = (passenger: Passenger) => {
-    setFormData(prev => ({
+  const handleSelectSearchedPassenger = (passenger: Passenger) => {
+    setReservationData(prev => ({
         ...prev,
         mainPassengerId: passenger.id,
         selectedPassengerIds: [passenger.id],
         paxCount: 1,
         boardingPointId: passenger.boardingPointId,
     }));
-    setMainPassengerSearch(passenger.fullName);
-    setIsAddingNewPassenger(false);
-    setPrefillData(null);
+    setSearchTerm(passenger.fullName);
+  }
+
+  const handleTriggerNewPassengerForm = () => {
+    const isDNI = /^\d+$/.test(searchTerm);
+    setNewPassengerData(prev => ({
+        ...prev,
+        fullName: isDNI ? "" : searchTerm,
+        dni: isDNI ? searchTerm : ""
+    }));
+    setIsCreatingPassenger(true);
+  }
+
+  const handleSaveNewPassenger = () => {
+    if (!newPassengerData.fullName || !newPassengerData.dni) {
+      toast({ title: "Faltan datos", description: "Por favor, completa el nombre completo y el DNI.", variant: "destructive" });
+      return;
+    }
+    
+    const newPassengerToSave: Passenger = {
+        id: `P-${Math.random().toString(36).substring(2, 11)}`,
+        nationality: 'Argentina',
+        tierId: 'adult',
+        ...newPassengerData,
+    }
+    
+    onPassengerCreated(newPassengerToSave);
+    handleSelectSearchedPassenger(newPassengerToSave);
+    setIsCreatingPassenger(false);
+    setNewPassengerData(newPassengerDefaultState);
+    toast({ title: "Pasajero creado", description: `${newPassengerToSave.fullName} ha sido añadido/a.`});
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
-     setFormData(prev => {
+     setReservationData(prev => {
         const currentSelection = prev.selectedPassengerIds;
         let newSelection;
         if (checked) {
@@ -140,28 +183,12 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
      });
   }
   
-  const handleTriggerNewPassengerForm = () => {
-    const isDNI = /^\d+$/.test(mainPassengerSearch);
-    setPrefillData({
-        name: isDNI ? "" : mainPassengerSearch,
-        dni: isDNI ? mainPassengerSearch : ""
-    });
-    setIsAddingNewPassenger(true);
-  }
-
-  const handleNewPassengerSaved = (newPassenger: Passenger) => {
-      onPassengerCreated(newPassenger);
-      handleMainPassengerSelect(newPassenger);
-      setIsAddingNewPassenger(false);
-      setPrefillData(null);
-  }
-
-  const handleSubmit = () => {
+  const handleSubmitReservation = () => {
     if (!selectedMainPassenger) {
         toast({ title: "Faltan datos", description: "Por favor, selecciona un pasajero principal.", variant: "destructive" });
         return;
     }
-    if(formData.selectedPassengerIds.length !== formData.paxCount) {
+    if(reservationData.selectedPassengerIds.length !== reservationData.paxCount) {
         toast({ title: "Verificar pasajeros", description: "La cantidad de pasajeros seleccionados no coincide con la cantidad de pasajeros de la reserva.", variant: "destructive" });
         return;
     }
@@ -170,23 +197,28 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         id: `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
         tripId: tour.id,
         passenger: selectedMainPassenger.fullName,
-        passengerIds: formData.selectedPassengerIds,
-        paxCount: formData.selectedPassengerIds.length,
+        passengerIds: reservationData.selectedPassengerIds,
+        paxCount: reservationData.selectedPassengerIds.length,
         assignedSeats: [],
         assignedCabins: [],
         status: 'Pendiente',
-        paymentStatus: formData.paymentStatus,
-        sellerId: formData.sellerId,
-        finalPrice: formData.finalPrice,
-        boardingPointId: formData.boardingPointId,
-        roomTypeId: formData.roomTypeId,
+        paymentStatus: reservationData.paymentStatus,
+        sellerId: reservationData.sellerId,
+        finalPrice: reservationData.finalPrice,
+        boardingPointId: reservationData.boardingPointId,
+        roomTypeId: reservationData.roomTypeId,
     }
 
     onSave(reservationToSave);
   }
 
-  const canSubmit = formData.paxCount === formData.selectedPassengerIds.length && formData.mainPassengerId;
-  const showNewPassengerForm = isAddingNewPassenger && !selectedMainPassenger;
+  const canSubmit = reservationData.paxCount === reservationData.selectedPassengerIds.length && reservationData.mainPassengerId;
+  
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setReservationData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}));
+    setIsCreatingPassenger(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -194,43 +226,43 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         <DialogHeader>
           <DialogTitle>Agregar Reserva a {tour.destination}</DialogTitle>
           <DialogDescription>
-            Busca un pasajero principal y completa los detalles de la reserva.
+            Busca un pasajero principal o créalo. Luego completa los detalles de la reserva.
           </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-grow pr-6 -mr-6">
             <div className="space-y-4">
+                {/* --- PASO 1: Buscar o Crear Pasajero Principal --- */}
                 <div className="space-y-2 relative">
                     <Label htmlFor="passenger-search">Pasajero Principal</Label>
-                    <Input
-                        id="passenger-search"
-                        value={mainPassengerSearch}
-                        onChange={e => {
-                            setMainPassengerSearch(e.target.value);
-                            if(isAddingNewPassenger) setIsAddingNewPassenger(false);
-                            if (formData.mainPassengerId) setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}));
-                        }}
-                        placeholder="Buscar por nombre o DNI..."
-                        disabled={!!selectedMainPassenger}
-                    />
-                    {selectedMainPassenger && (
-                        <Button variant="ghost" size="icon" className="absolute top-6 right-0" onClick={() => {
-                            setMainPassengerSearch("");
-                            setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}));
-                        }}>
-                            <XCircle className="w-5 h-5 text-muted-foreground"/>
-                        </Button>
-                    )}
-                    {mainPassengerSearch && !selectedMainPassenger && searchResults.length > 0 && (
+                    <div className="relative">
+                      <Input
+                          id="passenger-search"
+                          value={searchTerm}
+                          onChange={e => {
+                              setSearchTerm(e.target.value);
+                              if (selectedMainPassenger) handleClearSearch();
+                          }}
+                          placeholder="Buscar por nombre o DNI..."
+                          disabled={!!selectedMainPassenger}
+                      />
+                      {selectedMainPassenger && (
+                          <Button variant="ghost" size="icon" className="absolute top-1/2 -translate-y-1/2 right-1" onClick={handleClearSearch}>
+                              <XCircle className="w-5 h-5 text-muted-foreground"/>
+                          </Button>
+                      )}
+                    </div>
+
+                    {searchTerm && !selectedMainPassenger && searchResults.length > 0 && (
                         <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
                             {searchResults.map(p => (
-                                <div key={p.id} className="p-2 hover:bg-accent cursor-pointer" onClick={() => handleMainPassengerSelect(p)}>
+                                <div key={p.id} className="p-2 hover:bg-accent cursor-pointer" onClick={() => handleSelectSearchedPassenger(p)}>
                                     {p.fullName} ({p.dni})
                                 </div>
                             ))}
                         </div>
                     )}
-                     {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
+                     {searchTerm && !selectedMainPassenger && searchResults.length === 0 && !isCreatingPassenger && (
                         <div className="text-center p-4 border-dashed border-2 rounded-md">
                             <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
                             <Button onClick={handleTriggerNewPassengerForm}>
@@ -241,67 +273,69 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     )}
                 </div>
 
-                {showNewPassengerForm && prefillData && (
-                    <div className="p-4 border rounded-lg bg-muted/50">
-                         <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
-                           <PassengerForm
-                              isOpen={isAddingNewPassenger}
-                              onOpenChange={setIsAddingNewPassenger}
-                              passenger={null}
-                              onSave={handleNewPassengerSaved}
-                              allPassengers={passengers}
-                              prefilledData={prefillData}
-                              boardingPoints={boardingPoints}
-                          />
-                         </Dialog>
-                    </div>
+                {isCreatingPassenger && !selectedMainPassenger && (
+                   <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                      <h3 className="font-semibold">Datos del Nuevo Pasajero</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="new-fullName">Nombre Completo</Label>
+                          <Input id="new-fullName" value={newPassengerData.fullName} onChange={(e) => handleNewPassengerDataChange('fullName', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-dni">DNI</Label>
+                            <Input id="new-dni" value={newPassengerData.dni} onChange={(e) => handleNewPassengerDataChange('dni', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="new-dob">Fecha de Nacimiento</Label>
+                            <DatePicker id="new-dob" date={newPassengerData.dob} setDate={(d) => handleNewPassengerDataChange('dob', d)} captionLayout="dropdown-buttons" fromYear={1920} toYear={new Date().getFullYear()} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="new-phone">Teléfono</Label>
+                            <Input id="new-phone" value={newPassengerData.phone} onChange={(e) => handleNewPassengerDataChange('phone', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="new-family">Grupo Familiar (Opcional)</Label>
+                            <Input id="new-family" value={newPassengerData.family} onChange={(e) => handleNewPassengerDataChange('family', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="new-boardingPointId">Punto de Embarque</Label>
+                             <Select value={newPassengerData.boardingPointId} onValueChange={(val) => handleNewPassengerDataChange('boardingPointId', val)}>
+                                <SelectTrigger id="new-boardingPointId"><SelectValue placeholder="Seleccionar..."/></SelectTrigger>
+                                <SelectContent>
+                                    {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button onClick={handleSaveNewPassenger}>Guardar Pasajero</Button>
+                      </div>
+                   </div>
                 )}
                 
+                {/* --- PASO 2: Detalles de la Reserva (aparece al seleccionar un pasajero) --- */}
                 {selectedMainPassenger && (
-                    <>
+                    <div className="space-y-4 pt-4 border-t">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="paxCount">Cantidad de Pasajeros</Label>
-                                <Input id="paxCount" type="number" min="1" value={formData.paxCount} onChange={(e) => handleFormChange('paxCount', parseInt(e.target.value) || 1)} />
+                                <Input id="paxCount" type="number" min="1" value={reservationData.paxCount} onChange={(e) => handleReservationDataChange('paxCount', parseInt(e.target.value) || 1)} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="finalPrice">Precio Final (Total)</Label>
-                                <Input id="finalPrice" type="number" value={formData.finalPrice} onChange={(e) => handleFormChange('finalPrice', parseFloat(e.target.value) || 0)} />
+                                <Input id="finalPrice" type="number" value={reservationData.finalPrice} onChange={(e) => handleReservationDataChange('finalPrice', parseFloat(e.target.value) || 0)} />
                             </div>
                         </div>
                         
-                        <div className="p-4 border rounded-md space-y-3">
-                            <div className="flex justify-between items-center">
-                                <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
-                                <Dialog>
-                                     <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            Añadir Nuevo
-                                        </Button>
-                                    </DialogTrigger>
-                                    <PassengerForm 
-                                        isOpen={true} 
-                                        onOpenChange={(open) => { if (!open) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })) }} 
-                                        onSave={(p) => {
-                                            onPassengerCreated(p);
-                                            setFormData(prev => ({ ...prev, selectedPassengerIds: [...prev.selectedPassengerIds, p.id] }));
-                                            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-                                        }}
-                                        passenger={null} 
-                                        allPassengers={passengers}
-                                        prefilledFamily={selectedMainPassenger.family}
-                                        boardingPoints={boardingPoints}
-                                    />
-                                </Dialog>
-                            </div>
-                            <ScrollArea className="h-40">
-                                <div className="space-y-2 pr-2">
+                        {familyMembers.length > 0 && (
+                            <div className="p-4 border rounded-md space-y-3">
+                                <Label>Seleccionar Integrantes ({reservationData.selectedPassengerIds.length}/{reservationData.paxCount})</Label>
+                                <ScrollArea className="h-40"><div className="space-y-2 pr-2">
                                     {familyMembers.map(member => (
                                         <div key={member.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
                                             <Checkbox
                                                 id={`member-${member.id}`}
-                                                checked={formData.selectedPassengerIds.includes(member.id)}
+                                                checked={reservationData.selectedPassengerIds.includes(member.id)}
                                                 onCheckedChange={(checked) => handleMemberSelect(member.id, !!checked)}
                                                 disabled={member.id === selectedMainPassenger.id}
                                             />
@@ -310,24 +344,24 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                             </Label>
                                         </div>
                                     ))}
-                                </div>
-                            </ScrollArea>
-                        </div>
+                                </div></ScrollArea>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="seller">Vendedor/a</Label>
                                 <SearchableSelect
                                     options={sellerOptions}
-                                    value={formData.sellerId}
-                                    onChange={(value) => handleFormChange('sellerId', value)}
+                                    value={reservationData.sellerId}
+                                    onChange={(value) => handleReservationDataChange('sellerId', value)}
                                     placeholder="Buscar vendedor..."
                                     listHeight="h-32"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="paymentStatus">Estado de Pago</Label>
-                                <Select value={formData.paymentStatus} onValueChange={(val: PaymentStatus) => handleFormChange('paymentStatus', val)}>
+                                <Select value={reservationData.paymentStatus} onValueChange={(val: PaymentStatus) => handleReservationDataChange('paymentStatus', val)}>
                                     <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="Pendiente">Pendiente</SelectItem>
@@ -339,32 +373,35 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="roomTypeId">Tipo de Habitación</Label>
-                            <Select value={formData.roomTypeId} onValueChange={(val) => handleFormChange('roomTypeId', val)}>
+                            <Select value={reservationData.roomTypeId} onValueChange={(val) => handleReservationDataChange('roomTypeId', val)}>
                                 <SelectTrigger id="roomTypeId"><SelectValue placeholder="Seleccionar habitación..."/></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">Sin habitación</SelectItem>
                                     {roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="boardingPointId">Punto de Embarque</Label>
-                            <Select value={formData.boardingPointId} onValueChange={(val) => handleFormChange('boardingPointId', val)}>
+                            <Select value={reservationData.boardingPointId} onValueChange={(val) => handleReservationDataChange('boardingPointId', val)}>
                                 <SelectTrigger id="boardingPointId"><SelectValue placeholder="Seleccionar embarque..."/></SelectTrigger>
                                 <SelectContent>
                                     {boardingPoints.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </ScrollArea>
         
         <DialogFooter className="mt-auto pt-4 border-t shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>Guardar Reserva</Button>
+          <Button onClick={handleSubmitReservation} disabled={!canSubmit}>Guardar Reserva</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
+    
