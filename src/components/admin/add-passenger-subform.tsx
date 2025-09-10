@@ -11,6 +11,7 @@ import { ScrollArea } from "../ui/scroll-area"
 
 interface AddPassengerSubFormProps {
   onSave: (passengerData: Omit<Passenger, 'id'>) => void;
+  onCancel?: () => void;
 }
 
 const defaultPassenger: Omit<Passenger, 'id' | 'family' | 'tierId' | 'nationality'> = {
@@ -20,12 +21,8 @@ const defaultPassenger: Omit<Passenger, 'id' | 'family' | 'tierId' | 'nationalit
     phone: "",
 };
 
-export function AddPassengerSubForm({ onSave }: AddPassengerSubFormProps) {
+export function AddPassengerSubForm({ onSave, onCancel }: AddPassengerSubFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
-
-  const handleFormChange = (id: keyof typeof formData, value: any) => {
-    setFormData(prev => ({ ...prev, [id]: value }));
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +31,7 @@ export function AddPassengerSubForm({ onSave }: AddPassengerSubFormProps) {
       return;
     }
     onSave({ ...formData, nationality: 'Argentina', tierId: 'adult' });
+    setFormData(defaultPassenger); // Reset form after saving
   }
 
   return (
@@ -42,18 +40,18 @@ export function AddPassengerSubForm({ onSave }: AddPassengerSubFormProps) {
         <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="sub-fullName">Nombre Completo</Label>
-                <Input id="sub-fullName" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} />
+                <Input id="sub-fullName" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="sub-dni">DNI</Label>
-                <Input id="sub-dni" value={formData.dni} onChange={(e) => handleFormChange('dni', e.target.value)} />
+                <Input id="sub-dni" value={formData.dni} onChange={(e) => setFormData({...formData, dni: e.target.value})} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="sub-dob">Fecha de Nacimiento</Label>
                 <DatePicker 
                     id="sub-dob" 
                     date={formData.dob} 
-                    setDate={(d) => handleFormChange('dob', d)} 
+                    setDate={(d) => setFormData({...formData, dob: d})} 
                     className="h-10 w-full" 
                     placeholder="Seleccionar fecha..."
                     captionLayout="dropdown-buttons"
@@ -63,13 +61,14 @@ export function AddPassengerSubForm({ onSave }: AddPassengerSubFormProps) {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="sub-phone">Teléfono</Label>
-                <Input id="sub-phone" type="tel" value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} />
+                <Input id="sub-phone" type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
             </div>
         </div>
       </ScrollArea>
-      <Button type="submit" className="w-full">Guardar Integrante</Button>
+      <div className="flex justify-end gap-2">
+        {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>}
+        <Button type="submit">Guardar Integrante</Button>
+      </div>
     </form>
   )
 }
-
-    

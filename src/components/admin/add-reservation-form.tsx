@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { Passenger, Seller, Reservation, PaymentStatus, Tour, BoardingPoint, RoomType } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/searchable-select"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, UserPlus, XCircle } from "lucide-react"
 import { Checkbox } from "../ui/checkbox"
 import { AddPassengerSubForm } from "./add-passenger-subform"
 import { ScrollArea } from "../ui/scroll-area"
@@ -50,6 +50,7 @@ const defaultReservation = {
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints, roomTypes }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
   const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
+  const [mainPassengerSearch, setMainPassengerSearch] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,6 +59,8 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
             ...defaultReservation,
             finalPrice: tour.price // Default to base price
         });
+        setMainPassengerSearch("");
+        setIsAddingNewPassenger(false);
     }
   }, [isOpen, tour])
 
@@ -71,13 +74,15 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     return passengers.filter(p => !bookedPassengerIdsForThisTour.has(p.id));
   }, [passengers, allReservations, tour.id]);
 
-  const passengerOptions = useMemo(() => {
-    return availablePassengers.map(p => ({
-      value: p.id,
-      label: p.fullName,
-      keywords: [p.dni]
-    }));
-  }, [availablePassengers]);
+
+  const searchResults = useMemo(() => {
+    if (!mainPassengerSearch) return [];
+    const lowercasedTerm = mainPassengerSearch.toLowerCase();
+    return availablePassengers.filter(p => 
+        p.fullName.toLowerCase().includes(lowercasedTerm) || 
+        p.dni.includes(lowercasedTerm)
+    );
+  }, [mainPassengerSearch, availablePassengers]);
 
   const sellerOptions = useMemo(() => {
     return sellers.map(s => ({
@@ -107,20 +112,15 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     setFormData(prev => ({ ...prev, [id]: value }));
   }
 
-  const handleMainPassengerSelect = (passengerId: string) => {
-    const passenger = passengers.find(p => p.id === passengerId);
-    if (!passenger) {
-        setFormData(prev => ({ ...prev, mainPassengerId: '', selectedPassengerIds: [] }));
-        return;
-    }
-
+  const handleMainPassengerSelect = (passenger: Passenger) => {
     setFormData(prev => ({
         ...prev,
-        mainPassengerId: passengerId,
-        selectedPassengerIds: [passengerId],
+        mainPassengerId: passenger.id,
+        selectedPassengerIds: [passenger.id],
         paxCount: 1,
         boardingPointId: passenger.boardingPointId,
     }));
+    setMainPassengerSearch(passenger.fullName);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -136,7 +136,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
      });
   }
   
-  const handleAddNewPassenger = (newPassengerData: Omit<Passenger, 'id'>) => {
+  const handleAddNewPassenger = (newPassengerData: Omit<Passenger, 'id'>, isMain: boolean) => {
     const newPassenger: Passenger = {
       ...newPassengerData,
       id: `P-${Math.random().toString(36).substring(2, 11)}`,
@@ -145,11 +145,16 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
       tierId: 'adult'
     };
     onPassengerCreated(newPassenger);
-    setFormData(prev => ({
-        ...prev,
-        selectedPassengerIds: [...prev.selectedPassengerIds, newPassenger.id]
-    }));
-    setIsAddingNewPassenger(false);
+    
+    if (isMain) {
+        handleMainPassengerSelect(newPassenger);
+        setIsAddingNewPassenger(false);
+    } else {
+        setFormData(prev => ({
+            ...prev,
+            selectedPassengerIds: [...prev.selectedPassengerIds, newPassenger.id]
+        }));
+    }
   };
 
 
@@ -196,16 +201,51 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
         
         <ScrollArea className="flex-grow pr-6 -mr-6">
           <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                  <Label htmlFor="passenger">Pasajero Principal</Label>
-                  <SearchableSelect
-                      options={passengerOptions}
-                      value={formData.mainPassengerId}
-                      onChange={handleMainPassengerSelect}
-                      placeholder="Buscar pasajero por nombre o DNI..."
-                      listHeight="h-48"
-                  />
+              <div className="space-y-2 relative">
+                <Label htmlFor="passenger-search">Pasajero Principal</Label>
+                <Input
+                    id="passenger-search"
+                    value={mainPassengerSearch}
+                    onChange={e => setMainPassengerSearch(e.target.value)}
+                    placeholder="Buscar por nombre o DNI..."
+                    disabled={!!selectedMainPassenger}
+                />
+                 {selectedMainPassenger && (
+                    <Button variant="ghost" size="icon" className="absolute top-6 right-0" onClick={() => {
+                        setMainPassengerSearch("");
+                        setFormData(prev => ({...prev, mainPassengerId: "", selectedPassengerIds: []}))
+                    }}>
+                        <XCircle className="w-5 h-5 text-muted-foreground"/>
+                    </Button>
+                )}
+                {mainPassengerSearch && !selectedMainPassenger && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full bg-background border rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
+                        {searchResults.map(p => (
+                            <div key={p.id} className="p-2 hover:bg-accent cursor-pointer" onClick={() => handleMainPassengerSelect(p)}>
+                                {p.fullName} ({p.dni})
+                            </div>
+                        ))}
+                    </div>
+                )}
+                 {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
+                     <div className="text-center p-4 border-dashed border-2 rounded-md">
+                        <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
+                        <Button onClick={() => setIsAddingNewPassenger(true)}>
+                            <UserPlus className="mr-2 h-4 w-4"/>
+                            Registrar Nuevo Pasajero Principal
+                        </Button>
+                     </div>
+                 )}
               </div>
+
+               {isAddingNewPassenger && !selectedMainPassenger && (
+                 <div className="p-4 border rounded-lg bg-secondary/30">
+                    <DialogHeader className="mb-4">
+                        <DialogTitle>Registrar Nuevo Pasajero Principal</DialogTitle>
+                    </DialogHeader>
+                    <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, true)} onCancel={() => setIsAddingNewPassenger(false)} />
+                 </div>
+               )}
               
               {selectedMainPassenger && (
                   <>
@@ -223,7 +263,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                       <div className="p-4 border rounded-md space-y-3">
                           <div className="flex justify-between items-center">
                               <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
-                              <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
+                              <Dialog>
                                   <DialogTrigger asChild>
                                       <Button variant="outline" size="sm">
                                           <PlusCircle className="mr-2 h-4 w-4" />
@@ -237,7 +277,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                               El nuevo pasajero se agregará al grupo familiar de {selectedMainPassenger.family || 'la reserva'}.
                                           </DialogDescription>
                                       </DialogHeader>
-                                      <AddPassengerSubForm onSave={handleAddNewPassenger} />
+                                      <AddPassengerSubForm onSave={(data) => handleAddNewPassenger(data, false)} />
                                   </DialogContent>
                               </Dialog>
                           </div>
@@ -315,5 +355,3 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
-
-    
