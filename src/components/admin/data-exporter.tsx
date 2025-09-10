@@ -227,7 +227,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
              {relevantBoardingPoints.length > 0 ? (
                 <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable droppableId="boardingPoints">
-                    {(provided) => (
+                    {(provided, snapshot) => (
                         <div {...provided.droppableProps} ref={provided.innerRef}>
                             <ScrollArea className="h-64 border rounded-md bg-background">
                                 {customBoardingOrder.map((bp, index) => (
