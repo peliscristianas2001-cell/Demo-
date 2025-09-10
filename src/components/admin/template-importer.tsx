@@ -59,7 +59,7 @@ const normalizeHeader = (header: string) => (header || '').trim().toUpperCase().
 
 const toTitleCase = (str: string): string => {
   if (!str) return '';
-  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.substring(1)).join(' ');
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.substring(1)).join(' ').trim();
 }
 
 
@@ -103,8 +103,8 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let allTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
             let allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
             let allReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
-            const allSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
             let allBoardingPoints: BoardingPoint[] = JSON.parse(localStorage.getItem("ytl_boarding_points") || JSON.stringify(mockBoardingPoints));
+            const allSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
             
             const fileName = file.name.replace(/\.[^/.]+$/, "");
             const nameParts = fileName.split(' ');
@@ -138,75 +138,80 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let resultCounts = { newTours: 0, newReservations: 0, newPassengers: 0, updatedPassengers: 0, createdTripId: trip.id, preselectedMonth: detectedMonth };
             const updatedPassengersMap = new Map<string, Passenger>();
             let reservationMap = new Map<string, Reservation>();
-            let families = new Map<string, Passenger[]>(); // cellColor -> passengers
-            const familyNamesCount = new Map<string, number>();
-
-            // First Pass: Create all passengers and group them by family (cell color)
+            const familyGroups = new Map<string, any[]>(); // color -> excel rows
+            
+            // First Pass: Group all rows by cell color
             for (const [rowIndex, row] of passengerData.entries()) {
                 const passengerNameRaw = row[colMap['PASAJERO']];
-                if (!passengerNameRaw) continue;
+                if (!passengerNameRaw || !String(passengerNameRaw).trim()) continue;
 
-                const passengerName = toTitleCase(passengerNameRaw.trim());
-                const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
-                if (!passengerName || !passengerDNI) continue;
-
-                let familyColor = `no-color-${passengerDNI}`;
                 const cellRef = `${colMap['PASAJERO']}${rowIndex + 7}`;
                 const cell = worksheet[cellRef];
-                const cellColor = cell?.s?.fgColor?.rgb;
-                if (cellColor && cellColor !== 'FFFFFFFF' && cellColor !== '00000000') {
-                    familyColor = cellColor;
+                let familyColor = cell?.s?.fgColor?.rgb || 'no-color';
+                // Normalize to handle cases where there's no color or it's white/black
+                if (familyColor === 'FFFFFFFF' || familyColor === '00000000' || !cell?.s?.fgColor) {
+                    familyColor = `no-color-${rowIndex}`; // Treat each uncolored row as a potential separate family initially
                 }
 
-                let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
-
-                const boardingPointRaw = row[colMap['EMBARQUE']] ? String(row[colMap['EMBARQUE']]) : undefined;
-                let boardingPointId: string | undefined;
-
-                if (boardingPointRaw && /^[A-Z]-/.test(boardingPointRaw)) {
-                    const bpId = boardingPointRaw.charAt(0);
-                    const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
-                    
-                    if (!allBoardingPoints.some(bp => bp.id === bpId)) {
-                        allBoardingPoints.push({ id: bpId, name: bpName });
-                    }
-                    boardingPointId = bpId;
-                }
-                
-                const passengerUpdate: Partial<Passenger> & { fullName: string } = {
-                    fullName: passengerName,
-                    dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
-                    phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
-                    family: familyColor,
-                    boardingPointId: boardingPointId
-                };
-
-                if (passenger) {
-                    passenger = { ...passenger, ...passengerUpdate };
-                    if(!updatedPassengersMap.has(passenger.dni)) resultCounts.updatedPassengers++;
-                } else {
-                    passenger = { id: `P-${passengerDNI}`, dni: passengerDNI, nationality: "Argentina", tierId: "adult", ...passengerUpdate } as Passenger;
-                    resultCounts.newPassengers++;
-                }
-                updatedPassengersMap.set(passenger.dni, passenger);
-                
-                if (!families.has(familyColor)) families.set(familyColor, []);
-                families.get(familyColor)!.push(passenger);
+                if (!familyGroups.has(familyColor)) familyGroups.set(familyColor, []);
+                familyGroups.get(familyColor)!.push(row);
             }
 
-            // Second Pass: Process families to create reservations based on payers
-             families.forEach((members, color) => {
-                const payers = members.filter(m => {
-                    const row = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === m.dni);
-                    return row && (row[colMap['CANTIDAD']] || row[colMap['VALOR']]);
+            const familyNamesCount = new Map<string, number>();
+
+            // Second pass: Process each color group to form families and reservations
+            familyGroups.forEach((groupRows) => {
+                const membersInGroup: Passenger[] = [];
+                // Create/Update all passenger objects for this color group first
+                groupRows.forEach(row => {
+                    const passengerName = toTitleCase(row[colMap['PASAJERO']]);
+                    const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
+                    if (!passengerName || !passengerDNI) return;
+
+                    let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
+                    
+                    const boardingPointRaw = row[colMap['EMBARQUE']] ? String(row[colMap['EMBARQUE']]) : undefined;
+                    let boardingPointId: string | undefined;
+
+                    if (boardingPointRaw && /^[A-Z]-/.test(boardingPointRaw)) {
+                        const bpId = boardingPointRaw.charAt(0);
+                        const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
+                        
+                        if (!allBoardingPoints.some(bp => bp.id === bpId)) {
+                            allBoardingPoints.push({ id: bpId, name: bpName });
+                        }
+                        boardingPointId = bpId;
+                    }
+                    
+                    const passengerUpdate: Partial<Passenger> & { fullName: string } = {
+                        fullName: passengerName,
+                        dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
+                        phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
+                        boardingPointId: boardingPointId
+                    };
+    
+                    if (passenger) {
+                        passenger = { ...passenger, ...passengerUpdate };
+                        if(!updatedPassengersMap.has(passenger.dni)) resultCounts.updatedPassengers++;
+                    } else {
+                        passenger = { id: `P-${passengerDNI}`, dni: passengerDNI, nationality: "Argentina", tierId: "adult", ...passengerUpdate } as Passenger;
+                        resultCounts.newPassengers++;
+                    }
+                    updatedPassengersMap.set(passenger.dni, passenger);
+                    membersInGroup.push(passenger);
                 });
 
-                if (payers.length === 0 && members.length > 0) {
-                  // Handle cases where no one is marked as a payer, treat the first person as the payer.
-                  payers.push(members[0]);
-                }
+
+                const payers = membersInGroup.filter(m => {
+                    const row = groupRows.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === m.dni);
+                    return row && (row[colMap['CANTIDAD']] || row[colMap['VALOR']]);
+                });
                 
-                let nonPayers = members.filter(m => !payers.some(p => p.id === m.id));
+                if (payers.length === 0 && membersInGroup.length > 0) {
+                  payers.push(membersInGroup[0]); // Default to first person if no payer is marked
+                }
+
+                const nonPayers = membersInGroup.filter(m => !payers.some(p => p.id === m.id));
 
                 payers.forEach(payer => {
                     const nameParts = payer.fullName.split(' ');
@@ -214,50 +219,42 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     let familyName = lastName;
 
                     const count = familyNamesCount.get(lastName) || 0;
-                    if (count > 0) {
-                        familyName = `${lastName} (${count + 1})`;
-                    }
+                    if (count > 0) familyName = `${lastName} (${count + 1})`;
                     familyNamesCount.set(lastName, count + 1);
-                    
-                    // Assign family name to all members of this reservation
-                    const reservationMembers = [payer];
 
-                    const payerRow = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === payer.dni);
+                    const reservationMembers = [payer];
+                    const payerRow = groupRows.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === payer.dni);
                     if (!payerRow) return;
 
                     const paxCount = payerRow[colMap['CANTIDAD']] || 1;
 
-                    // Assign non-payers to this reservation if they share the same boarding point
-                    const assignedNonPayers: Passenger[] = [];
-                    nonPayers.forEach(nonPayer => {
-                        if (nonPayer.boardingPointId === payer.boardingPointId && reservationMembers.length < paxCount) {
+                    // Assign non-payers to this reservation based on boarding point
+                    const unassignedNonPayers = [...nonPayers]; // copy to modify
+                    for (let i = unassignedNonPayers.length - 1; i >= 0; i--) {
+                        const nonPayer = unassignedNonPayers[i];
+                        if (reservationMembers.length < paxCount && nonPayer.boardingPointId === payer.boardingPointId) {
                             reservationMembers.push(nonPayer);
-                            assignedNonPayers.push(nonPayer);
+                            unassignedNonPayers.splice(i, 1); // remove from pool
                         }
-                    });
+                    }
 
-                     // Remove assigned non-payers so they aren't assigned again
-                    nonPayers = nonPayers.filter(np => !assignedNonPayers.some(anp => anp.id === np.id));
-
+                    // Assign family name to all members of this specific reservation
                     reservationMembers.forEach(member => {
                       const updatedMember = updatedPassengersMap.get(member.dni);
-                      if (updatedMember) {
-                        updatedMember.family = familyName;
-                      }
+                      if (updatedMember) updatedMember.family = familyName;
                     });
-
-
+                    
                     const installments: Installment[] = ['CUOTA 1', 'CUOTA 2', 'CUOTA 3', 'CUOTA 4'].map(c => payerRow[colMap[c]])
                         .filter(amount => amount && !isNaN(parseFloat(amount)))
                         .map(amount => ({ amount: parseFloat(amount), isPaid: true }));
 
                     const finalPrice = payerRow[colMap['VALOR']] || 0;
                     const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
-                    const seller = allSellers.find(s => s.name.toLowerCase() === payerRow[colMap['VENDEDOR']]?.toLowerCase());
+                    const seller = allSellers.find(s => s.name.toLowerCase() === (payerRow[colMap['VENDEDOR']] || '').toLowerCase());
 
                     const reservation: Reservation = {
-                        id: `R-${trip.id}-${payer.id}`,
-                        tripId: trip.id,
+                        id: `R-${trip!.id}-${payer.id}`,
+                        tripId: trip!.id,
                         passenger: payer.fullName,
                         passengerIds: reservationMembers.map(m => m.id),
                         paxCount: paxCount,
