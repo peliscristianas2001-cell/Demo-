@@ -139,6 +139,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             const updatedPassengersMap = new Map<string, Passenger>();
             let reservationMap = new Map<string, Reservation>();
             let families = new Map<string, Passenger[]>(); // cellColor -> passengers
+            const familyNamesCount = new Map<string, number>();
 
             // First Pass: Create all passengers and group them by family (cell color)
             for (const [rowIndex, row] of passengerData.entries()) {
@@ -149,7 +150,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
                 if (!passengerName || !passengerDNI) continue;
 
-                let familyColor = "no-color";
+                let familyColor = `no-color-${passengerDNI}`;
                 const cellRef = `${colMap['PASAJERO']}${rowIndex + 7}`;
                 const cell = worksheet[cellRef];
                 const cellColor = cell?.s?.fgColor?.rgb;
@@ -194,17 +195,57 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             }
 
             // Second Pass: Process families to create reservations based on payers
-            families.forEach((members) => {
+             families.forEach((members, color) => {
                 const payers = members.filter(m => {
                     const row = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === m.dni);
                     return row && (row[colMap['CANTIDAD']] || row[colMap['VALOR']]);
                 });
+
+                if (payers.length === 0 && members.length > 0) {
+                  // Handle cases where no one is marked as a payer, treat the first person as the payer.
+                  payers.push(members[0]);
+                }
                 
                 let nonPayers = members.filter(m => !payers.some(p => p.id === m.id));
 
                 payers.forEach(payer => {
+                    const nameParts = payer.fullName.split(' ');
+                    const lastName = nameParts[nameParts.length - 1];
+                    let familyName = lastName;
+
+                    const count = familyNamesCount.get(lastName) || 0;
+                    if (count > 0) {
+                        familyName = `${lastName} (${count + 1})`;
+                    }
+                    familyNamesCount.set(lastName, count + 1);
+                    
+                    // Assign family name to all members of this reservation
+                    const reservationMembers = [payer];
+
                     const payerRow = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === payer.dni);
                     if (!payerRow) return;
+
+                    const paxCount = payerRow[colMap['CANTIDAD']] || 1;
+
+                    // Assign non-payers to this reservation if they share the same boarding point
+                    const assignedNonPayers: Passenger[] = [];
+                    nonPayers.forEach(nonPayer => {
+                        if (nonPayer.boardingPointId === payer.boardingPointId && reservationMembers.length < paxCount) {
+                            reservationMembers.push(nonPayer);
+                            assignedNonPayers.push(nonPayer);
+                        }
+                    });
+
+                     // Remove assigned non-payers so they aren't assigned again
+                    nonPayers = nonPayers.filter(np => !assignedNonPayers.some(anp => anp.id === np.id));
+
+                    reservationMembers.forEach(member => {
+                      const updatedMember = updatedPassengersMap.get(member.dni);
+                      if (updatedMember) {
+                        updatedMember.family = familyName;
+                      }
+                    });
+
 
                     const installments: Installment[] = ['CUOTA 1', 'CUOTA 2', 'CUOTA 3', 'CUOTA 4'].map(c => payerRow[colMap[c]])
                         .filter(amount => amount && !isNaN(parseFloat(amount)))
@@ -218,8 +259,8 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                         id: `R-${trip.id}-${payer.id}`,
                         tripId: trip.id,
                         passenger: payer.fullName,
-                        passengerIds: [payer.id], // Start with the payer
-                        paxCount: payerRow[colMap['CANTIDAD']] || 1,
+                        passengerIds: reservationMembers.map(m => m.id),
+                        paxCount: paxCount,
                         status: 'Confirmado',
                         paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
                         finalPrice: finalPrice,
@@ -228,18 +269,6 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                         sellerId: seller?.id || 'unassigned',
                         boardingPointId: payer.boardingPointId,
                     };
-                    
-                    // Assign non-payers to this reservation if they share the same boarding point
-                    const assignedNonPayers: Passenger[] = [];
-                    nonPayers.forEach(nonPayer => {
-                        if (nonPayer.boardingPointId === payer.boardingPointId && reservation.passengerIds.length < reservation.paxCount) {
-                            reservation.passengerIds.push(nonPayer.id);
-                            assignedNonPayers.push(nonPayer);
-                        }
-                    });
-
-                    // Remove assigned non-payers so they aren't assigned again
-                    nonPayers = nonPayers.filter(np => !assignedNonPayers.some(anp => anp.id === np.id));
                     
                     reservationMap.set(payer.dni, reservation);
                 });
