@@ -248,7 +248,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     const seller = allSellers.find(s => s.name.toLowerCase() === (payerRow[colMap['VENDEDOR']] || '').toLowerCase());
 
                     const reservation: Reservation = {
-                        id: `R-${trip!.id}-${payer.id}`,
+                        id: `YTL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
                         tripId: trip!.id,
                         passenger: payer.fullName,
                         passengerIds: reservationMembers.map(m => m.id),
