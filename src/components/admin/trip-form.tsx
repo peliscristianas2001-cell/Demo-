@@ -61,8 +61,6 @@ const defaultTourData: Omit<Tour, 'id' | 'destination' | 'date' | 'price' | 'fly
     presentationTime: "",
     departureTime: "",
     bus: "",
-    observations: "",
-    cancellationPolicy: "",
     pricingTiers: [],
     costs: defaultCosts,
     vehicles: {},
@@ -110,8 +108,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
               presentationTime: tour.presentationTime || "",
               departureTime: tour.departureTime || "",
               bus: tour.bus || "",
-              observations: tour.observations || "",
-              cancellationPolicy: tour.cancellationPolicy || "",
               pricingTiers: tour.pricingTiers || [],
               costs: {
                 hotel: tour.costs?.hotel || 0,
@@ -241,11 +237,17 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
         toast({ title: "Transporte incompleto", description: "Debes agregar al menos una unidad de transporte y seleccionar su tipo.", variant: "destructive" });
         return;
     }
+    
+    // Get global texts from local storage
+    const globalObservations = localStorage.getItem("ytl_global_observations") || "";
+    const globalCancellationPolicy = localStorage.getItem("ytl_global_cancellation_policy") || "";
 
     const tourDataToSave: Tour = {
         id: tour?.id || "",
         flyerUrl: tour?.flyerUrl || "https://placehold.co/400x500.png",
         ...formData,
+        observations: globalObservations,
+        cancellationPolicy: globalCancellationPolicy,
         transportUnits,
         pricingTiers: (formData.pricingTiers?.length || 0) > 0 ? formData.pricingTiers : undefined,
     };
@@ -312,14 +314,6 @@ export function TripForm({ isOpen, onOpenChange, onSave, tour }: TripFormProps) 
                                   <div className="space-y-2"><Label>Hora Presentación</Label><Input value={formData.presentationTime} onChange={(e) => handleFormChange('presentationTime', e.target.value)} placeholder="HH:MM"/></div>
                                   <div className="space-y-2"><Label>Hora Salida</Label><Input value={formData.departureTime} onChange={(e) => handleFormChange('departureTime', e.target.value)} placeholder="HH:MM"/></div>
                                </div>
-                                <div className="space-y-2">
-                                  <Label>Observaciones</Label>
-                                  <Textarea value={formData.observations} onChange={(e) => handleFormChange('observations', e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Política de Cancelación</Label>
-                                  <Textarea value={formData.cancellationPolicy} onChange={(e) => handleFormChange('cancellationPolicy', e.target.value)} />
-                                </div>
                             </AccordionContent>
                          </AccordionItem>
                         

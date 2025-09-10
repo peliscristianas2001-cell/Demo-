@@ -22,11 +22,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, FileText, ShieldAlert } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, LayoutItemType, LayoutCategory, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
 import { TripForm } from "@/components/admin/trip-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+
+
+type GlobalTextType = 'observations' | 'cancellationPolicy' | null;
 
 export default function TripsPage() {
   const [tours, setTours] = useState<Tour[]>([])
@@ -36,10 +50,20 @@ export default function TripsPage() {
   const [isClient, setIsClient] = useState(false)
   const [layoutConfig, setLayoutConfig] = useState(() => getLayoutConfig());
 
+  const [globalTextType, setGlobalTextType] = useState<GlobalTextType>(null);
+  const [globalObservations, setGlobalObservations] = useState("");
+  const [globalCancellationPolicy, setGlobalCancellationPolicy] = useState("");
+  const { toast } = useToast();
+
   useEffect(() => {
     setIsClient(true)
     const storedTours = localStorage.getItem("ytl_tours")
     const storedReservations = localStorage.getItem("ytl_reservations")
+    const storedObservations = localStorage.getItem("ytl_global_observations");
+    const storedCancellationPolicy = localStorage.getItem("ytl_global_cancellation_policy");
+
+    setGlobalObservations(storedObservations || "");
+    setGlobalCancellationPolicy(storedCancellationPolicy || "");
     
     if (storedTours) {
       setTours(JSON.parse(storedTours, (key, value) => {
@@ -65,6 +89,10 @@ export default function TripsPage() {
             return value;
           }));
         }
+      const newStoredObservations = localStorage.getItem("ytl_global_observations");
+      const newStoredCancellationPolicy = localStorage.getItem("ytl_global_cancellation_policy");
+      setGlobalObservations(newStoredObservations || "");
+      setGlobalCancellationPolicy(newStoredCancellationPolicy || "");
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -134,13 +162,58 @@ export default function TripsPage() {
   const handleDelete = (tourId: string) => {
     setTours(tours.filter(t => t.id !== tourId))
   }
+  
+  const handleSaveGlobalText = () => {
+    if (globalTextType === 'observations') {
+      localStorage.setItem("ytl_global_observations", globalObservations);
+       toast({ title: "Observaciones guardadas." });
+    } else if (globalTextType === 'cancellationPolicy') {
+      localStorage.setItem("ytl_global_cancellation_policy", globalCancellationPolicy);
+       toast({ title: "Política de cancelación guardada." });
+    }
+    window.dispatchEvent(new Event('storage'));
+    setGlobalTextType(null);
+  }
 
   if (!isClient) {
     return null;
   }
+  
+  const isDialogForObservations = globalTextType === 'observations';
+  const currentDialogText = isDialogForObservations ? globalObservations : globalCancellationPolicy;
+  const setDialogText = isDialogForObservations ? setGlobalObservations : setGlobalCancellationPolicy;
 
   return (
     <div className="space-y-6">
+      <Dialog open={!!globalTextType} onOpenChange={(open) => !open && setGlobalTextType(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {isDialogForObservations ? "Observaciones Globales" : "Política de Cancelación Global"}
+            </DialogTitle>
+            <DialogDescription>
+              {isDialogForObservations 
+                ? "Este texto se añadirá a todos los viajes nuevos y existentes. Ideal para información importante y recurrente."
+                : "Define la política de cancelación que se aplicará a todos los viajes."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+              <Label htmlFor="global-textarea">{isDialogForObservations ? "Observaciones" : "Política de Cancelación"}</Label>
+              <Textarea 
+                id="global-textarea"
+                value={currentDialogText}
+                onChange={(e) => setDialogText(e.target.value)}
+                className="h-48"
+              />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGlobalTextType(null)}>Cancelar</Button>
+            <Button onClick={handleSaveGlobalText}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <TripForm
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -154,10 +227,18 @@ export default function TripsPage() {
             Aquí podrás crear, editar y eliminar los viajes. Los viajes pasados se ocultan automáticamente.
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Crear Nuevo Viaje
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setGlobalTextType('observations')}>
+              <FileText className="mr-2 h-4 w-4" /> Observaciones
+            </Button>
+            <Button variant="outline" onClick={() => setGlobalTextType('cancellationPolicy')}>
+              <ShieldAlert className="mr-2 h-4 w-4" /> Política Cancelación
+            </Button>
+            <Button onClick={handleCreate}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Crear Nuevo Viaje
+            </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
