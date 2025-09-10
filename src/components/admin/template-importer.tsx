@@ -59,7 +59,7 @@ const normalizeHeader = (header: string) => (header || '').trim().toUpperCase().
 
 const toTitleCase = (str: string): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w+/g, char => char.charAt(0).toUpperCase() + char.substring(1));
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.substring(1)).join(' ');
 }
 
 
@@ -128,8 +128,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     id: `T-${Date.now()}`,
                     destination: tripName,
                     price: basePrice,
-                    flyerUrl: 'https://placehold.co/400x500.png',
-                    flyerType: 'image',
+                    flyers: [],
                     date: new Date(), 
                     pricingTiers: newPricingTiers
                 };
@@ -138,36 +137,28 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
 
             let resultCounts = { newTours: 0, newReservations: 0, newPassengers: 0, updatedPassengers: 0, createdTripId: trip.id, preselectedMonth: detectedMonth };
             const updatedPassengersMap = new Map<string, Passenger>();
-            const newReservationsList: Reservation[] = [];
-            const colorToFamilyName = new Map<string, string>();
+            let reservationMap = new Map<string, Reservation>();
+            let familyToPayerMap = new Map<string, string>(); // familyName -> payerDNI
 
+            // First pass: create passengers and identify payers to create initial reservations
             for (const [rowIndex, row] of passengerData.entries()) {
                 const passengerNameRaw = row[colMap['PASAJERO']];
-                if (!passengerNameRaw) continue; // Skip empty rows
+                if (!passengerNameRaw) continue;
 
                 const passengerName = toTitleCase(passengerNameRaw.trim());
                 const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
-
                 if (!passengerName || !passengerDNI) continue;
-                
-                // Family by color logic
+
                 let familyName = "";
                 const cellRef = `${colMap['PASAJERO']}${rowIndex + 7}`;
                 const cell = worksheet[cellRef];
                 const cellColor = cell?.s?.fgColor?.rgb;
-                
-                if (cellColor && cellColor !== 'FFFFFFFF' && cellColor !== '00000000') { // Ignore white/transparent
-                    if (colorToFamilyName.has(cellColor)) {
-                        familyName = colorToFamilyName.get(cellColor)!;
-                    } else {
-                        familyName = `Familia ${passengerName.split(' ')[1] || passengerName}`;
-                        colorToFamilyName.set(cellColor, familyName);
-                    }
+                if (cellColor && cellColor !== 'FFFFFFFF' && cellColor !== '00000000') {
+                     familyName = `Familia ${passengerName.split(' ')[1] || passengerName} ${cellColor}`;
                 }
 
                 let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
-                
-                // Boarding Point Logic
+
                 const boardingPointRaw = row[colMap['EMBARQUE']] ? String(row[colMap['EMBARQUE']]) : undefined;
                 let boardingPointId: string | undefined;
 
@@ -176,11 +167,8 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
                     boardingPointId = bpId;
                     
-                    const existingBp = allBoardingPoints.find(bp => bp.id === bpId);
-                    if (!existingBp) {
+                    if (!allBoardingPoints.some(bp => bp.id === bpId)) {
                         allBoardingPoints.push({ id: bpId, name: bpName });
-                    } else if (existingBp.name !== bpName) {
-                        existingBp.name = bpName; // Update name if it changed
                     }
                 }
                 
@@ -188,88 +176,79 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     fullName: passengerName,
                     dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
                     phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
-                    family: familyName || passenger?.family || "", // Prioritize new color family, then existing, then default
+                    family: familyName,
                     boardingPointId: boardingPointId
                 };
 
                 if (passenger) {
                     passenger = { ...passenger, ...passengerUpdate };
-                    resultCounts.updatedPassengers++;
+                    if(!updatedPassengersMap.has(passenger.dni)) resultCounts.updatedPassengers++;
                 } else {
-                    passenger = {
-                        id: `P-${passengerDNI}`,
-                        dni: passengerDNI,
-                        nationality: "Argentina",
-                        tierId: "adult",
-                        ...passengerUpdate,
-                    } as Passenger;
+                    passenger = { id: `P-${passengerDNI}`, dni: passengerDNI, nationality: "Argentina", tierId: "adult", ...passengerUpdate } as Passenger;
                     resultCounts.newPassengers++;
                 }
                 updatedPassengersMap.set(passenger.dni, passenger);
                 
-                if(trip && trip.price === 0 && row[colMap['VALOR']]) {
-                    trip.price = parseFloat(row[colMap['VALOR']]);
-                }
-                
-                const installments: Installment[] = [];
-                const cuotas = [
-                    { amount: row[colMap['CUOTA 1']] },
-                    { amount: row[colMap['CUOTA 2']] },
-                    { amount: row[colMap['CUOTA 3']] },
-                    { amount: row[colMap['CUOTA 4']] },
-                ];
-                cuotas.forEach(c => {
-                    if (c.amount && !isNaN(parseFloat(c.amount))) {
-                        installments.push({ amount: parseFloat(c.amount), isPaid: true });
+                const isPayer = row[colMap['CANTIDAD']] || row[colMap['VALOR']];
+
+                if (isPayer) {
+                    if (trip && trip.price === 0 && row[colMap['VALOR']]) {
+                        trip.price = parseFloat(row[colMap['VALOR']]);
                     }
-                });
+                    
+                    const installments: Installment[] = ['CUOTA 1', 'CUOTA 2', 'CUOTA 3', 'CUOTA 4'].map(c => row[colMap[c]])
+                        .filter(amount => amount && !isNaN(parseFloat(amount)))
+                        .map(amount => ({ amount: parseFloat(amount), isPaid: true }));
 
-                const finalPrice = row[colMap['VALOR']] || 0;
-                const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
+                    const finalPrice = row[colMap['VALOR']] || 0;
+                    const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
+                    const seller = allSellers.find(s => s.name.toLowerCase() === row[colMap['VENDEDOR']]?.toLowerCase());
 
-                const sellerName = row[colMap['VENDEDOR']];
-                const seller = allSellers.find(s => s.name.toLowerCase() === sellerName?.toLowerCase());
-
-                const reservation: Reservation = {
-                    id: `R-${trip.id}-${passenger.id}`,
-                    tripId: trip.id,
-                    passenger: passengerName,
-                    passengerIds: [passenger.id],
-                    paxCount: row[colMap['CANTIDAD']] || 1,
-                    status: 'Confirmado',
-                    paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
-                    finalPrice: finalPrice,
-                    installments: {
-                        count: installments.length || 1,
-                        details: installments.length > 0 ? installments : [{ amount: finalPrice, isPaid: false }],
-                    },
-                    assignedSeats: [],
-                    assignedCabins: [],
-                    sellerId: seller?.id || 'unassigned',
-                    boardingPointId: boardingPointId
-                };
-                newReservationsList.push(reservation);
+                    const reservation: Reservation = {
+                        id: `R-${trip.id}-${passenger.id}`,
+                        tripId: trip.id,
+                        passenger: passengerName,
+                        passengerIds: [passenger.id], // Start with self
+                        paxCount: row[colMap['CANTIDAD']] || 1,
+                        status: 'Confirmado',
+                        paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
+                        finalPrice: finalPrice,
+                        installments: { count: installments.length || 1, details: installments.length > 0 ? installments : [{ amount: finalPrice, isPaid: false }] },
+                        assignedSeats: [], assignedCabins: [],
+                        sellerId: seller?.id || 'unassigned',
+                        boardingPointId: boardingPointId
+                    };
+                    reservationMap.set(passenger.dni, reservation);
+                    if (familyName && !familyToPayerMap.has(familyName)) {
+                        familyToPayerMap.set(familyName, passenger.dni);
+                    }
+                }
             }
+
+            // Second pass: assign non-payers to their family's payer
+            for (const p of updatedPassengersMap.values()) {
+                if (reservationMap.has(p.dni)) continue; // This is a payer, skip
+                
+                const familyPayerDNI = p.family ? familyToPayerMap.get(p.family) : undefined;
+                if (familyPayerDNI) {
+                    const payerReservation = reservationMap.get(familyPayerDNI);
+                    if (payerReservation && !payerReservation.passengerIds.includes(p.id)) {
+                        payerReservation.passengerIds.push(p.id);
+                    }
+                }
+            }
+            
+            const newReservationsList = Array.from(reservationMap.values());
             resultCounts.newReservations = newReservationsList.length;
 
-            // Merge updated passengers back into the main list
             updatedPassengersMap.forEach(p => {
                 const index = allPassengers.findIndex(ap => ap.id === p.id);
-                if (index > -1) {
-                    allPassengers[index] = p;
-                } else {
-                    allPassengers.push(p);
-                }
+                if (index > -1) allPassengers[index] = p; else allPassengers.push(p);
             });
 
-            // Merge new/updated reservations
             newReservationsList.forEach(nr => {
                 const index = allReservations.findIndex(ar => ar.id === nr.id);
-                if (index > -1) {
-                    allReservations[index] = nr;
-                } else {
-                    allReservations.push(nr);
-                }
+                if (index > -1) allReservations[index] = nr; else allReservations.push(nr);
             });
 
             if (newTourCreated && trip) {
@@ -287,10 +266,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             
             window.dispatchEvent(new Event('storage'));
 
-            toast({
-                title: "¡Importación Exitosa!",
-                description: "La plantilla de Excel ha sido procesada."
-            });
+            toast({ title: "¡Importación Exitosa!", description: "La plantilla de Excel ha sido procesada." });
             setImportResult(resultCounts);
 
         } catch (error) {
