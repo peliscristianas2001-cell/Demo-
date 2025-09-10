@@ -165,9 +165,9 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
 
       // Sorting logic
       if (boardingSortOrder === 'asc') {
-          passengerData.sort((a, b) => a.boardingPoint.localeCompare(b.boardingPoint));
+          passengerData.sort((a, b) => (a.boardingPointId || '').localeCompare(b.boardingPointId || ''));
       } else if (boardingSortOrder === 'desc') {
-          passengerData.sort((a, b) => b.boardingPoint.localeCompare(a.boardingPoint));
+          passengerData.sort((a, b) => (b.boardingPointId || '').localeCompare(a.boardingPointId || ''));
       } else if (boardingSortOrder === 'custom' && customBoardingOrder.length > 0) {
           const customOrderMap = new Map(customBoardingOrder.map((bp, index) => [bp.id, index]));
           passengerData.sort((a, b) => {
@@ -224,7 +224,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
             </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-             {relevantBoardingPoints.length > 0 ? (
+            {relevantBoardingPoints.length > 0 ? (
                 <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable droppableId="boardingPoints">
                     {(provided, snapshot) => (
