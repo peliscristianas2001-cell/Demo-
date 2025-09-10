@@ -16,7 +16,8 @@ import {
   PercentSquare,
   BarChart3,
   Briefcase,
-  Calendar
+  Calendar,
+  Receipt
 } from "lucide-react";
 
 import {
@@ -43,6 +44,7 @@ const navItems = [
   { href: "/admin/dashboard/sellers", label: "Vendedores", icon: PercentSquare },
   { href: "/admin/dashboard/flyers", label: "Flyers", icon: ImageIcon },
   { href: "/admin/dashboard/tickets", label: "Tickets", icon: TicketCheck },
+  { href: "/admin/dashboard/receipts", label: "Recibos", icon: Receipt },
   { href: "/admin/dashboard/reports", label: "Reportes", icon: BarChart3 },
   { href: "/admin/dashboard/calendar", label: "Calendario", icon: Calendar },
   { href: "/admin/dashboard/settings", label: "Configuración", icon: Settings },
