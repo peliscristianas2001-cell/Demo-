@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import * as XLSX from "xlsx"
 import {
   Dialog,
@@ -138,9 +138,9 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let resultCounts = { newTours: 0, newReservations: 0, newPassengers: 0, updatedPassengers: 0, createdTripId: trip.id, preselectedMonth: detectedMonth };
             const updatedPassengersMap = new Map<string, Passenger>();
             let reservationMap = new Map<string, Reservation>();
-            let familyToPayerMap = new Map<string, string>(); // familyName -> payerDNI
+            let families = new Map<string, Passenger[]>(); // cellColor -> passengers
 
-            // First pass: create passengers and identify payers to create initial reservations
+            // First Pass: Create all passengers and group them by family (cell color)
             for (const [rowIndex, row] of passengerData.entries()) {
                 const passengerNameRaw = row[colMap['PASAJERO']];
                 if (!passengerNameRaw) continue;
@@ -149,12 +149,12 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 const passengerDNI = String(row[colMap['DNI']] || '').replace(/\D/g, '');
                 if (!passengerName || !passengerDNI) continue;
 
-                let familyName = "";
+                let familyColor = "no-color";
                 const cellRef = `${colMap['PASAJERO']}${rowIndex + 7}`;
                 const cell = worksheet[cellRef];
                 const cellColor = cell?.s?.fgColor?.rgb;
                 if (cellColor && cellColor !== 'FFFFFFFF' && cellColor !== '00000000') {
-                     familyName = `Familia ${passengerName.split(' ')[1] || passengerName} ${cellColor}`;
+                    familyColor = cellColor;
                 }
 
                 let passenger = allPassengers.find(p => p.dni === passengerDNI) || updatedPassengersMap.get(passengerDNI);
@@ -165,18 +165,18 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 if (boardingPointRaw && /^[A-Z]-/.test(boardingPointRaw)) {
                     const bpId = boardingPointRaw.charAt(0);
                     const bpName = toTitleCase(boardingPointRaw.substring(2).trim());
-                    boardingPointId = bpId;
                     
                     if (!allBoardingPoints.some(bp => bp.id === bpId)) {
                         allBoardingPoints.push({ id: bpId, name: bpName });
                     }
+                    boardingPointId = bpId;
                 }
                 
                 const passengerUpdate: Partial<Passenger> & { fullName: string } = {
                     fullName: passengerName,
                     dob: excelDateToJSDate(row[colMap['FECHA NAC']]),
                     phone: row[colMap['TEL']] ? String(row[colMap['TEL']]) : undefined,
-                    family: familyName,
+                    family: familyColor,
                     boardingPointId: boardingPointId
                 };
 
@@ -189,54 +189,61 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                 }
                 updatedPassengersMap.set(passenger.dni, passenger);
                 
-                const isPayer = row[colMap['CANTIDAD']] || row[colMap['VALOR']];
+                if (!families.has(familyColor)) families.set(familyColor, []);
+                families.get(familyColor)!.push(passenger);
+            }
 
-                if (isPayer) {
-                    if (trip && trip.price === 0 && row[colMap['VALOR']]) {
-                        trip.price = parseFloat(row[colMap['VALOR']]);
-                    }
-                    
-                    const installments: Installment[] = ['CUOTA 1', 'CUOTA 2', 'CUOTA 3', 'CUOTA 4'].map(c => row[colMap[c]])
+            // Second Pass: Process families to create reservations based on payers
+            families.forEach((members) => {
+                const payers = members.filter(m => {
+                    const row = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === m.dni);
+                    return row && (row[colMap['CANTIDAD']] || row[colMap['VALOR']]);
+                });
+                
+                let nonPayers = members.filter(m => !payers.some(p => p.id === m.id));
+
+                payers.forEach(payer => {
+                    const payerRow = passengerData.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === payer.dni);
+                    if (!payerRow) return;
+
+                    const installments: Installment[] = ['CUOTA 1', 'CUOTA 2', 'CUOTA 3', 'CUOTA 4'].map(c => payerRow[colMap[c]])
                         .filter(amount => amount && !isNaN(parseFloat(amount)))
                         .map(amount => ({ amount: parseFloat(amount), isPaid: true }));
 
-                    const finalPrice = row[colMap['VALOR']] || 0;
+                    const finalPrice = payerRow[colMap['VALOR']] || 0;
                     const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
-                    const seller = allSellers.find(s => s.name.toLowerCase() === row[colMap['VENDEDOR']]?.toLowerCase());
+                    const seller = allSellers.find(s => s.name.toLowerCase() === payerRow[colMap['VENDEDOR']]?.toLowerCase());
 
                     const reservation: Reservation = {
-                        id: `R-${trip.id}-${passenger.id}`,
+                        id: `R-${trip.id}-${payer.id}`,
                         tripId: trip.id,
-                        passenger: passengerName,
-                        passengerIds: [passenger.id], // Start with self
-                        paxCount: row[colMap['CANTIDAD']] || 1,
+                        passenger: payer.fullName,
+                        passengerIds: [payer.id], // Start with the payer
+                        paxCount: payerRow[colMap['CANTIDAD']] || 1,
                         status: 'Confirmado',
                         paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
                         finalPrice: finalPrice,
                         installments: { count: installments.length || 1, details: installments.length > 0 ? installments : [{ amount: finalPrice, isPaid: false }] },
                         assignedSeats: [], assignedCabins: [],
                         sellerId: seller?.id || 'unassigned',
-                        boardingPointId: boardingPointId
+                        boardingPointId: payer.boardingPointId,
                     };
-                    reservationMap.set(passenger.dni, reservation);
-                    if (familyName && !familyToPayerMap.has(familyName)) {
-                        familyToPayerMap.set(familyName, passenger.dni);
-                    }
-                }
-            }
+                    
+                    // Assign non-payers to this reservation if they share the same boarding point
+                    const assignedNonPayers: Passenger[] = [];
+                    nonPayers.forEach(nonPayer => {
+                        if (nonPayer.boardingPointId === payer.boardingPointId && reservation.passengerIds.length < reservation.paxCount) {
+                            reservation.passengerIds.push(nonPayer.id);
+                            assignedNonPayers.push(nonPayer);
+                        }
+                    });
 
-            // Second pass: assign non-payers to their family's payer
-            for (const p of updatedPassengersMap.values()) {
-                if (reservationMap.has(p.dni)) continue; // This is a payer, skip
-                
-                const familyPayerDNI = p.family ? familyToPayerMap.get(p.family) : undefined;
-                if (familyPayerDNI) {
-                    const payerReservation = reservationMap.get(familyPayerDNI);
-                    if (payerReservation && !payerReservation.passengerIds.includes(p.id)) {
-                        payerReservation.passengerIds.push(p.id);
-                    }
-                }
-            }
+                    // Remove assigned non-payers so they aren't assigned again
+                    nonPayers = nonPayers.filter(np => !assignedNonPayers.some(anp => anp.id === np.id));
+                    
+                    reservationMap.set(payer.dni, reservation);
+                });
+            });
             
             const newReservationsList = Array.from(reservationMap.values());
             resultCounts.newReservations = newReservationsList.length;
@@ -394,3 +401,5 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
         </Dialog>
     )
 }
+
+    
