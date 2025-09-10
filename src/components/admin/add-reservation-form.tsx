@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,8 +48,8 @@ const defaultReservation = {
 
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints, roomTypes }: AddReservationFormProps) {
   const [formData, setFormData] = useState(defaultReservation);
-  const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const [mainPassengerSearch, setMainPassengerSearch] = useState("");
+  const [isAddingNewPassenger, setIsAddingNewPassenger] = useState(false);
   const [prefillData, setPrefillData] = useState<{name: string, dni: string} | null>(null);
   const { toast } = useToast();
 
@@ -198,8 +197,8 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto pr-2">
-            <div className="py-4 space-y-4">
+        <ScrollArea className="flex-grow pr-6 -mr-6">
+            <div className="space-y-4">
                 <div className="space-y-2 relative">
                     <Label htmlFor="passenger-search">Pasajero Principal</Label>
                     <Input
@@ -208,6 +207,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                         onChange={e => {
                             setMainPassengerSearch(e.target.value);
                             if(isAddingNewPassenger) setIsAddingNewPassenger(false);
+                            if (formData.mainPassengerId) setFormData(prev => ({...prev, mainPassengerId: ""}))
                         }}
                         placeholder="Buscar por nombre o DNI..."
                         disabled={!!selectedMainPassenger}
@@ -241,17 +241,19 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                 </div>
 
                 {showNewPassengerForm && prefillData && (
-                    <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
-                         <PassengerForm
-                            isOpen={isAddingNewPassenger}
-                            onOpenChange={setIsAddingNewPassenger}
-                            passenger={null}
-                            onSave={handleNewPassengerSaved}
-                            allPassengers={passengers}
-                            prefilledData={prefillData}
-                            boardingPoints={boardingPoints}
-                        />
-                    </Dialog>
+                    <div className="p-4 border rounded-lg bg-muted/50">
+                         <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
+                           <PassengerForm
+                              isOpen={isAddingNewPassenger}
+                              onOpenChange={setIsAddingNewPassenger}
+                              passenger={null}
+                              onSave={handleNewPassengerSaved}
+                              allPassengers={passengers}
+                              prefilledData={prefillData}
+                              boardingPoints={boardingPoints}
+                          />
+                         </Dialog>
+                    </div>
                 )}
                 
                 {selectedMainPassenger && (
@@ -271,7 +273,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                             <div className="flex justify-between items-center">
                                 <Label>Integrantes del Viaje ({formData.selectedPassengerIds.length}/{formData.paxCount})</Label>
                                 <Dialog>
-                                    <DialogTrigger asChild>
+                                     <DialogTrigger asChild>
                                         <Button variant="outline" size="sm">
                                             <PlusCircle className="mr-2 h-4 w-4" />
                                             Añadir Nuevo
@@ -355,7 +357,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     </>
                 )}
             </div>
-        </div>
+        </ScrollArea>
         
         <DialogFooter className="mt-auto pt-4 border-t shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
