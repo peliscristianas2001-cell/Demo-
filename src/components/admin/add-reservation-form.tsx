@@ -8,7 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,7 +43,8 @@ const defaultReservation = {
     paymentStatus: "Pendiente" as PaymentStatus,
     selectedPassengerIds: [] as string[],
     boardingPointId: undefined,
-    roomTypeId: undefined
+    roomTypeId: undefined,
+    finalPrice: 0,
 }
 
 export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passengers, allReservations, onPassengerCreated, sellers, boardingPoints, roomTypes }: AddReservationFormProps) {
@@ -354,5 +356,3 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     </Dialog>
   )
 }
-
-    
