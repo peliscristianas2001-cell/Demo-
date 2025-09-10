@@ -157,6 +157,7 @@ export default function PassengersPage() {
         passenger={selectedPassenger}
         prefilledFamily={prefilledFamily}
         allPassengers={passengers}
+        boardingPoints={boardingPoints}
     />
     <div className="space-y-6">
       <div className="flex justify-between items-center">

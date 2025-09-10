@@ -124,6 +124,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
     }));
     setMainPassengerSearch(passenger.fullName);
     setIsAddingNewPassenger(false);
+    setPrefillData(null);
   }
 
   const handleMemberSelect = (passengerId: string, checked: boolean) => {
@@ -152,6 +153,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
       onPassengerCreated(newPassenger);
       handleMainPassengerSelect(newPassenger);
       setIsAddingNewPassenger(false);
+      setPrefillData(null);
   }
 
   const handleSubmit = () => {
@@ -223,7 +225,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                             ))}
                         </div>
                     )}
-                    {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
+                     {mainPassengerSearch && !selectedMainPassenger && searchResults.length === 0 && !isAddingNewPassenger && (
                         <div className="text-center p-4 border-dashed border-2 rounded-md">
                             <p className="text-sm text-muted-foreground mb-2">No se encontró al pasajero.</p>
                             <Button onClick={handleTriggerNewPassengerForm}>
@@ -234,7 +236,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                     )}
                 </div>
 
-                {isAddingNewPassenger && !selectedMainPassenger && (
+                {isAddingNewPassenger && !selectedMainPassenger && prefillData && (
                     <Dialog open={isAddingNewPassenger} onOpenChange={setIsAddingNewPassenger}>
                          <PassengerForm
                             isOpen={isAddingNewPassenger}
@@ -243,6 +245,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                             onSave={handleNewPassengerSaved}
                             allPassengers={passengers}
                             prefilledData={prefillData}
+                            boardingPoints={boardingPoints}
                         />
                     </Dialog>
                 )}
@@ -281,6 +284,7 @@ export function AddReservationForm({ isOpen, onOpenChange, onSave, tour, passeng
                                         passenger={null} 
                                         allPassengers={passengers}
                                         prefilledFamily={selectedMainPassenger.family}
+                                        boardingPoints={boardingPoints}
                                     />
                                 </Dialog>
                             </div>

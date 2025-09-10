@@ -17,7 +17,6 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useToast } from "@/hooks/use-toast"
 import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { mockBoardingPoints } from "@/lib/mock-data"
 import { ScrollArea } from "../ui/scroll-area"
 
 interface PassengerFormProps {
@@ -28,6 +27,7 @@ interface PassengerFormProps {
   prefilledFamily?: string
   prefilledData?: { name: string; dni: string } | null;
   allPassengers?: Passenger[]
+  boardingPoints?: BoardingPoint[];
 }
 
 const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
@@ -39,9 +39,8 @@ const defaultPassenger: Omit<Passenger, 'id' | 'tierId' | 'nationality'> = {
     boardingPointId: undefined
 }
 
-export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily, prefilledData, allPassengers = [] }: PassengerFormProps) {
+export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefilledFamily, prefilledData, allPassengers = [], boardingPoints = [] }: PassengerFormProps) {
   const [formData, setFormData] = useState(defaultPassenger);
-  const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
   const { toast } = useToast();
 
   const existingFamilies = useMemo(() => {
@@ -51,9 +50,6 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
 
 
   useEffect(() => {
-    const storedPoints = localStorage.getItem("ytl_boarding_points");
-    setBoardingPoints(storedPoints ? JSON.parse(storedPoints) : mockBoardingPoints);
-
     if (isOpen) {
         if (passenger) {
             setFormData({
@@ -169,5 +165,3 @@ export function PassengerForm({ isOpen, onOpenChange, onSave, passenger, prefill
     </Dialog>
   )
 }
-
-    
