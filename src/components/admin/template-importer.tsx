@@ -112,7 +112,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
             let allTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
             let allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
             let allReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
-            let allBoardingPoints: BoardingPoint[] = JSON.parse(localStorage.getItem("ytl_boarding_points") || JSON.stringify(mockBoardingPoints));
+            let allBoardingPoints: BoardingPoint[] = JSON.parse(localStorage.getItem("ytl_boarding_points") || "[]");
             const allSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
             
             const fileName = file.name.replace(/\.[^/.]+$/, "");
@@ -222,27 +222,25 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     membersInGroup.push(passenger);
                 });
 
-                const payers = membersInGroup.filter(m => {
+                let nonPayers = membersInGroup.filter(m => {
                     const row = groupRows.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === m.dni);
-                    return row && (row[colMap['CANTIDAD']] || row[colMap['VALOR']]);
+                    return !row || (!row[colMap['CANTIDAD']] && !row[colMap['VALOR']]);
                 });
-                
-                let nonPayers = membersInGroup.filter(m => !payers.some(p => p.id === m.id));
 
-                payers.forEach(payer => {
+                familyPayers.forEach(payerRow => {
+                    const payerDNI = String(payerRow[colMap['DNI']] || '').replace(/\D/g, '');
+                    const payer = membersInGroup.find(m => m.dni === payerDNI);
+                    if (!payer) return;
+
                     const reservationMembers = [payer];
-                    const payerRow = groupRows.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === payer.dni);
-                    if (!payerRow) return;
-
                     const paxCount = payerRow[colMap['CANTIDAD']] || 1;
                     
-                    // Temporary array of non-payers to assign from
+                    // Assign non-payers who share the same boarding point
                     const availableNonPayers = [...nonPayers];
                     for (let i = availableNonPayers.length - 1; i >= 0; i--) {
                         const nonPayer = availableNonPayers[i];
                         if (reservationMembers.length < paxCount && nonPayer.boardingPointId === payer.boardingPointId) {
                             reservationMembers.push(nonPayer);
-                            // Remove assigned non-payer from the main non-payer pool for this family
                             nonPayers = nonPayers.filter(np => np.id !== nonPayer.id);
                         }
                     }
@@ -254,6 +252,13 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                     const finalPrice = payerRow[colMap['VALOR']] || 0;
                     const paidAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
                     const seller = allSellers.find(s => s.name.toLowerCase() === (payerRow[colMap['VENDEDOR']] || '').toLowerCase());
+                    
+                    const releasedPassengerIds = reservationMembers
+                        .filter(member => {
+                            const memberRow = groupRows.find(r => String(r[colMap['DNI']] || '').replace(/\D/g, '') === member.dni);
+                            return memberRow && String(memberRow[colMap['LIBERADO']]).trim().toUpperCase() === 'SI';
+                        })
+                        .map(member => member.id);
 
                     const reservation: Reservation = {
                         id: generateNextReservationId(),
@@ -261,6 +266,7 @@ export function TemplateImporter({ isOpen, onOpenChange }: TemplateImporterProps
                         passenger: payer.fullName,
                         passengerIds: reservationMembers.map(m => m.id),
                         paxCount: paxCount,
+                        releasedPassengerIds: releasedPassengerIds,
                         status: 'Confirmado',
                         paymentStatus: finalPrice > 0 ? (paidAmount >= finalPrice ? "Pagado" : (paidAmount > 0 ? "Parcial" : "Pendiente")) : "Pendiente",
                         finalPrice: finalPrice,

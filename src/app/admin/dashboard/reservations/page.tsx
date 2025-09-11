@@ -36,7 +36,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SearchableSelect } from "@/components/searchable-select"
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown, BadgePercent } from "lucide-react"
 import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions, mockRoomTypes } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit, RoomType } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
@@ -459,6 +459,29 @@ export default function ReservationsPage() {
                         ))}
                     </div>
                 </div>
+                <div className="space-y-3 pt-2">
+                    <Label>Pasajeros Liberados</Label>
+                    <div className="space-y-2 p-2 border rounded-md max-h-40 overflow-y-auto">
+                        {reservationPassengers.map(p => (
+                            <div key={p.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`release-${p.id}`}
+                                    checked={(reservation.releasedPassengerIds || []).includes(p.id)}
+                                    onCheckedChange={(checked) => {
+                                        setEditingReservation(prev => {
+                                            const currentReleased = prev.reservation?.releasedPassengerIds || [];
+                                            const newReleased = checked 
+                                                ? [...currentReleased, p.id]
+                                                : currentReleased.filter(id => id !== p.id);
+                                            return {...prev, reservation: {...prev.reservation!, releasedPassengerIds: newReleased}}
+                                        });
+                                    }}
+                                />
+                                <Label htmlFor={`release-${p.id}`} className="font-normal">{p.fullName}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
               </CardContent>
           </Card>
         </div>
@@ -704,6 +727,7 @@ export default function ReservationsPage() {
                                                             </CardHeader>
                                                             <CardContent className="space-y-3 text-sm">
                                                                 <InfoRow label="Seguro" value={(res.insuredPassengerIds?.length || 0) > 0 ? `Sí (${res.insuredPassengerIds?.length})` : 'No'} icon={<ShieldCheck className="w-4 h-4 text-green-600"/>}/>
+                                                                <InfoRow label="Liberados" value={(res.releasedPassengerIds?.length || 0) > 0 ? `Sí (${res.releasedPassengerIds?.length})` : 'No'} icon={<BadgePercent className="w-4 h-4 text-blue-600"/>}/>
                                                                 <InfoRow label="Pensión" value={pension?.name || 'No incluida'} icon={<Utensils className="w-4 h-4 text-orange-600"/>}/>
                                                                 <InfoRow label="Tipo de Hab." value={roomType?.name} icon={<BedDouble className="w-4 h-4 text-blue-600"/>}/>
                                                             </CardContent>
@@ -754,3 +778,4 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     
 
     
+
