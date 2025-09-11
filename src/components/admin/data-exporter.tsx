@@ -31,8 +31,7 @@ import { Download, Copy, Users, GripVertical, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from "react-beautiful-dnd";
-
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 
 interface DataExporterProps {
   isOpen: boolean;
@@ -58,40 +57,6 @@ const calculateAge = (dob?: Date | string) => {
     age--;
   }
   return String(age);
-};
-
-
-// Extracted SortableList component to ensure DragDropContext is not rendered when the list is empty.
-const SortableList = ({ items, onDragEnd, droppableId }: { items: BoardingPoint[], onDragEnd: OnDragEndResponder, droppableId: string }) => {
-  return (
-    <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId={droppableId}>
-            {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                    <ScrollArea className="h-64 border rounded-md bg-background">
-                        {items.map((bp, index) => (
-                            <Draggable key={bp.id} draggableId={bp.id} index={index}>
-                                {(provided) => (
-                                    <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className="p-2 flex items-center gap-2 border-b bg-card hover:bg-muted"
-                                    >
-                                        <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                                        <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
-                                        <span className="font-medium">{bp.name}</span>
-                                    </div>
-                                )}
-                            </Draggable>
-                        ))}
-                        {provided.placeholder}
-                    </ScrollArea>
-                </div>
-            )}
-        </Droppable>
-    </DragDropContext>
-  );
 };
 
 
@@ -149,18 +114,20 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
     return boardingPoints.filter(bp => boardingPointIdsInSelectedTrips.has(bp.id));
   }, [selectedTripIds, reservations, boardingPoints]);
   
-
-  const onDragEnd: OnDragEndResponder = (result) => {
-    if (!result.destination) return;
-    const items = Array.from(customBoardingOrder);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    setCustomBoardingOrder(items);
-  };
-  
   const handleOpenSortModal = () => {
     setCustomBoardingOrder(relevantBoardingPoints);
     setIsSortModalOpen(true);
+  }
+
+  const handleReorder = (id: string) => {
+    const item = customBoardingOrder.find(bp => bp.id === id);
+    if (!item) return;
+
+    setCustomBoardingOrder(prev => {
+        const newOrder = prev.filter(bp => bp.id !== id);
+        newOrder.unshift(item);
+        return newOrder;
+    });
   }
 
   const exportableData = useMemo(() => {
@@ -255,22 +222,35 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
         <DialogHeader>
             <DialogTitle>Orden Personalizado de Embarques</DialogTitle>
             <DialogDescription>
-                Arrastra y suelta los puntos de embarque para definir el orden de la lista de pasajeros.
+               Selecciona un punto de embarque para moverlo al principio de la lista. Repite hasta lograr el orden deseado.
             </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-             {isSortModalOpen && customBoardingOrder.length > 0 ? (
-                <SortableList
-                    items={customBoardingOrder}
-                    onDragEnd={onDragEnd}
-                    droppableId="boardingPoints"
-                />
-            ) : (
-                <div className="text-center text-muted-foreground p-8 border rounded-md">
-                    Selecciona al menos un viaje con pasajeros para poder ordenar los puntos de embarque.
+        <Command className="rounded-lg border shadow-md mt-4">
+          <CommandInput placeholder="Buscar punto de embarque..." />
+          <CommandList>
+            <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+            <CommandGroup>
+              {customBoardingOrder.length > 0 ? (
+                customBoardingOrder.map((bp) => (
+                  <CommandItem
+                    key={bp.id}
+                    value={bp.name}
+                    onSelect={() => handleReorder(bp.id)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                    <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
+                    <span className="font-medium">{bp.name}</span>
+                  </CommandItem>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground p-8">
+                  Selecciona un viaje con pasajeros para poder ordenar los puntos de embarque.
                 </div>
-            )}
-        </div>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
         <DialogFooter>
              <Button variant="outline" onClick={() => setIsSortModalOpen(false)}>Cerrar</Button>
         </DialogFooter>
