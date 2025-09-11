@@ -2,6 +2,9 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
@@ -31,7 +34,6 @@ import { Download, Copy, Users, GripVertical, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 
 interface DataExporterProps {
   isOpen: boolean;
@@ -60,6 +62,26 @@ const calculateAge = (dob?: Date | string) => {
 };
 
 
+// Sortable Item Component for dnd-kit
+function SortableItem({ id, name }: { id: string; name: string }) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} className="flex items-center gap-2 p-2 bg-background rounded-md border">
+            <button {...listeners} className="cursor-grab p-1">
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <span className="font-mono text-xs text-muted-foreground">[{id}]</span>
+            <span className="font-medium">{name}</span>
+        </div>
+    );
+}
+
 export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const { toast } = useToast();
   const [tours, setTours] = useState<Tour[]>([]);
@@ -74,6 +96,14 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const [boardingSortOrder, setBoardingSortOrder] = useState<"asc" | "desc" | "custom">("asc");
   const [customBoardingOrder, setCustomBoardingOrder] = useState<BoardingPoint[]>([]);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
 
   useEffect(() => {
     if (isOpen) {
@@ -119,16 +149,19 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
     setIsSortModalOpen(true);
   }
 
-  const handleReorder = (id: string) => {
-    const item = customBoardingOrder.find(bp => bp.id === id);
-    if (!item) return;
-
-    setCustomBoardingOrder(prev => {
-        const newOrder = prev.filter(bp => bp.id !== id);
-        newOrder.unshift(item);
-        return newOrder;
-    });
+  function handleDragEnd(event: DragEndEvent) {
+    const {active, over} = event;
+    
+    if (active.id !== over?.id) {
+      setCustomBoardingOrder((items) => {
+        const oldIndex = items.findIndex(item => item.id === active.id);
+        const newIndex = items.findIndex(item => item.id === over?.id);
+        
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   }
+
 
   const exportableData = useMemo(() => {
     const tripsToExport = tours.filter((t) => selectedTripIds.includes(t.id));
@@ -175,7 +208,9 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
           passengerData.sort((a, b) => {
               const orderA = a.boardingPointId ? customOrderMap.get(a.boardingPointId) : Infinity;
               const orderB = b.boardingPointId ? customOrderMap.get(b.boardingPointId) : Infinity;
-              if (orderA === undefined || orderB === undefined) return 0;
+              if (orderA === undefined && orderB === undefined) return 0;
+              if (orderA === undefined) return 1;
+              if (orderB === undefined) return -1;
               return orderA - orderB;
           });
       }
@@ -222,35 +257,35 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
         <DialogHeader>
             <DialogTitle>Orden Personalizado de Embarques</DialogTitle>
             <DialogDescription>
-               Selecciona un punto de embarque para moverlo al principio de la lista. Repite hasta lograr el orden deseado.
+               Arrastra y suelta los puntos de embarque para establecer el orden de la lista de exportación.
             </DialogDescription>
         </DialogHeader>
-        <Command className="rounded-lg border shadow-md mt-4">
-          <CommandInput placeholder="Buscar punto de embarque..." />
-          <CommandList>
-            <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-            <CommandGroup>
-              {customBoardingOrder.length > 0 ? (
-                customBoardingOrder.map((bp) => (
-                  <CommandItem
-                    key={bp.id}
-                    value={bp.name}
-                    onSelect={() => handleReorder(bp.id)}
-                    className="flex items-center gap-2 cursor-pointer"
+        <div className="py-4">
+          <ScrollArea className="h-96 pr-4">
+             {customBoardingOrder.length > 0 ? (
+                  <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
                   >
-                    <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                    <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
-                    <span className="font-medium">{bp.name}</span>
-                  </CommandItem>
-                ))
+                      <SortableContext 
+                          items={customBoardingOrder.map(item => item.id)}
+                          strategy={verticalListSortingStrategy}
+                      >
+                         <div className="space-y-2">
+                           {customBoardingOrder.map(bp => (
+                              <SortableItem key={bp.id} id={bp.id} name={bp.name}/>
+                           ))}
+                         </div>
+                      </SortableContext>
+                  </DndContext>
               ) : (
                 <div className="text-center text-muted-foreground p-8">
                   Selecciona un viaje con pasajeros para poder ordenar los puntos de embarque.
                 </div>
               )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+          </ScrollArea>
+        </div>
         <DialogFooter>
              <Button variant="outline" onClick={() => setIsSortModalOpen(false)}>Cerrar</Button>
         </DialogFooter>
