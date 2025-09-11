@@ -31,7 +31,7 @@ import { Download, Copy, Users, GripVertical, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable, OnDragEndResponder } from "react-beautiful-dnd";
 
 
 interface DataExporterProps {
@@ -59,6 +59,41 @@ const calculateAge = (dob?: Date | string) => {
   }
   return String(age);
 };
+
+
+// Extracted SortableList component to ensure DragDropContext is not rendered when the list is empty.
+const SortableList = ({ items, onDragEnd, droppableId }: { items: BoardingPoint[], onDragEnd: OnDragEndResponder, droppableId: string }) => {
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId={droppableId}>
+            {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                    <ScrollArea className="h-64 border rounded-md bg-background">
+                        {items.map((bp, index) => (
+                            <Draggable key={bp.id} draggableId={bp.id} index={index}>
+                                {(provided) => (
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        className="p-2 flex items-center gap-2 border-b bg-card hover:bg-muted"
+                                    >
+                                        <GripVertical className="h-5 w-5 text-muted-foreground"/>
+                                        <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
+                                        <span className="font-medium">{bp.name}</span>
+                                    </div>
+                                )}
+                            </Draggable>
+                        ))}
+                        {provided.placeholder}
+                    </ScrollArea>
+                </div>
+            )}
+        </Droppable>
+    </DragDropContext>
+  );
+};
+
 
 export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   const { toast } = useToast();
@@ -115,7 +150,7 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
   }, [selectedTripIds, reservations, boardingPoints]);
   
 
-  const onDragEnd = (result: any) => {
+  const onDragEnd: OnDragEndResponder = (result) => {
     if (!result.destination) return;
     const items = Array.from(customBoardingOrder);
     const [reorderedItem] = items.splice(result.source.index, 1);
@@ -224,39 +259,17 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
             </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-            {relevantBoardingPoints.length > 0 ? (
-                <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="boardingPoints">
-                    {(provided, snapshot) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                            <ScrollArea className="h-64 border rounded-md bg-background">
-                                {customBoardingOrder.map((bp, index) => (
-                                    <Draggable key={bp.id} draggableId={bp.id} index={index}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                className="p-2 flex items-center gap-2 border-b bg-card hover:bg-muted"
-                                            >
-                                                <GripVertical className="h-5 w-5 text-muted-foreground"/>
-                                                <span className="font-mono text-xs text-muted-foreground">[{bp.id}]</span>
-                                                <span className="font-medium">{bp.name}</span>
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-                            </ScrollArea>
-                        </div>
-                    )}
-                    </Droppable>
-                </DragDropContext>
-             ) : (
+             {isSortModalOpen && customBoardingOrder.length > 0 ? (
+                <SortableList
+                    items={customBoardingOrder}
+                    onDragEnd={onDragEnd}
+                    droppableId="boardingPoints"
+                />
+            ) : (
                 <div className="text-center text-muted-foreground p-8 border rounded-md">
                     Selecciona al menos un viaje con pasajeros para poder ordenar los puntos de embarque.
                 </div>
-             )}
+            )}
         </div>
         <DialogFooter>
              <Button variant="outline" onClick={() => setIsSortModalOpen(false)}>Cerrar</Button>
@@ -299,8 +312,8 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
                <div className="space-y-2">
                 <Label className="font-semibold">Ordenar embarques por:</Label>
                  <RadioGroup value={boardingSortOrder} onValueChange={(v) => setBoardingSortOrder(v as any)}>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="asc" id="sort-asc"/><Label htmlFor="sort-asc">Abecedario ascendente</Label></div>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="desc" id="sort-desc"/><Label htmlFor="sort-desc">Abecedario descendente</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="asc" id="sort-asc"/><Label htmlFor="sort-asc">Abecedario ascendente (ID)</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="desc" id="sort-desc"/><Label htmlFor="sort-desc">Abecedario descendente (ID)</Label></div>
                     <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id="sort-custom"/><Label htmlFor="sort-custom">Personalizado</Label></div>
                  </RadioGroup>
                   {boardingSortOrder === 'custom' && (
