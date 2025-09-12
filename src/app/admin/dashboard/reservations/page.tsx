@@ -788,13 +788,3 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     </div>
 )
     
-
-
-
-
-    
-
-    
-
-
-
