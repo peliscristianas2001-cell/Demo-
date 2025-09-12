@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useToast } from "@/hooks/use-toast"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 
 export default function TicketsAdminPage() {
@@ -41,6 +43,7 @@ export default function TicketsAdminPage() {
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("all");
   const [isClient, setIsClient] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const ticketRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
   useEffect(() => {
@@ -200,6 +203,13 @@ export default function TicketsAdminPage() {
 
   return (
     <div className="space-y-6">
+       <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.tickets.title}
+        description={guides.tickets.description}
+        content={guides.tickets.content}
+      />
       <div className="flex justify-between items-center mb-6">
         <div>
             <h2 className="text-2xl font-bold">Gestión de Tickets de Viaje</h2>
@@ -207,7 +217,7 @@ export default function TicketsAdminPage() {
             Visualiza, descarga e imprime los tickets para los pasajeros con reservas confirmadas.
             </p>
         </div>
-         <Button variant="outline" size="sm">
+         <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
             <HelpCircle className="mr-2 h-4 w-4" />
             Guía de la Sección
         </Button>

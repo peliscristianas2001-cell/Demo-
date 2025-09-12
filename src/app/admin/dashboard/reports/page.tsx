@@ -33,7 +33,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle, Pencil, Bus, Ship } from "lucide-react"
+import { BarChart3, TrendingUp, DollarSign, Plane, Users, PlusCircle, Trash2, Package, Banknote, TrendingDown, HandCoins, MountainSnow, Wallet, BookMarked, AlertCircle, Pencil, Bus, Ship, HelpCircle } from "lucide-react"
 import { mockTours, mockReservations, mockSellers } from "@/lib/mock-data"
 import type { Tour, Reservation, Seller, CustomExpense, ExternalCommission, ExcursionIncome, HistoryItem } from "@/lib/types"
 import { Input } from "@/components/ui/input"
@@ -41,6 +41,8 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { HistoryViewer } from "@/components/admin/history-viewer"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 type CommissionDetail = {
     sellerId: string;
@@ -74,6 +76,7 @@ export default function ReportsPage() {
     const [newItem, setNewItem] = useState({ description: "", amount: "" });
     const { toast } = useToast();
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
     const [hasDueItems, setHasDueItems] = useState(false);
     const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
 
@@ -324,6 +327,13 @@ export default function ReportsPage() {
 
     return (
         <>
+         <GuideDialog
+            isOpen={isGuideOpen}
+            onOpenChange={setIsGuideOpen}
+            title={guides.reports.title}
+            description={guides.reports.description}
+            content={guides.reports.content}
+        />
          {/* -- MODALS -- */}
         <Dialog open={activeModal === 'commissionsPaid'} onOpenChange={(isOpen) => !isOpen && setActiveModal(null)}>
              <DialogContent>
@@ -432,11 +442,17 @@ export default function ReportsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div><h2 className="text-2xl font-bold">Reportes Financieros</h2><p className="text-muted-foreground">Analiza los ingresos, gastos y ganancias de cada viaje activo.</p></div>
-                 <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
-                    {hasDueItems && <AlertCircle className="mr-2 h-4 w-4 text-destructive" />}
-                    <BookMarked className="mr-2 h-4 w-4" />
-                    Historial de Reportes
-                </Button>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        Guía de la Sección
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
+                        {hasDueItems && <AlertCircle className="mr-2 h-4 w-4 text-destructive" />}
+                        <BookMarked className="mr-2 h-4 w-4" />
+                        Historial de Reportes
+                    </Button>
+                 </div>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                  <Button variant="outline" className="h-auto py-2" onClick={() => setActiveModal('expenses')}>
@@ -512,3 +528,4 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
     
 
     
+

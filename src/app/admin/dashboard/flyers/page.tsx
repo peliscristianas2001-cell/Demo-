@@ -9,10 +9,13 @@ import { Upload, Trash2, HelpCircle } from "lucide-react"
 import { mockTours } from "@/lib/mock-data"
 import { FlyerForm } from "@/components/admin/flyer-form"
 import type { Tour, Flyer } from "@/lib/types"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 export default function FlyersPage() {
   const [tours, setTours] = useState<Tour[]>(mockTours)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     const storedTours = localStorage.getItem("ytl_tours")
@@ -61,6 +64,13 @@ export default function FlyersPage() {
 
   return (
     <div className="space-y-6">
+      <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.flyers.title}
+        description={guides.flyers.description}
+        content={guides.flyers.content}
+      />
       <FlyerForm
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -75,7 +85,7 @@ export default function FlyersPage() {
           </p>
         </div>
          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

@@ -6,9 +6,12 @@ import { Calendar } from '@/components/admin/calendar';
 import { Button } from '@/components/ui/button';
 import { BookMarked, AlertCircle, HelpCircle } from 'lucide-react';
 import { HistoryViewer } from '@/components/admin/history-viewer';
+import { GuideDialog } from '@/components/admin/guide-dialog';
+import { guides } from '@/lib/guides';
 
 export default function CalendarPage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [hasDueItems, setHasDueItems] = useState(false); // This would be updated by a check
 
   return (
@@ -22,6 +25,13 @@ export default function CalendarPage() {
         downloadFolderNameKey="calendarDownloadFolder"
         setHasDueItems={setHasDueItems}
       />
+      <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.calendar.title}
+        description={guides.calendar.description}
+        content={guides.calendar.content}
+      />
       <div className="printable-area">
         <div className="no-print flex justify-between items-center mb-6">
           <div>
@@ -31,7 +41,7 @@ export default function CalendarPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

@@ -37,6 +37,8 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 const calculateAge = (dob: Date | string) => {
     if (!dob) return null;
@@ -58,6 +60,7 @@ export default function PassengersPage() {
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null)
   const [prefilledFamily, setPrefilledFamily] = useState<string | undefined>(undefined);
   const [isClient, setIsClient] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -151,6 +154,13 @@ export default function PassengersPage() {
 
   return (
     <>
+    <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.passengers.title}
+        description={guides.passengers.description}
+        content={guides.passengers.content}
+    />
     <PassengerForm 
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -169,7 +179,7 @@ export default function PassengersPage() {
             </p>
         </div>
          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

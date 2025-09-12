@@ -46,6 +46,8 @@ import { AddReservationForm } from "@/components/admin/add-reservation-form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 type ActiveTransportUnitInfo = {
   unitNumber: number;
@@ -94,6 +96,7 @@ export default function ReservationsPage() {
   const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig());
   const [editingReservation, setEditingReservation] = useState<EditReservationState>({ isOpen: false, reservation: null });
   const [addingReservation, setAddingReservation] = useState<AddReservationState>({ isOpen: false, tour: null });
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
 
   useEffect(() => {
@@ -548,6 +551,13 @@ export default function ReservationsPage() {
 
   return (
     <>
+    <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.reservations.title}
+        description={guides.reservations.description}
+        content={guides.reservations.content}
+    />
     {addingReservation.tour && (
          <AddReservationForm 
             isOpen={addingReservation.isOpen}
@@ -596,7 +606,7 @@ export default function ReservationsPage() {
             Visualiza las reservas, asigna asientos y gestiona los estados.
           </p>
         </div>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
           <HelpCircle className="mr-2 h-4 w-4" />
           Guía de la Sección
         </Button>
@@ -781,8 +791,10 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
 
 
 
+
     
 
     
+
 
 

@@ -38,6 +38,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 
 type GlobalTextType = 'observations' | 'cancellationPolicy' | null;
@@ -53,6 +55,7 @@ export default function TripsPage() {
   const [globalTextType, setGlobalTextType] = useState<GlobalTextType>(null);
   const [globalObservations, setGlobalObservations] = useState("");
   const [globalCancellationPolicy, setGlobalCancellationPolicy] = useState("");
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -185,6 +188,13 @@ export default function TripsPage() {
 
   return (
     <div className="space-y-6">
+      <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.trips.title}
+        description={guides.trips.description}
+        content={guides.trips.content}
+      />
       <Dialog open={!!globalTextType} onOpenChange={(open) => !open && setGlobalTextType(null)}>
         <DialogContent>
           <DialogHeader>
@@ -228,7 +238,7 @@ export default function TripsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

@@ -39,6 +39,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Switch } from "@/components/ui/switch"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 type FormData = Omit<Seller, 'id'>;
 
@@ -46,6 +48,7 @@ export default function SellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isCommissionSettingsOpen, setIsCommissionSettingsOpen] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', useFixedCommission: false, fixedCommissionRate: 0 });
@@ -161,6 +164,13 @@ export default function SellersPage() {
 
   return (
     <div className="space-y-6">
+       <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.sellers.title}
+        description={guides.sellers.description}
+        content={guides.sellers.content}
+      />
        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
             <DialogHeader>
@@ -239,7 +249,7 @@ export default function SellersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" size="sm">
+           <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

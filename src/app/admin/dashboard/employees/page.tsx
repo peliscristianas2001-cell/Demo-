@@ -39,6 +39,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 type FormData = Omit<Employee, 'id'>;
 
@@ -49,6 +51,7 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [formData, setFormData] = useState<FormData>({ name: '', dni: '', phone: '', password: '', fixedSalary: 0 });
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -174,6 +177,13 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
+       <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.employees.title}
+        description={guides.employees.description}
+        content={guides.employees.content}
+      />
        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
             <DialogHeader>
@@ -228,7 +238,7 @@ export default function EmployeesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-           <Button variant="outline" size="sm">
+           <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>

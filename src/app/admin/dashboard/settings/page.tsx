@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder, ShieldCheck, KeyRound } from "lucide-react"
+import { Upload, Settings as SettingsIcon, Bus, Trash2, Edit, PlusCircle, Ship, Plane, Save, MapPin, Loader2, Pin, Contact, Utensils, BedDouble, Folder, ShieldCheck, KeyRound, HelpCircle } from "lucide-react"
 import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType, Employee } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
@@ -25,6 +25,8 @@ import {
   DialogFooter,
   DialogTrigger
 } from "@/components/ui/dialog"
+import { GuideDialog } from "@/components/admin/guide-dialog";
+import { guides } from "@/lib/guides";
 
 const MapSelector = dynamic(
   () => import('@/components/admin/map-selector').then((mod) => mod.MapSelector),
@@ -126,6 +128,7 @@ export default function SettingsPage() {
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
     const [adminAuthEmail, setAdminAuthEmail] = useState('');
     const [adminUser, setAdminUser] = useState<Employee | null>(null);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     useEffect(() => {
         const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
@@ -391,6 +394,13 @@ export default function SettingsPage() {
     
   return (
     <Dialog>
+     <GuideDialog
+        isOpen={isGuideOpen}
+        onOpenChange={setIsGuideOpen}
+        title={guides.settings.title}
+        description={guides.settings.description}
+        content={guides.settings.content}
+      />
      <LayoutEditor
         isOpen={isEditorOpen}
         onOpenChange={setIsEditorOpen}
@@ -400,6 +410,19 @@ export default function SettingsPage() {
         layoutConfig={editingLayout?.key && editingLayout?.category ? layoutConfig[editingLayout.category][editingLayout.key] : undefined}
       />
     <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+            <h2 className="text-2xl font-bold">Configuración</h2>
+            <p className="text-muted-foreground">
+                Administra las configuraciones generales del sitio web.
+            </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setIsGuideOpen(true)}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
+        </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><SettingsIcon className="w-6 h-6"/> Configuración General</CardTitle>
