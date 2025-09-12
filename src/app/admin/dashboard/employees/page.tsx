@@ -43,6 +43,7 @@ import { GuideDialog } from "@/components/admin/guide-dialog";
 import { guides } from "@/lib/guides";
 
 type FormData = Omit<Employee, 'id'>;
+const CREATION_LIMIT = 5; // Max 5 new employees
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -91,6 +92,10 @@ export default function EmployeesPage() {
         setFormData({ name: '', dni: '', phone: '', password: '', fixedSalary: 0 });
     }
   }, [selectedEmployee, isFormOpen]);
+  
+  const isCreationLimitReached = useMemo(() => {
+    return employees.length >= mockEmployees.length + CREATION_LIMIT;
+  }, [employees]);
 
   const getRegistrationLink = (employeeId: string) => {
     if (isClient) {
@@ -109,6 +114,10 @@ export default function EmployeesPage() {
   }
 
   const handleCreate = () => {
+    if (isCreationLimitReached) {
+        toast({ title: "Límite alcanzado", description: `Solo puedes crear hasta ${CREATION_LIMIT} empleados nuevos en esta demo.`, variant: "destructive"});
+        return;
+    }
     setSelectedEmployee(null)
     setIsFormOpen(true)
   }
@@ -252,7 +261,7 @@ export default function EmployeesPage() {
                 </SelectContent>
             </Select>
            )}
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} disabled={isCreationLimitReached} title={isCreationLimitReached ? `Límite de ${CREATION_LIMIT} creaciones alcanzado en esta demo.` : ''}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Nuevo Empleado
             </Button>

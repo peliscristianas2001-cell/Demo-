@@ -5,6 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
+import { useDailyReset } from '@/hooks/use-daily-reset';
 
 interface AuthContextType {
   user: User | null;
@@ -16,6 +17,9 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true }
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Initialize daily reset hook
+  useDailyReset();
 
   useEffect(() => {
     // Only subscribe if auth object is valid

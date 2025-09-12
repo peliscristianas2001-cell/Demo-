@@ -43,6 +43,7 @@ import { guides } from "@/lib/guides";
 
 
 type GlobalTextType = 'observations' | 'cancellationPolicy' | null;
+const CREATION_LIMIT = 5; // Max 5 new trips
 
 export default function TripsPage() {
   const [tours, setTours] = useState<Tour[]>([])
@@ -110,6 +111,10 @@ export default function TripsPage() {
 
   const activeTours = useMemo(() => tours.filter(tour => new Date(tour.date) >= new Date()), [tours]);
   
+  const isCreationLimitReached = useMemo(() => {
+    return activeTours.length >= mockTours.length + CREATION_LIMIT;
+  }, [activeTours]);
+
   const getOccupiedCount = (tourId: string) => {
     return reservations
         .filter(r => r.tripId === tourId)
@@ -143,6 +148,10 @@ export default function TripsPage() {
   }, [activeTours]);
 
   const handleCreate = () => {
+    if (isCreationLimitReached) {
+        toast({ title: "Límite alcanzado", description: `Solo puedes crear hasta ${CREATION_LIMIT} viajes nuevos en esta demo.`, variant: "destructive"});
+        return;
+    }
     setSelectedTour(null)
     setIsFormOpen(true)
   }
@@ -248,7 +257,7 @@ export default function TripsPage() {
             <Button variant="outline" onClick={() => setGlobalTextType('cancellationPolicy')}>
               <ShieldAlert className="mr-2 h-4 w-4" /> Política
             </Button>
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} disabled={isCreationLimitReached} title={isCreationLimitReached ? `Límite de ${CREATION_LIMIT} creaciones alcanzado en esta demo.` : ''}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Crear Viaje
             </Button>

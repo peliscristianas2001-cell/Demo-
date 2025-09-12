@@ -43,6 +43,7 @@ import { GuideDialog } from "@/components/admin/guide-dialog";
 import { guides } from "@/lib/guides";
 
 type FormData = Omit<Seller, 'id'>;
+const CREATION_LIMIT = 5; // Max 5 new sellers
 
 export default function SellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
@@ -83,8 +84,16 @@ export default function SellersPage() {
         setFormData({ name: '', dni: '', phone: '', useFixedCommission: false, fixedCommissionRate: 0 });
     }
   }, [selectedSeller, isFormOpen]);
+  
+  const isCreationLimitReached = useMemo(() => {
+    return sellers.length >= mockSellers.length + CREATION_LIMIT;
+  }, [sellers]);
 
   const handleCreate = () => {
+    if (isCreationLimitReached) {
+        toast({ title: "Límite alcanzado", description: `Solo puedes crear hasta ${CREATION_LIMIT} vendedores nuevos en esta demo.`, variant: "destructive"});
+        return;
+    }
     setSelectedSeller(null)
     setIsFormOpen(true)
   }
@@ -257,7 +266,7 @@ export default function SellersPage() {
             <Settings className="mr-2 h-4 w-4" />
             Configurar Comisiones
           </Button>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} disabled={isCreationLimitReached} title={isCreationLimitReached ? `Límite de ${CREATION_LIMIT} creaciones alcanzado en esta demo.` : ''}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Nuevo Vendedor
           </Button>

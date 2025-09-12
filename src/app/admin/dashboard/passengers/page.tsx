@@ -51,6 +51,7 @@ const calculateAge = (dob: Date | string) => {
     }
     return age;
 }
+const CREATION_LIMIT = 10; // Max 10 new passengers
 
 export default function PassengersPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([])
@@ -86,6 +87,10 @@ export default function PassengersPage() {
     }
   }, [passengers, isClient]);
 
+  const isCreationLimitReached = useMemo(() => {
+    return passengers.length >= mockPassengers.length + CREATION_LIMIT;
+  }, [passengers]);
+
   const handleEdit = (passenger: Passenger) => {
     setSelectedPassenger(passenger)
     setPrefilledFamily(undefined);
@@ -93,12 +98,20 @@ export default function PassengersPage() {
   }
 
   const handleCreate = () => {
+    if (isCreationLimitReached) {
+        toast({ title: "Límite alcanzado", description: `Solo puedes crear hasta ${CREATION_LIMIT} pasajeros nuevos en esta demo.`, variant: "destructive"});
+        return;
+    }
     setSelectedPassenger(null)
     setPrefilledFamily(undefined);
     setIsFormOpen(true)
   }
 
   const handleCreateInFamily = (familyName: string) => {
+    if (isCreationLimitReached) {
+        toast({ title: "Límite alcanzado", description: `Solo puedes crear hasta ${CREATION_LIMIT} pasajeros nuevos en esta demo.`, variant: "destructive"});
+        return;
+    }
     setSelectedPassenger(null);
     setPrefilledFamily(familyName);
     setIsFormOpen(true);
@@ -183,7 +196,7 @@ export default function PassengersPage() {
               <HelpCircle className="mr-2 h-4 w-4" />
               Guía de la Sección
             </Button>
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} disabled={isCreationLimitReached} title={isCreationLimitReached ? `Límite de ${CREATION_LIMIT} creaciones alcanzado en esta demo.` : ''}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nuevo Pasajero
             </Button>
@@ -225,7 +238,7 @@ export default function PassengersPage() {
                              <div className="space-y-4">
                                 {family !== 'Sin familia asignada' && (
                                     <div className="flex justify-end">
-                                        <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)}>
+                                        <Button variant="outline" size="sm" onClick={() => handleCreateInFamily(family)} disabled={isCreationLimitReached} title={isCreationLimitReached ? `Límite de ${CREATION_LIMIT} creaciones alcanzado en esta demo.` : ''}>
                                             <UserPlus className="mr-2 h-4 w-4"/>
                                             Añadir Integrante
                                         </Button>
