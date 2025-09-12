@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
 import { Chatbot } from '@/components/chatbot';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -20,8 +21,8 @@ const lilitaOne = Lilita_One({
 });
 
 export const metadata: Metadata = {
-  title: 'YO TE LLEVO',
-  description: 'Tu próxima aventura te espera',
+  title: 'Demo App',
+  description: 'App Prototyper Demo',
 };
 
 export default function RootLayout({
@@ -32,11 +33,18 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${ptSans.variable} ${lilitaOne.variable} font-body antialiased`}>
-        <AuthProvider>
-          {children}
-          <Chatbot />
-          <Toaster />
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            {children}
+            <Chatbot />
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

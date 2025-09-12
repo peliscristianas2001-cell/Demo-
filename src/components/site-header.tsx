@@ -6,11 +6,12 @@ import React from "react"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut, Settings } from "lucide-react"
+import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut, Settings, Sun, Moon } from "lucide-react"
 import { useAuth } from "./auth/auth-provider"
 import { auth } from "@/lib/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,8 +19,49 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+
+function ThemeToggle() {
+    const { setTheme } = useTheme()
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>Claro</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>Oscuro</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>Sistema</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
+function LanguageToggle() {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                 <Button variant="ghost" size="icon">
+                    <div className="w-6 h-6 flex items-center justify-center font-bold text-sm">ES</div>
+                 </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem>Español</DropdownMenuItem>
+                <DropdownMenuItem>English</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
 
 export function SiteHeader() {
   const { user } = useAuth();
@@ -107,47 +149,50 @@ export function SiteHeader() {
               </div>
             </SheetContent>
           </Sheet>
-           <div className="hidden md:flex items-center gap-2">
-            {user ? (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Usuario'} />
-                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                            </Avatar>
+            <div className="hidden md:flex items-center gap-2">
+                <ThemeToggle />
+                <LanguageToggle />
+                <div className="w-px h-6 bg-border mx-2" />
+                {user ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Usuario'} />
+                                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                </Avatar>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                            <DropdownMenuSeparator/>
+                             <DropdownMenuItem asChild>
+                                <Link href="/profile"><Settings className="mr-2"/>Mi Perfil</Link>
+                             </DropdownMenuItem>
+                            <DropdownMenuItem>Mis Viajes</DropdownMenuItem>
+                            <DropdownMenuSeparator/>
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                                <LogOut className="mr-2"/>
+                                Cerrar Sesión
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <>
+                        <Button asChild variant="ghost">
+                            <Link href="/login">
+                            <LogInIcon className="w-4 h-4 mr-2" />
+                            Iniciar Sesión
+                            </Link>
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
-                        <DropdownMenuSeparator/>
-                         <DropdownMenuItem asChild>
-                            <Link href="/profile"><Settings className="mr-2"/>Mi Perfil</Link>
-                         </DropdownMenuItem>
-                        <DropdownMenuItem>Mis Viajes</DropdownMenuItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                            <LogOut className="mr-2"/>
-                            Cerrar Sesión
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ) : (
-                <>
-                    <Button asChild variant="ghost">
-                        <Link href="/login">
-                        <LogInIcon className="w-4 h-4 mr-2" />
-                        Iniciar Sesión
-                        </Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/login?mode=register">
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Registro
-                        </Link>
-                    </Button>
-                </>
-            )}
+                        <Button asChild>
+                            <Link href="/login?mode=register">
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Registro
+                            </Link>
+                        </Button>
+                    </>
+                )}
            </div>
         </div>
       </div>

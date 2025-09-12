@@ -107,7 +107,7 @@ export default function Home() {
               Tu Próxima Aventura Comienza Aquí
             </h1>
             <p className="max-w-3xl mx-auto mt-4 text-lg md:text-xl text-white/90 drop-shadow-lg animate-fade-in-down " style={{ animationDelay: '0.2s' }}>
-              Explora los destinos más increíbles. Encontrá tu viaje soñado con YO TE LLEVO.
+              Explora destinos increíbles. Encuentra tu viaje soñado con nuestra agencia de demostración.
             </p>
             <div className="max-w-xl mx-auto mt-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="flex flex-col gap-4 p-4 rounded-2xl shadow-2xl md:flex-row bg-background/80 backdrop-blur-lg border border-white/20">
@@ -131,7 +131,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary/30">
+        <section className="w-full py-16 md:py-24 lg:py-32 bg-muted/50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -140,7 +140,7 @@ export default function Home() {
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tighter sm:text-5xl font-headline text-primary">Viajes Destacados</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Descubrí nuestras ofertas más populares y preparate para una experiencia inolvidable.
+                  Descubrí nuestras ofertas más populares y prepárate para una experiencia inolvidable.
                 </p>
               </div>
             </div>
@@ -166,11 +166,11 @@ export default function Home() {
             <div className="grid items-center gap-12 md:grid-cols-2">
                 <div className="animate-fade-in-up">
                     <div className="inline-block px-4 py-1 text-sm font-semibold tracking-wider rounded-full bg-primary/10 text-primary">
-                        SOBRE NOSOTROS
+                        SOBRE ESTA DEMO
                     </div>
                     <h2 className="mt-4 text-3xl md:text-4xl font-bold tracking-tighter font-headline text-primary sm:text-5xl">Viajes grupales, experiencias únicas</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
-                        En "YO TE LLEVO" creemos que viajar es más que visitar un lugar, es vivirlo. Nos especializamos en crear viajes grupales económicos, llenos de buena onda y momentos que recordarás para siempre.
+                        Esta es una aplicación de demostración. Creemos que viajar es más que visitar un lugar, es vivirlo. Nos especializamos en crear viajes grupales económicos, llenos de buena onda y momentos que recordarás para siempre.
                     </p>
                      <p className="mt-4 text-lg text-muted-foreground">
                         Con nosotros, no solo descubrís un destino, te sumas a una comunidad de viajeros. ¡La aventura te espera!

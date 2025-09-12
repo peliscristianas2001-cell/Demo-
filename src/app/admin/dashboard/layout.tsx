@@ -17,7 +17,6 @@ import {
   BarChart3,
   Briefcase,
   Calendar,
-  Receipt
 } from "lucide-react";
 
 import {
@@ -33,7 +32,6 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -44,7 +42,6 @@ const navItems = [
   { href: "/admin/dashboard/sellers", label: "Vendedores", icon: PercentSquare },
   { href: "/admin/dashboard/flyers", label: "Flyers", icon: ImageIcon },
   { href: "/admin/dashboard/tickets", label: "Tickets", icon: TicketCheck },
-  { href: "/admin/dashboard/receipts", label: "Recibos", icon: Receipt },
   { href: "/admin/dashboard/reports", label: "Reportes", icon: BarChart3 },
   { href: "/admin/dashboard/calendar", label: "Calendario", icon: Calendar },
   { href: "/admin/dashboard/settings", label: "Configuración", icon: Settings },

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { LogInIcon, UserPlus, Eye, EyeOff, Loader2, ArrowLeft, Shield } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 import type { Passenger, Employee } from "@/lib/types";
@@ -61,11 +61,20 @@ function UnifiedLoginForm() {
   const [localEmployees, setLocalEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
-    // Cargar los datos desde localStorage solo en el cliente
     setLocalPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
     setLocalEmployees(JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees)));
   }, []);
 
+  const handleAdminLogin = () => {
+    const adminUser = localEmployees.find(emp => emp.dni === '99999999');
+    if (adminUser) {
+        localStorage.setItem("ytl_admin_id", adminUser.id);
+        toast({ title: "Acceso de Administrador Concedido", description: "Bienvenido al panel de control." });
+        router.push("/admin/dashboard");
+    } else {
+        toast({ title: "Error", description: "No se encontró el usuario administrador de prueba.", variant: "destructive"});
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,16 +82,7 @@ function UnifiedLoginForm() {
 
     const lowerIdentifier = identifier.toLowerCase();
     
-    // 1. Admin login check
-    const adminUser = localEmployees.find(emp => emp.dni === '99999999');
-    if (adminUser && (lowerIdentifier === adminUser.dni || lowerIdentifier === adminUser.name.toLowerCase()) && password === adminUser.password) {
-        localStorage.setItem("ytl_admin_id", adminUser.id);
-        toast({ title: "¡Bienvenida, Admin!", description: "Has iniciado sesión correctamente." });
-        router.push("/admin/dashboard");
-        return;
-    }
-
-    // 2. Employee login check (by DNI)
+    // Employee login check (by DNI)
     const employeeUser = localEmployees.find(emp => emp.dni === identifier && emp.password === password);
     if (employeeUser) {
       localStorage.setItem("ytl_employee_id", employeeUser.id);
@@ -91,7 +91,7 @@ function UnifiedLoginForm() {
       return; 
     }
     
-    // 3. Passenger Login (by Email or Username)
+    // Passenger Login (by Email or Username)
     if (!app) {
         toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
         setIsLoading(false);
@@ -148,6 +148,9 @@ function UnifiedLoginForm() {
         </div>
       </div>
       <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
+      <Button type="button" variant="secondary" className="w-full h-11" onClick={handleAdminLogin}>
+          <Shield className="mr-2 h-4 w-4" /> Ingresar como Administrador
+      </Button>
     </form>
   );
 }
@@ -183,20 +186,16 @@ function PassengerRegisterForm() {
             
             const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
             
-            // Check if passenger with that email already exists from a non-auth creation
             const existingPassengerIndex = localPassengers.findIndex(p => p.email?.toLowerCase() === email.toLowerCase());
 
             if (existingPassengerIndex !== -1) {
-                // Update existing passenger with Firebase UID and new details
                 localPassengers[existingPassengerIndex] = {
                     ...localPassengers[existingPassengerIndex],
                     id: userCredential.user.uid,
                     fullName: fullName,
-                    // keep other details like DNI if they exist
                 };
                  localStorage.setItem("ytl_user_id", userCredential.user.uid);
             } else {
-                // Create brand new passenger
                 const newPassenger: Passenger = {
                     id: userCredential.user.uid,
                     fullName: fullName,
@@ -301,13 +300,11 @@ export default function AuthPage() {
         let userRecord = localPassengers.find(p => p.email?.toLowerCase() === user.email?.toLowerCase());
 
         if (userRecord) {
-             // If user exists, ensure their ID matches Firebase UID for consistency
             if (userRecord.id !== user.uid) {
                 userRecord.id = user.uid;
             }
             localStorage.setItem("ytl_user_id", userRecord.id);
         } else {
-             // If user doesn't exist, create a new record
             userRecord = {
                 id: user.uid,
                 fullName: user.displayName || 'Usuario de Google',
@@ -337,7 +334,7 @@ export default function AuthPage() {
 
   return (
     <Dialog>
-    <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
        <div className="w-full max-w-sm">
             <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -346,8 +343,8 @@ export default function AuthPage() {
             <Card className="shadow-2xl">
                 <CardHeader className="text-center">
                     <div className="flex justify-center mb-4"><Logo /></div>
-                    <CardTitle className="text-2xl font-headline">Acceso a YO TE LLEVO</CardTitle>
-                    <CardDescription>Ingresa a tu cuenta o regístrate para la mejor experiencia.</CardDescription>
+                    <CardTitle className="text-2xl font-headline">Acceso a la Demo</CardTitle>
+                    <CardDescription>Ingresa a tu cuenta de prueba o regístrate.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Tabs defaultValue={mode} className="w-full">
@@ -376,7 +373,7 @@ export default function AuthPage() {
                     </Tabs>
                 </CardContent>
                 <CardFooter>
-                     <p className="text-xs text-muted-foreground text-center px-4">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.</p>
+                     <p className="text-xs text-muted-foreground text-center px-4">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad de esta demo.</p>
                 </CardFooter>
             </Card>
         </div>

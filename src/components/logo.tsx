@@ -4,39 +4,48 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { Plane } from 'lucide-react';
 
-const defaultLogo = "https://instagram.fepa9-2.fna.fbcdn.net/v/t51.2885-19/478145482_2050373918705456_5085497722998866930_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_ht=instagram.fepa9-2.fna.fbcdn.net&_nc_cat=108&_nc_oc=Q6cZ2QFzjVvSlHCf0Z2hstJHws97y0Q1b3iIKZskWlJOzKkzsXA5d7w5jeqV3MF8EUnkXK0&_nc_ohc=0kFfIMnvmBwQ7kNvwHJGNkB&_nc_gid=9W3okjmGr8DgZuyMHj14tg&edm=AEYEu-QBAAAA&ccb=7-5&oh=00_AfSWH7AGXQ1um0uq2Vfz-d6jjRHQIyOiIFf90fiE8TXyiA&oe=687DAD20&_nc_sid=ead929";
+const defaultLogo = "";
 
 export function Logo() {
   const [logoUrl, setLogoUrl] = useState(defaultLogo);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const updateLogo = () => {
         const savedLogo = localStorage.getItem("ytl_logo_url");
         setLogoUrl(savedLogo || defaultLogo);
     };
 
-    updateLogo(); // Initial load
+    updateLogo();
 
-    window.addEventListener('storage', updateLogo); // Listen for changes from other tabs/windows
+    window.addEventListener('storage', updateLogo);
 
     return () => {
-      window.removeEventListener('storage', updateLogo); // Cleanup listener
+      window.removeEventListener('storage', updateLogo);
     };
   }, []);
 
   return (
     <Link href="/" className="flex items-center gap-2" prefetch={false}>
-      <Image
-        src={logoUrl}
-        alt="YO TE LLEVO Logo"
-        width={36}
-        height={36}
-        className="rounded-full"
-        key={logoUrl} // Adding key forces re-render when src changes
-      />
+      {isClient && logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt="Demo App Logo"
+            width={36}
+            height={36}
+            className="rounded-full"
+            key={logoUrl}
+          />
+      ) : (
+        <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            <Plane className="w-5 h-5" />
+        </div>
+      )}
       <span className="text-2xl font-bold tracking-tight text-foreground font-headline">
-        YO TE LLEVO
+        Demo App
       </span>
     </Link>
   );
