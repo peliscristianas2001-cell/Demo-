@@ -20,21 +20,22 @@ export default function ProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [passenger, setPassenger] = useState<Passenger | null>(null);
-    const [formData, setFormData] = useState({ fullName: '', dni: '', phone: '' });
+    const [formData, setFormData] = useState({ fullName: '', dni: '', phone: '', password: '' });
 
     useEffect(() => {
         if (!loading && !user) {
             router.replace('/login');
         } else if (user) {
             const allPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers));
-            const currentPassenger = allPassengers.find(p => p.id === user.uid || p.email === user.email);
+            const currentPassenger = allPassengers.find(p => p.id === user.id);
             
             if (currentPassenger) {
                 setPassenger(currentPassenger);
                 setFormData({
                     fullName: currentPassenger.fullName,
                     dni: currentPassenger.dni || '',
-                    phone: currentPassenger.phone || ''
+                    phone: currentPassenger.phone || '',
+                    password: currentPassenger.password || '',
                 });
             }
         }
@@ -78,15 +79,11 @@ export default function ProfilePage() {
                                 <UserCircle className="w-10 h-10 text-primary"/>
                                 <div>
                                     <CardTitle className="text-2xl">Mi Perfil</CardTitle>
-                                    <CardDescription>Actualiza tu información personal.</CardDescription>
+                                    <CardDescription>Actualiza tu información personal y tu contraseña.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" value={user.email || ''} disabled />
-                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Nombre Completo</Label>
                                 <Input id="fullName" value={formData.fullName} onChange={handleFormChange} />
@@ -98,6 +95,10 @@ export default function ProfilePage() {
                              <div className="space-y-2">
                                 <Label htmlFor="phone">Teléfono</Label>
                                 <Input id="phone" value={formData.phone} onChange={handleFormChange} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="password">Contraseña</Label>
+                                <Input id="password" type="password" value={formData.password} onChange={handleFormChange} />
                             </div>
                         </CardContent>
                         <CardFooter>

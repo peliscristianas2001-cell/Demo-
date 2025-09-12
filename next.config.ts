@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  output: 'export',
 };
 
 // Forcing a cache refresh - Change this value to force a refresh: 2

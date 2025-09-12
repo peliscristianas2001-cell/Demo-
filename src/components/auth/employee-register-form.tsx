@@ -29,7 +29,7 @@ export function EmployeeRegisterForm() {
     const id = searchParams.get('employeeId');
     if (id) {
         setEmployeeId(id);
-        const storedEmployees = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+        const storedEmployees = JSON.parse(localStorage.getItem("app_employees") || JSON.stringify(mockEmployees));
         setEmployees(storedEmployees);
     }
   }, [searchParams]);
@@ -55,7 +55,7 @@ export function EmployeeRegisterForm() {
 
     const updatedEmployee = { ...employee, password };
     const updatedEmployees = employees.map(s => s.id === employeeId ? updatedEmployee : s);
-    localStorage.setItem("ytl_employees", JSON.stringify(updatedEmployees));
+    localStorage.setItem("app_employees", JSON.stringify(updatedEmployees));
 
     toast({
         title: "¡Registro completado!",

@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { MenuIcon, LogInIcon, UserPlus, UserCircle, LogOut, Settings } from "lucide-react"
 import { useAuth } from "./auth/auth-provider"
-import { auth } from "@/lib/firebase"
-import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
@@ -28,8 +26,7 @@ export function SiteHeader() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut(auth);
-    localStorage.removeItem("ytl_user_id");
+    localStorage.removeItem("app_user_id");
     router.push('/');
   }
 
@@ -118,8 +115,8 @@ export function SiteHeader() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Usuario'} />
-                                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                    <AvatarImage src={''} alt={user.fullName || 'Usuario'} />
+                                    <AvatarFallback>{user.fullName?.charAt(0) || 'U'}</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>

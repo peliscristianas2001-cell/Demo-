@@ -2,38 +2,42 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
 import { useDailyReset } from '@/hooks/use-daily-reset';
+import type { Passenger } from '@/lib/types';
 
 interface AuthContextType {
-  user: User | null;
+  user: Passenger | null;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Passenger | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Initialize daily reset hook
   useDailyReset();
 
   useEffect(() => {
-    // Only subscribe if auth object is valid
-    if (auth && typeof auth.onAuthStateChanged === 'function') {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          setUser(user);
-          setLoading(false);
-        });
-        return () => unsubscribe();
-    } else {
-        // If Firebase isn't configured, stop loading and assume no user.
+    const checkUser = () => {
+        const userId = localStorage.getItem("app_user_id");
+        if (userId) {
+            const passengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || "[]");
+            const currentUser = passengers.find(p => p.id === userId);
+            setUser(currentUser || null);
+        } else {
+            setUser(null);
+        }
         setLoading(false);
-        setUser(null);
     }
+    
+    checkUser();
+
+    // Listen for storage changes to sync login/logout across tabs
+    window.addEventListener('storage', checkUser);
+    return () => window.removeEventListener('storage', checkUser);
   }, []);
 
   if (loading) {

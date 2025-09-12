@@ -31,24 +31,6 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { app, auth } from "@/lib/firebase";
-import { 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword,
-    signInWithPopup,
-    GoogleAuthProvider,
-    updateProfile,
-    sendPasswordResetEmail
-} from "firebase/auth";
-
-const GoogleIcon = () => (
-    <svg className="w-4 h-4 mr-2" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
-      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
-      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
-      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.712,34.464,44,28.756,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
-    </svg>
-);
 
 function UnifiedLoginForm() {
   const router = useRouter();
@@ -61,14 +43,15 @@ function UnifiedLoginForm() {
   const [localEmployees, setLocalEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
-    setLocalPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
-    setLocalEmployees(JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees)));
+    setLocalPassengers(JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers)));
+    setLocalEmployees(JSON.parse(localStorage.getItem("app_employees") || JSON.stringify(mockEmployees)));
   }, []);
 
   const handleAdminLogin = () => {
+    // Demo logic: using a hardcoded DNI for admin for simplicity
     const adminUser = localEmployees.find(emp => emp.dni === '99999999');
     if (adminUser) {
-        localStorage.setItem("ytl_admin_id", adminUser.id);
+        localStorage.setItem("app_employee_id", adminUser.id);
         toast({ title: "Acceso de Administrador Concedido", description: "Bienvenido al panel de control." });
         router.push("/admin/dashboard");
     } else {
@@ -80,63 +63,37 @@ function UnifiedLoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const lowerIdentifier = identifier.toLowerCase();
-    
     // Employee login check (by DNI)
     const employeeUser = localEmployees.find(emp => emp.dni === identifier && emp.password === password);
     if (employeeUser) {
-      localStorage.setItem("ytl_employee_id", employeeUser.id);
+      localStorage.setItem("app_employee_id", employeeUser.id);
       toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión correctamente." });
       router.push("/employee/dashboard");
+      setIsLoading(false);
       return; 
     }
     
-    // Passenger Login (by Email or Username)
-    if (!app) {
-        toast({ title: "Servicio no disponible", description: "La autenticación no está configurada.", variant: "destructive" });
-        setIsLoading(false);
-        return;
-    }
+    // Passenger Login (by DNI or Full Name)
+    const passengerUser = localPassengers.find(
+      p => (p.dni === identifier || p.fullName.toLowerCase() === identifier.toLowerCase()) && p.password === password
+    );
 
-    let emailToAuth = identifier;
-    const isEmail = identifier.includes('@');
-    
-    if (!isEmail) {
-        const passengerByUsername = localPassengers.find(p => p.fullName.toLowerCase() === lowerIdentifier);
-        if (passengerByUsername && passengerByUsername.email) {
-            emailToAuth = passengerByUsername.email;
-        } else { 
-            toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
-            setIsLoading(false);
-            return;
-        }
-    }
-
-    try {
-        await signInWithEmailAndPassword(auth, emailToAuth, password);
-        const loggedInPassenger = localPassengers.find(p => p.email === emailToAuth);
-        if (loggedInPassenger) {
-            localStorage.setItem("ytl_user_id", loggedInPassenger.id);
-        }
+    if (passengerUser) {
+        localStorage.setItem("app_user_id", passengerUser.id);
         toast({ title: "¡Bienvenido/a de nuevo!", description: "Has iniciado sesión correctamente." });
         router.push("/");
-    } catch (error: any) {
-        console.error(error);
-        if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
-        } else {
-            toast({ title: "Error de inicio de sesión", description: "Ocurrió un problema al intentar iniciar sesión.", variant: "destructive" });
-        }
-    } finally {
-        setIsLoading(false);
+    } else {
+         toast({ title: "Credenciales incorrectas", description: "El usuario o la contraseña son incorrectos.", variant: "destructive" });
     }
+
+    setIsLoading(false);
   };
 
   return (
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="identifier">Email, DNI o Nombre de Usuario</Label>
-        <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="tu@email.com, DNI o nombre" required className="h-11"/>
+        <Label htmlFor="identifier">DNI o Nombre de Usuario</Label>
+        <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Tu DNI o nombre de usuario" required className="h-11"/>
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
@@ -149,7 +106,7 @@ function UnifiedLoginForm() {
       </div>
       <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <LogInIcon className="mr-2 h-4 w-4" /> Ingresar </>}</Button>
       <Button type="button" variant="secondary" className="w-full h-11" onClick={handleAdminLogin}>
-          <Shield className="mr-2 h-4 w-4" /> Ingresar como Administrador
+          <Shield className="mr-2 h-4 w-4" /> Ingresar como Administrador (Demo)
       </Button>
     </form>
   );
@@ -159,7 +116,7 @@ function PassengerRegisterForm() {
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({ fullName: '', email: '', password: '' });
+    const [formData, setFormData] = useState({ fullName: '', dni: '', password: '' });
 
     const handleFormChange = (id: keyof typeof formData, value: any) => {
         setFormData(prev => ({...prev, [id]: value}));
@@ -167,69 +124,48 @@ function PassengerRegisterForm() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!app) {
-            toast({ title: "Servicio no disponible", description: "El registro no está configurado.", variant: "destructive" });
-            return;
-        }
         setIsLoading(true);
 
-        const { fullName, email, password } = formData;
-        if (!fullName || !email || !password || password.length < 6) {
-            toast({ title: "Datos inválidos", description: "Nombre, email y una contraseña de 6+ caracteres son obligatorios.", variant: "destructive"});
+        const { fullName, dni, password } = formData;
+        if (!fullName || !dni || !password || password.length < 6) {
+            toast({ title: "Datos inválidos", description: "Nombre, DNI y una contraseña de 6+ caracteres son obligatorios.", variant: "destructive"});
             setIsLoading(false);
             return;
         }
 
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(userCredential.user, { displayName: fullName });
-            
-            const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
-            
-            const existingPassengerIndex = localPassengers.findIndex(p => p.email?.toLowerCase() === email.toLowerCase());
+        const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || "[]");
+        const existingPassenger = localPassengers.find(p => p.dni === dni);
 
-            if (existingPassengerIndex !== -1) {
-                localPassengers[existingPassengerIndex] = {
-                    ...localPassengers[existingPassengerIndex],
-                    id: userCredential.user.uid,
-                    fullName: fullName,
-                };
-                 localStorage.setItem("ytl_user_id", userCredential.user.uid);
-            } else {
-                const newPassenger: Passenger = {
-                    id: userCredential.user.uid,
-                    fullName: fullName,
-                    email: email,
-                    dni: "",
-                    nationality: "Argentina",
-                    tierId: "adult"
-                };
-                localPassengers.push(newPassenger);
-                localStorage.setItem("ytl_user_id", newPassenger.id);
-            }
-            
-            localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
-            window.dispatchEvent(new Event('storage'));
-
-
-            toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. ¡Bienvenido/a!" });
-            router.push('/');
-        } catch (error: any) {
-            if (error.code === 'auth/email-already-in-use') {
-                 toast({ title: "Email ya registrado", description: "Ya existe una cuenta con ese email. Intenta iniciar sesión.", variant: "destructive"});
-            } else {
-                 toast({ title: "Error de registro", description: "No se pudo crear la cuenta. Inténtalo de nuevo.", variant: "destructive"});
-            }
-            console.error(error);
-        } finally {
+        if (existingPassenger) {
+            toast({ title: "DNI ya registrado", description: "Ya existe un usuario con ese DNI. Intenta iniciar sesión.", variant: "destructive"});
             setIsLoading(false);
+            return;
         }
+
+        const newPassenger: Passenger = {
+            id: `P-USER-${Date.now()}`,
+            fullName: fullName,
+            dni: dni,
+            password: password,
+            nationality: "Argentina",
+            tierId: "adult"
+        };
+        
+        localPassengers.push(newPassenger);
+        localStorage.setItem("app_passengers", JSON.stringify(localPassengers));
+        localStorage.setItem("app_user_id", newPassenger.id);
+
+        window.dispatchEvent(new Event('storage'));
+
+        toast({ title: "¡Registro exitoso!", description: "Tu cuenta ha sido creada. ¡Bienvenido/a!" });
+        router.push('/');
+        setIsLoading(false);
     }
 
     return (
         <form onSubmit={handleRegister} className="space-y-4">
              <div className="space-y-2"><Label htmlFor="register-name">Nombre Completo</Label><Input id="register-name" placeholder="Ej: Juan Pérez" required className="h-11" value={formData.fullName} onChange={e => handleFormChange('fullName', e.target.value)}/></div>
-             <div className="space-y-2"><Label htmlFor="register-email">Email</Label><Input id="register-email" type="email" placeholder="tu@email.com" required className="h-11" value={formData.email} onChange={e => handleFormChange('email', e.target.value)}/></div>
+             <div className="space-y-2"><Label htmlFor="register-dni">DNI</Label><Input id="register-dni" type="text" placeholder="Tu número de DNI" required className="h-11" value={formData.dni} onChange={e => handleFormChange('dni', e.target.value)}/></div>
              <div className="space-y-2"><Label htmlFor="register-password">Contraseña</Label><Input id="register-password" type="password" placeholder="Crea una contraseña segura (mín. 6)" required className="h-11" value={formData.password} onChange={e => handleFormChange('password', e.target.value)}/></div>
              <Button type="submit" className="w-full h-11" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : <> <UserPlus className="mr-2 h-4 w-4" /> Registrarse </>}</Button>
         </form>
@@ -238,43 +174,16 @@ function PassengerRegisterForm() {
 
 function ForgotPasswordDialog() {
     const { toast } = useToast();
-    const [email, setEmail] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-
-    const handlePasswordReset = async () => {
-        if (!email) {
-            toast({ title: "Falta el email", description: "Por favor, ingresa tu correo electrónico.", variant: "destructive" });
-            return;
-        }
-        setIsLoading(true);
-        try {
-            await sendPasswordResetEmail(auth, email);
-            toast({ title: "Correo enviado", description: "Si tu cuenta existe, recibirás un enlace para restablecer tu contraseña." });
-        } catch (error) {
-            console.error("Password reset error:", error);
-            toast({ title: "Error", description: "No se pudo enviar el correo de restablecimiento. Inténtalo de nuevo.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
     return (
          <DialogContent>
             <DialogHeader>
-                <DialogTitle>Recuperar Contraseña</DialogTitle>
+                <DialogTitle>Funcionalidad no disponible</DialogTitle>
                 <DialogDescription>
-                    Ingresa tu correo electrónico registrado y te enviaremos un enlace para que puedas crear una nueva contraseña.
+                    La recuperación de contraseña no está habilitada en esta demo de frontend puro.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-2">
-                <Label htmlFor="reset-email">Email</Label>
-                <Input id="reset-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com"/>
-            </div>
             <DialogFooter>
-                 <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-                <Button onClick={handlePasswordReset} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin" /> : "Enviar Correo"}
-                </Button>
+                 <DialogClose asChild><Button>Entendido</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     )
@@ -283,54 +192,7 @@ function ForgotPasswordDialog() {
 export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const mode = searchParams.get('mode') || 'login';
-
-  const handleGoogleSignIn = async () => {
-    if (!app) {
-        toast({ title: "Servicio no disponible", description: "La autenticación con Google no está disponible.", variant: "destructive" });
-        return;
-    }
-    const provider = new GoogleAuthProvider();
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        const localPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || "[]");
-        let userRecord = localPassengers.find(p => p.email?.toLowerCase() === user.email?.toLowerCase());
-
-        if (userRecord) {
-            if (userRecord.id !== user.uid) {
-                userRecord.id = user.uid;
-            }
-            localStorage.setItem("ytl_user_id", userRecord.id);
-        } else {
-            userRecord = {
-                id: user.uid,
-                fullName: user.displayName || 'Usuario de Google',
-                email: user.email || '',
-                dni: "",
-                nationality: "Argentina",
-                tierId: "adult"
-            };
-            localPassengers.push(userRecord);
-            localStorage.setItem("ytl_user_id", userRecord.id);
-        }
-        
-        localStorage.setItem("ytl_passengers", JSON.stringify(localPassengers));
-        window.dispatchEvent(new Event('storage'));
-        
-        toast({ title: "¡Bienvenido/a!", description: "Has iniciado sesión con Google." });
-        router.push('/');
-
-    } catch (error: any) {
-        if (error.code === 'auth/popup-closed-by-user') {
-            return;
-        }
-        console.error(error);
-        toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
-    }
-  }
 
   return (
     <Dialog>
@@ -354,14 +216,6 @@ export default function AuthPage() {
                         </TabsList>
                         
                         <TabsContent value="login" className="pt-4">
-                           <Button variant="outline" className="w-full h-11 mb-4" onClick={handleGoogleSignIn}>
-                                <GoogleIcon /> Continuar con Google
-                            </Button>
-                            <div className="flex items-center mb-4">
-                                <Separator className="flex-1" />
-                                <span className="px-4 text-xs text-muted-foreground uppercase">O</span>
-                                <Separator className="flex-1" />
-                            </div>
                            <UnifiedLoginForm />
                             <DialogTrigger asChild>
                                <Button variant="link" className="w-full mt-2 text-xs">¿Olvidaste tu contraseña?</Button>

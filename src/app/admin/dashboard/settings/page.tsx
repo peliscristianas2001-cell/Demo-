@@ -14,8 +14,6 @@ import { getLayoutConfig, saveLayoutConfig } from "@/lib/layout-config"
 import type { CustomLayoutConfig, LayoutCategory, GeneralSettings, GeoSettings, BoardingPoint, ContactSettings, Pension, RoomType, Employee } from "@/lib/types"
 import { LayoutEditor } from "@/components/admin/layout-editor"
 import { mockBoardingPoints, mockPensions, mockRoomTypes, mockEmployees } from "@/lib/mock-data"
-import { auth } from "@/lib/firebase"
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updatePassword } from "firebase/auth"
 import {
   Dialog,
   DialogContent,
@@ -35,16 +33,6 @@ const MapSelector = dynamic(
     loading: () => <div className="h-96 flex items-center justify-center bg-muted rounded-lg"><Loader2 className="w-8 h-8 animate-spin"/></div>
   }
 )
-
-const GoogleIcon = () => (
-    <svg className="w-4 h-4 mr-2" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
-      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
-      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
-      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.712,34.464,44,28.756,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
-    </svg>
-);
-
 
 type LayoutConfigState = ReturnType<typeof getLayoutConfig>;
 
@@ -67,14 +55,6 @@ function ChangePasswordDialog() {
     if (!adminUser) {
         toast({ title: "Error", description: "No se encontró el usuario administrador.", variant: "destructive"});
         return;
-    }
-
-    // Update Firebase Auth user if linked
-    if (auth.currentUser && auth.currentUser.email === adminUser.email) {
-        updatePassword(auth.currentUser, newPassword).catch(err => {
-            console.error("Error updating firebase password", err);
-             toast({ title: "Error en Firebase", description: "No se pudo actualizar la contraseña en Firebase. Puede que necesites volver a iniciar sesión.", variant: "destructive"});
-        })
     }
 
     // Update local storage password
@@ -126,8 +106,6 @@ export default function SettingsPage() {
     const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingLayout, setEditingLayout] = useState<{ category: LayoutCategory, key: string | null } | null>(null);
-    const [adminAuthEmail, setAdminAuthEmail] = useState('');
-    const [adminUser, setAdminUser] = useState<Employee | null>(null);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     useEffect(() => {
@@ -152,10 +130,6 @@ export default function SettingsPage() {
         const storedRoomTypes = localStorage.getItem("app_room_types");
         setRoomTypes(storedRoomTypes ? JSON.parse(storedRoomTypes) : mockRoomTypes);
         
-        const allEmployees = JSON.parse(localStorage.getItem('app_employees') || JSON.stringify(mockEmployees));
-        const admin = allEmployees.find((e: Employee) => e.dni === '99999999');
-        setAdminUser(admin);
-
 
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
@@ -350,48 +324,6 @@ export default function SettingsPage() {
         cruises: { icon: Ship, title: "Tipos de Crucero" },
     }
     
-    const updateAdminEmail = (email: string) => {
-      if (!adminUser) return;
-      const allEmployees: Employee[] = JSON.parse(localStorage.getItem('app_employees') || '[]');
-      const updatedEmployees = allEmployees.map(e => e.id === adminUser.id ? { ...e, email } : e);
-      localStorage.setItem('app_employees', JSON.stringify(updatedEmployees));
-      setAdminUser(prev => prev ? { ...prev, email } : null);
-    }
-    
-    const handleEmailLink = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!adminAuthEmail || !adminUser?.password) {
-            toast({ title: 'Error', description: 'El email es requerido y el administrador debe tener una contraseña.', variant: 'destructive'});
-            return;
-        }
-        try {
-            await createUserWithEmailAndPassword(auth, adminAuthEmail, adminUser.password);
-            updateAdminEmail(adminAuthEmail);
-            toast({ title: '¡Éxito!', description: 'Cuenta de administrador vinculada con email.'});
-        } catch (error: any) {
-            if (error.code === 'auth/email-already-in-use') {
-                 toast({ title: "Email ya registrado", description: "Este email ya está en uso por otra cuenta.", variant: "destructive"});
-            } else {
-                toast({ title: 'Error', description: 'No se pudo vincular la cuenta.', variant: 'destructive'});
-            }
-            console.error(error);
-        }
-    }
-    
-    const handleGoogleLink = async () => {
-        const provider = new GoogleAuthProvider();
-        try {
-            const result = await signInWithPopup(auth, provider);
-            if (result.user.email) {
-                 updateAdminEmail(result.user.email);
-                 toast({ title: '¡Éxito!', description: 'Cuenta de administrador vinculada con Google.'});
-            }
-        } catch (error) {
-            toast({ title: 'Error', description: 'No se pudo vincular la cuenta con Google.', variant: 'destructive'});
-            console.error(error);
-        }
-    }
-    
   return (
     <Dialog>
      <GuideDialog
@@ -496,34 +428,10 @@ export default function SettingsPage() {
             <Card>
               <CardHeader>
                   <CardTitle className="flex items-center gap-2"><ShieldCheck className="w-6 h-6"/> Seguridad de la Cuenta</CardTitle>
-                  <CardDescription>Vincula tu cuenta de administrador a un correo para mayor seguridad y un inicio de sesión más rápido.</CardDescription>
+                  <CardDescription>Define o cambia la contraseña para la cuenta de Administrador.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                  {adminUser && adminUser.email ? (
-                      <div className="p-4 border rounded-lg bg-green-50 text-green-800 space-y-4">
-                          <p>Esta cuenta de administrador está vinculada al correo: <span className="font-bold">{adminUser.email}</span></p>
-                          <DialogTrigger asChild><Button variant="secondary"><KeyRound className="mr-2 h-4 w-4"/>Cambiar Contraseña</Button></DialogTrigger>
-                      </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <form onSubmit={handleEmailLink} className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold">Vincular con Email</h3>
-                            <p className="text-xs text-muted-foreground">Se usará tu contraseña de administrador actual.</p>
-                            <div className="space-y-2">
-                                <Label htmlFor="admin-email">Email</Label>
-                                <Input id="admin-email" type="email" value={adminAuthEmail} onChange={e => setAdminAuthEmail(e.target.value)} required/>
-                            </div>
-                            <Button type="submit">Vincular Cuenta</Button>
-                        </form>
-                        <div className="space-y-4 p-4 border rounded-lg flex flex-col items-start justify-center">
-                             <h3 className="font-semibold">Vincular con Google</h3>
-                             <p className="text-sm text-muted-foreground">Usa tu cuenta de Google para un inicio de sesión rápido y seguro.</p>
-                             <Button onClick={handleGoogleLink} variant="outline" className="w-full">
-                                <GoogleIcon/> Continuar con Google
-                            </Button>
-                        </div>
-                    </div>
-                  )}
+                   <DialogTrigger asChild><Button variant="secondary"><KeyRound className="mr-2 h-4 w-4"/>Cambiar Contraseña de Administrador</Button></DialogTrigger>
               </CardContent>
           </Card>
 

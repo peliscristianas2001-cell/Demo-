@@ -4,7 +4,6 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
-import { Chatbot } from '@/components/chatbot';
 import { AuthProvider } from '@/components/auth/auth-provider';
 
 const ptSans = PT_Sans({
@@ -34,7 +33,6 @@ export default function RootLayout({
       <body className={`${ptSans.variable} ${lilitaOne.variable} font-body antialiased`}>
           <AuthProvider>
             {children}
-            <Chatbot />
             <Toaster />
           </AuthProvider>
       </body>
