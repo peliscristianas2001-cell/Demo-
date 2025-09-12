@@ -181,3 +181,4 @@ export const TravelTicket = React.forwardRef<HTMLDivElement, TravelTicketProps>(
   )
 })
 TravelTicket.displayName = "TravelTicket"
+
