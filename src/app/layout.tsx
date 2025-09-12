@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
 import { Chatbot } from '@/components/chatbot';
 import { AuthProvider } from '@/components/auth/auth-provider';
-import { ThemeProvider } from '@/components/theme-provider';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -31,20 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es">
       <body className={`${ptSans.variable} ${lilitaOne.variable} font-body antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
           <AuthProvider>
             {children}
             <Chatbot />
             <Toaster />
           </AuthProvider>
-        </ThemeProvider>
       </body>
     </html>
   );

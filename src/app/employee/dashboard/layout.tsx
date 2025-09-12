@@ -12,7 +12,8 @@ import {
   LogOut,
   TicketCheck,
   Plane,
-  Home
+  Home,
+  HelpCircle,
 } from "lucide-react";
 
 import {
@@ -30,7 +31,6 @@ import {
 import { Logo } from "@/components/logo";
 import { mockEmployees } from "@/lib/mock-data";
 import type { Employee } from "@/lib/types";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 
 const navItems = [
@@ -110,7 +110,6 @@ export default function EmployeeDashboardLayout({
                     <h1 className="text-xl font-semibold hidden md:block">Panel de Empleado</h1>
                  </div>
                  <div className="flex items-center gap-2">
-                    <ThemeToggle />
                     <LanguageToggle />
                  </div>
             </header>

@@ -7,7 +7,7 @@ import {
   Settings,
   Ticket,
   Users,
-  Image as ImageIcon,
+  ImageIcon,
   Plane,
   LogOut,
   Globe,
@@ -17,6 +17,7 @@ import {
   BarChart3,
   Briefcase,
   Calendar,
+  HelpCircle,
 } from "lucide-react";
 
 import {
@@ -32,7 +33,6 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 
 const navItems = [
@@ -113,7 +113,6 @@ export default function DashboardLayout({
                      <h1 className="text-xl font-semibold hidden md:block">Panel de Administración</h1>
                    </div>
                    <div className="flex items-center gap-2">
-                      <ThemeToggle />
                       <LanguageToggle />
                    </div>
               </header>
