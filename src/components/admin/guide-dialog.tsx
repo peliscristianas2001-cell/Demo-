@@ -28,19 +28,17 @@ export function GuideDialog({
 }: GuideDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[80vh]">
+      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full pr-6">
+        <div className="flex-1 overflow-y-auto pr-6 -mr-6">
             <div className="py-4 space-y-4 text-sm text-muted-foreground prose prose-sm prose-p:leading-relaxed prose-headings:text-foreground">
               {content}
             </div>
-          </ScrollArea>
         </div>
-        <DialogFooter className="pt-4 border-t">
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cerrar
           </Button>
