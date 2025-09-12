@@ -36,7 +36,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SearchableSelect } from "@/components/searchable-select"
 import { SeatSelector } from "@/components/booking/seat-selector"
-import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown, BadgePercent } from "lucide-react"
+import { MoreHorizontal, CheckCircle, Clock, Trash2, Armchair, Bus, Plane, Ship, Edit, UserPlus, CreditCard, Users, Info, Calendar, MapPin, DollarSign, Home, Tag, ShieldCheck, Utensils, BedDouble, PercentSquare, Check, ChevronsUpDown, BadgePercent, HelpCircle } from "lucide-react"
 import { mockTours, mockReservations, mockSellers, mockPassengers, mockBoardingPoints, mockPensions, mockRoomTypes } from "@/lib/mock-data"
 import type { Tour, Reservation, ReservationStatus, LayoutCategory, LayoutItemType, Seller, PaymentStatus, Passenger, BoardingPoint, Pension, PaymentMethod, TransportUnit, RoomType } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
@@ -589,11 +589,17 @@ export default function ReservationsPage() {
 
 
     <div className="space-y-6">
-       <div>
-        <h2 className="text-2xl font-bold">Gestión de Reservas</h2>
-        <p className="text-muted-foreground">
-          Visualiza las reservas, asigna asientos y gestiona los estados.
-        </p>
+       <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Gestión de Reservas</h2>
+          <p className="text-muted-foreground">
+            Visualiza las reservas, asigna asientos y gestiona los estados.
+          </p>
+        </div>
+        <Button variant="outline" size="sm">
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Guía de la Sección
+        </Button>
       </div>
       <Card>
         <CardContent className="pt-6">
@@ -608,8 +614,8 @@ export default function ReservationsPage() {
                        const totalCapacity = getTourCapacity(tour);
                        const availableSeats = totalCapacity - occupiedCount;
                        return (
-                       <AccordionItem value={tour.id} key={tour.id} className="border-b-0">
-                           <AccordionTrigger className="text-lg font-medium hover:no-underline bg-muted/50 px-4 rounded-t-lg">
+                       <AccordionItem value={tour.id} key={tour.id} className="border rounded-lg overflow-hidden">
+                           <AccordionTrigger className="text-lg font-medium hover:no-underline bg-muted/50 px-4 py-3">
                                <div className="flex justify-between items-center w-full">
                                   <span>{tour.destination} ({tripReservations.length} reservas)</span>
                                   <Badge variant={availableSeats > 0 ? "secondary" : "destructive"} className="mr-4">
@@ -618,14 +624,14 @@ export default function ReservationsPage() {
                                </div>
                             </AccordionTrigger>
                            <AccordionContent className="p-0">
-                                <div className="flex justify-end p-4 border-x border-b rounded-b-lg">
+                                <div className="flex justify-end p-4 border-t">
                                     <Button onClick={() => setAddingReservation({isOpen: true, tour: tour})}>
                                         <UserPlus className="mr-2 h-4 w-4"/>
                                         Agregar Reserva
                                     </Button>
                                 </div>
                                {tripReservations.length > 0 ? (
-                                <div className="space-y-2 mt-4">
+                                <div className="space-y-2 px-4 pb-4">
                                 {tripReservations.map((res) => {
                                     const resPassengers = passengers.filter(p => (res.passengerIds || []).includes(p.id));
                                     const mainPassenger = resPassengers[0];
@@ -645,7 +651,7 @@ export default function ReservationsPage() {
 
                                     return (
                                         <Accordion key={res.id} type="single" collapsible>
-                                            <AccordionItem value={res.id} className="border rounded-lg">
+                                            <AccordionItem value={res.id} className="border rounded-lg bg-background">
                                                 <AccordionTrigger className="px-4 hover:no-underline text-base">
                                                     <div className="flex items-center gap-4">
                                                         <span>{res.passenger}</span>
@@ -778,4 +784,5 @@ const InfoRow = ({ label, value, icon }: { label: string, value: string | number
     
 
     
+
 

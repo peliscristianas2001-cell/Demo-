@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Download, TicketCheck, User, Plane, Printer } from "lucide-react"
+import { Download, TicketCheck, User, Plane, Printer, HelpCircle } from "lucide-react"
 import { TravelTicket } from "@/components/admin/travel-ticket"
 import { mockTours, mockSellers, mockReservations, mockPassengers, mockBoardingPoints, mockPensions } from "@/lib/mock-data"
 import type { Tour, Ticket, Seller, Reservation, Passenger, BoardingPoint, Pension } from "@/lib/types"
@@ -200,11 +200,17 @@ export default function TicketsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Gestión de Tickets de Viaje</h2>
-        <p className="text-muted-foreground">
-          Visualiza, descarga e imprime los tickets para los pasajeros con reservas confirmadas.
-        </p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+            <h2 className="text-2xl font-bold">Gestión de Tickets de Viaje</h2>
+            <p className="text-muted-foreground">
+            Visualiza, descarga e imprime los tickets para los pasajeros con reservas confirmadas.
+            </p>
+        </div>
+         <Button variant="outline" size="sm">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Guía de la Sección
+        </Button>
       </div>
 
        <Card>
@@ -240,54 +246,52 @@ export default function TicketsAdminPage() {
             if (!tour) return null;
 
             return (
-                 <AccordionItem value={tripId} key={tripId} className="border-b-0">
-                    <Card>
-                        <AccordionTrigger className="p-4 text-lg font-semibold hover:no-underline hover:bg-muted/50">
-                            {tour.destination} ({tripTickets.length} tickets)
-                        </AccordionTrigger>
-                        <AccordionContent className="p-0">
-                             <Accordion type="multiple" className="w-full">
-                                {tripTickets.map((ticket) => {
-                                    return (
-                                        <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
-                                            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
-                                                 <div className="flex items-center gap-4 text-left">
-                                                    <div className="p-2 rounded-full bg-primary/10 text-primary"><User className="w-5 h-5"/></div>
-                                                    <div>
-                                                        <p className="font-semibold">{ticket.passengerName}</p>
-                                                        <p className="text-sm text-muted-foreground">DNI: {ticket.passengerDni}</p>
-                                                    </div>
-                                                  </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
-                                                    <div
-                                                        data-ticket
-                                                        className="w-[794px]"
-                                                        ref={el => ticketRefs.current[ticket.id] = el}
-                                                    >
-                                                        <TravelTicket 
-                                                            ticket={ticket} 
-                                                            tour={tour} 
-                                                            seller={sellers.find(s => s.id === ticket.reservation.sellerId)} 
-                                                            boardingPoint={boardingPoints.find(bp => bp.id === ticket.boardingPointId)} 
-                                                            pension={pensions.find(p => p.id === ticket.reservation.pensionId)}
-                                                        />
-                                                    </div>
-                                                    <div className="flex justify-end w-full px-4">
-                                                    <Button onClick={() => handleDownload(ticket)}>
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        Descargar PDF
-                                                    </Button>
-                                                    </div>
+                 <AccordionItem value={tripId} key={tripId} className="border rounded-lg overflow-hidden">
+                    <AccordionTrigger className="p-4 text-lg font-semibold hover:no-underline bg-muted/50">
+                        {tour.destination} ({tripTickets.length} tickets)
+                    </AccordionTrigger>
+                    <AccordionContent className="p-0">
+                         <Accordion type="multiple" className="w-full">
+                            {tripTickets.map((ticket) => {
+                                return (
+                                    <AccordionItem value={ticket.id} key={ticket.id} className="border-t">
+                                        <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
+                                             <div className="flex items-center gap-4 text-left">
+                                                <div className="p-2 rounded-full bg-primary/10 text-primary"><User className="w-5 h-5"/></div>
+                                                <div>
+                                                    <p className="font-semibold">{ticket.passengerName}</p>
+                                                    <p className="text-sm text-muted-foreground">DNI: {ticket.passengerDni}</p>
                                                 </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    )
-                                })}
-                             </Accordion>
-                        </AccordionContent>
-                    </Card>
+                                              </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="bg-slate-200 p-4 space-y-4 flex flex-col items-center">
+                                                <div
+                                                    data-ticket
+                                                    className="w-[794px]"
+                                                    ref={el => ticketRefs.current[ticket.id] = el}
+                                                >
+                                                    <TravelTicket 
+                                                        ticket={ticket} 
+                                                        tour={tour} 
+                                                        seller={sellers.find(s => s.id === ticket.reservation.sellerId)} 
+                                                        boardingPoint={boardingPoints.find(bp => bp.id === ticket.boardingPointId)} 
+                                                        pension={pensions.find(p => p.id === ticket.reservation.pensionId)}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-end w-full px-4">
+                                                <Button onClick={() => handleDownload(ticket)}>
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Descargar PDF
+                                                </Button>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                )
+                            })}
+                         </Accordion>
+                    </AccordionContent>
                  </AccordionItem>
             )
          })}

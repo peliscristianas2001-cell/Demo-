@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useMemo, useEffect } from "react"
 import {
@@ -16,7 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, UserPlus, Pencil } from "lucide-react"
+import { Search, PlusCircle, MoreHorizontal, Edit, Trash2, UserPlus, Pencil, HelpCircle } from "lucide-react"
 import { mockPassengers, mockBoardingPoints } from "@/lib/mock-data"
 import type { Passenger, BoardingPoint } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -160,17 +161,23 @@ export default function PassengersPage() {
         boardingPoints={boardingPoints}
     />
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
             <h2 className="text-2xl font-bold">Gestión de Pasajeros</h2>
             <p className="text-muted-foreground">
             Añade, busca y administra la información de todos los pasajeros.
             </p>
         </div>
-         <Button onClick={handleCreate}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Pasajero
-        </Button>
+         <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
+            <Button onClick={handleCreate}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nuevo Pasajero
+            </Button>
+        </div>
       </div>
       <Card>
         <CardHeader>

@@ -32,7 +32,7 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog"
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Clipboard, UserPlus, Redo } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Clipboard, UserPlus, Redo, HelpCircle } from "lucide-react"
 import { mockEmployees } from "@/lib/mock-data"
 import type { Employee } from "@/lib/types"
 import { Label } from "@/components/ui/label"
@@ -220,7 +220,7 @@ export default function EmployeesPage() {
         </DialogContent>
        </Dialog>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Empleados</h2>
           <p className="text-muted-foreground">
@@ -228,6 +228,10 @@ export default function EmployeesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+           <Button variant="outline" size="sm">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
            {exEmployees.length > 0 && (
              <Select onValueChange={handleRehireSelect}>
                 <SelectTrigger className="w-[200px] h-10">

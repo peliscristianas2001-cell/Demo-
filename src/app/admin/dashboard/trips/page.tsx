@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PlusCircle, MoreHorizontal, Edit, Trash2, FileText, ShieldAlert } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, FileText, ShieldAlert, HelpCircle } from "lucide-react"
 import { mockTours, mockReservations } from "@/lib/mock-data"
 import type { Tour, Reservation, LayoutItemType, LayoutCategory, TransportUnit } from "@/lib/types"
 import { getLayoutConfig } from "@/lib/layout-config"
@@ -220,23 +220,27 @@ export default function TripsPage() {
         onSave={handleSave}
         tour={selectedTour}
       />
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Viajes</h2>
           <p className="text-muted-foreground">
-            Aquí podrás crear, editar y eliminar los viajes. Los viajes pasados se ocultan automáticamente.
+            Crea, edita y elimina los viajes. Los viajes pasados se ocultan automáticamente.
           </p>
         </div>
         <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
             <Button variant="outline" onClick={() => setGlobalTextType('observations')}>
               <FileText className="mr-2 h-4 w-4" /> Observaciones
             </Button>
             <Button variant="outline" onClick={() => setGlobalTextType('cancellationPolicy')}>
-              <ShieldAlert className="mr-2 h-4 w-4" /> Política Cancelación
+              <ShieldAlert className="mr-2 h-4 w-4" /> Política
             </Button>
             <Button onClick={handleCreate}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Crear Nuevo Viaje
+              Crear Viaje
             </Button>
         </div>
       </div>

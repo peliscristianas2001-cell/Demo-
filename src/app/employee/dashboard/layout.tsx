@@ -30,6 +30,8 @@ import {
 import { Logo } from "@/components/logo";
 import { mockEmployees } from "@/lib/mock-data";
 import type { Employee } from "@/lib/types";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const navItems = [
   { href: "/employee/dashboard", label: "Inicio", icon: Home },
@@ -103,8 +105,14 @@ export default function EmployeeDashboardLayout({
         </Sidebar>
         <SidebarInset>
             <header className="flex items-center justify-between h-16 px-6 border-b bg-card">
-                 <SidebarTrigger className="md:hidden" />
-                 <h1 className="text-xl font-semibold">Panel de Empleado</h1>
+                 <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    <h1 className="text-xl font-semibold hidden md:block">Panel de Empleado</h1>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <LanguageToggle />
+                 </div>
             </header>
           <main className="flex-1 p-6 overflow-auto">{children}</main>
         </SidebarInset>

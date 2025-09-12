@@ -32,7 +32,7 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog"
-import { PlusCircle, MoreHorizontal, Edit, Trash2, InfinityIcon, Percent, Save, Settings } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Edit, Trash2, InfinityIcon, Percent, Save, Settings, HelpCircle } from "lucide-react"
 import { mockSellers, mockCommissionSettings } from "@/lib/mock-data"
 import type { Seller, CommissionRule, CommissionSettings } from "@/lib/types"
 import { Label } from "@/components/ui/label"
@@ -205,7 +205,7 @@ export default function SellersPage() {
             <DialogHeader>
               <DialogTitle>Configurar Comisiones por Venta</DialogTitle>
               <DialogDescription>
-                Define los rangos de comisiones que se aplicarán a los vendedores (a menos que tengan una comisión fija).
+                Define los rangos de comisiones según la cantidad de pasajes vendidos por un vendedor (a menos que tengan una comisión fija).
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -231,7 +231,7 @@ export default function SellersPage() {
           </DialogContent>
        </Dialog>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Vendedores</h2>
           <p className="text-muted-foreground">
@@ -239,6 +239,10 @@ export default function SellersPage() {
           </p>
         </div>
         <div className="flex gap-2">
+           <Button variant="outline" size="sm">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
           <Button variant="outline" onClick={() => setIsCommissionSettingsOpen(true)}>
             <Settings className="mr-2 h-4 w-4" />
             Configurar Comisiones

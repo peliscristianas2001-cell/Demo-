@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, Trash2 } from "lucide-react"
+import { Upload, Trash2, HelpCircle } from "lucide-react"
 import { mockTours } from "@/lib/mock-data"
 import { FlyerForm } from "@/components/admin/flyer-form"
 import type { Tour, Flyer } from "@/lib/types"
@@ -67,17 +67,23 @@ export default function FlyersPage() {
         tours={tours.filter(tour => new Date(tour.date) >= new Date())}
         onSave={handleFlyerUpload}
       />
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Flyers</h2>
           <p className="text-muted-foreground">
             Sube y administra los flyers (fotos o videos) promocionales para los viajes.
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Subir Nuevo Flyer
-        </Button>
+         <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Guía de la Sección
+            </Button>
+            <Button onClick={() => setIsFormOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Subir Nuevo Flyer
+            </Button>
+        </div>
       </div>
       {activeToursWithFlyers.length === 0 ? (
          <Card>
