@@ -4,6 +4,7 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from "@/components/ui/toaster"
 import { PT_Sans, Lilita_One } from "next/font/google";
+import { useDailyReset } from '@/hooks/use-daily-reset';
 import { AuthProvider } from '@/components/auth/auth-provider';
 
 const ptSans = PT_Sans({
@@ -29,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="light">
       <body className={`${ptSans.variable} ${lilitaOne.variable} font-body antialiased`}>
           <AuthProvider>
             {children}

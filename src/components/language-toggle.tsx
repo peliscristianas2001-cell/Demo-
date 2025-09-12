@@ -19,7 +19,7 @@ export function LanguageToggle() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem>Español</DropdownMenuItem>
-                <DropdownMenuItem>English</DropdownMenuItem>
+                <DropdownMenuItem disabled>English</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )

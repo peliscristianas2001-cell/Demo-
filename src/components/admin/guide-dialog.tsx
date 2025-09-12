@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -28,7 +29,7 @@ export function GuideDialog({
 }: GuideDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-2xl flex flex-col h-full max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

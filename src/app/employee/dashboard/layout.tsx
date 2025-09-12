@@ -53,10 +53,14 @@ export default function EmployeeDashboardLayout({
 
   useEffect(() => {
     const employeeId = localStorage.getItem("app_employee_id");
+    if (!employeeId) {
+        router.replace('/login');
+        return;
+    }
     const employees: Employee[] = JSON.parse(localStorage.getItem("app_employees") || JSON.stringify(mockEmployees));
     const isEmployeeValid = employees.some(s => s.id === employeeId && s.password);
 
-    if (!employeeId || !isEmployeeValid) {
+    if (!isEmployeeValid) {
         localStorage.removeItem("app_employee_id"); // Clean up invalid ID
         router.replace('/login');
     }
@@ -64,6 +68,7 @@ export default function EmployeeDashboardLayout({
 
   const handleLogout = () => {
     localStorage.removeItem("app_employee_id");
+    window.dispatchEvent(new Event('storage'));
     router.push('/');
   }
 

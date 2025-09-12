@@ -27,6 +27,7 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     localStorage.removeItem("app_user_id");
+    window.dispatchEvent(new Event('storage')); // Notify other tabs/components
     router.push('/');
   }
 

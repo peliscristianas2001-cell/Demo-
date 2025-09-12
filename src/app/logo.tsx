@@ -45,7 +45,7 @@ export function Logo() {
         </div>
       )}
       <span className="text-2xl font-bold tracking-tight text-foreground font-headline">
-        Demo App
+        PRUEBA
       </span>
     </Link>
   );
