@@ -20,10 +20,10 @@ export default function EmployeeSettingsPage() {
 
     useEffect(() => {
         setIsClient(true);
-        const storedEmployeeId = localStorage.getItem("ytl_employee_id");
+        const storedEmployeeId = localStorage.getItem("app_employee_id");
         setEmployeeId(storedEmployeeId);
 
-        const storedEmployees = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+        const storedEmployees = JSON.parse(localStorage.getItem("app_employees") || JSON.stringify(mockEmployees));
         setEmployees(storedEmployees);
         
         const currentEmployee = storedEmployees.find((s: Employee) => s.id === storedEmployeeId);
@@ -60,7 +60,7 @@ export default function EmployeeSettingsPage() {
         });
 
         setEmployees(updatedEmployees);
-        localStorage.setItem("ytl_employees", JSON.stringify(updatedEmployees));
+        localStorage.setItem("app_employees", JSON.stringify(updatedEmployees));
 
         toast({
             title: "¡Datos guardados!",

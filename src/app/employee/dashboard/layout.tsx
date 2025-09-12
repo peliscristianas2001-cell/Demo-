@@ -52,18 +52,18 @@ export default function EmployeeDashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const employeeId = localStorage.getItem("ytl_employee_id");
-    const employees: Employee[] = JSON.parse(localStorage.getItem("ytl_employees") || JSON.stringify(mockEmployees));
+    const employeeId = localStorage.getItem("app_employee_id");
+    const employees: Employee[] = JSON.parse(localStorage.getItem("app_employees") || JSON.stringify(mockEmployees));
     const isEmployeeValid = employees.some(s => s.id === employeeId && s.password);
 
     if (!employeeId || !isEmployeeValid) {
-        localStorage.removeItem("ytl_employee_id"); // Clean up invalid ID
+        localStorage.removeItem("app_employee_id"); // Clean up invalid ID
         router.replace('/login');
     }
   }, [router, pathname]); // Re-check on every route change within the dashboard
 
   const handleLogout = () => {
-    localStorage.removeItem("ytl_employee_id");
+    localStorage.removeItem("app_employee_id");
     router.push('/');
   }
 

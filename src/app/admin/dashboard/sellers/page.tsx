@@ -57,16 +57,16 @@ export default function SellersPage() {
 
   useEffect(() => {
     setIsClient(true)
-    const storedSellers = localStorage.getItem("ytl_sellers")
+    const storedSellers = localStorage.getItem("app_sellers")
     setSellers(storedSellers ? JSON.parse(storedSellers) : mockSellers)
-    const storedCommissionSettings = localStorage.getItem("ytl_commission_settings")
+    const storedCommissionSettings = localStorage.getItem("app_commission_settings")
     setCommissionSettings(storedCommissionSettings ? JSON.parse(storedCommissionSettings) : mockCommissionSettings)
   }, [])
   
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem("ytl_sellers", JSON.stringify(sellers));
-      localStorage.setItem("ytl_commission_settings", JSON.stringify(commissionSettings));
+      localStorage.setItem("app_sellers", JSON.stringify(sellers));
+      localStorage.setItem("app_commission_settings", JSON.stringify(commissionSettings));
     }
   }, [sellers, commissionSettings, isClient])
   

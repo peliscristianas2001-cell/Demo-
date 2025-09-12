@@ -107,13 +107,13 @@ export function DataExporter({ isOpen, onOpenChange }: DataExporterProps) {
 
   useEffect(() => {
     if (isOpen) {
-      const currentTours = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
-      const currentReservations = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
+      const currentTours = JSON.parse(localStorage.getItem("app_tours") || JSON.stringify(mockTours));
+      const currentReservations = JSON.parse(localStorage.getItem("app_reservations") || JSON.stringify(mockReservations));
       
       setTours(currentTours);
       setReservations(currentReservations);
-      setPassengers(JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers)));
-      setBoardingPoints(JSON.parse(localStorage.getItem("ytl_boarding_points") || "[]"));
+      setPassengers(JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers)));
+      setBoardingPoints(JSON.parse(localStorage.getItem("app_boarding_points") || "[]"));
 
       const confirmedReservations = currentReservations.filter((r: Reservation) => r.status === 'Confirmado');
       const generatedTickets = confirmedReservations.map((res: Reservation): Ticket => {

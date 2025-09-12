@@ -36,12 +36,12 @@ export default function ContactPage() {
   const [settings, setSettings] = useState<GeneralSettings | null>(null);
 
   useEffect(() => {
-    const storedSettings = localStorage.getItem("ytl_general_settings");
+    const storedSettings = localStorage.getItem("app_general_settings");
     if (storedSettings) {
         setSettings(JSON.parse(storedSettings));
     }
      const handleStorageChange = () => {
-        const newStoredSettings = localStorage.getItem("ytl_general_settings")
+        const newStoredSettings = localStorage.getItem("app_general_settings")
         if (newStoredSettings) setSettings(JSON.parse(newStoredSettings))
     };
     window.addEventListener('storage', handleStorageChange);

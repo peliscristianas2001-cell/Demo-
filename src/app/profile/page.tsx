@@ -26,7 +26,7 @@ export default function ProfilePage() {
         if (!loading && !user) {
             router.replace('/login');
         } else if (user) {
-            const allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+            const allPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers));
             const currentPassenger = allPassengers.find(p => p.id === user.uid || p.email === user.email);
             
             if (currentPassenger) {
@@ -47,14 +47,14 @@ export default function ProfilePage() {
     const handleSaveChanges = () => {
         if (!passenger) return;
 
-        const allPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+        const allPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers));
         const updatedPassengers = allPassengers.map(p => {
             if (p.id === passenger.id) {
                 return { ...p, ...formData };
             }
             return p;
         });
-        localStorage.setItem("ytl_passengers", JSON.stringify(updatedPassengers));
+        localStorage.setItem("app_passengers", JSON.stringify(updatedPassengers));
         window.dispatchEvent(new Event('storage'));
         toast({ title: "¡Datos guardados!", description: "Tu perfil ha sido actualizado." });
     };

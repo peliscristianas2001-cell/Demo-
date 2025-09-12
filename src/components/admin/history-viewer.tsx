@@ -79,8 +79,8 @@ export function HistoryViewer({ isOpen, onOpenChange, historyKey, title, itemTit
   };
 
   const handleDownload = () => {
-    const generalSettings = JSON.parse(localStorage.getItem("ytl_general_settings") || "{}");
-    const folderName = generalSettings[downloadFolderNameKey] || "Descargas_YTL";
+    const generalSettings = JSON.parse(localStorage.getItem("app_general_settings") || "{}");
+    const folderName = generalSettings[downloadFolderNameKey] || "Descargas_App";
 
     // This is a simplified download. A real implementation would need a library like JSZip
     // to create an actual folder. For now, we'll download files individually with a prefix.
@@ -115,7 +115,7 @@ export function HistoryViewer({ isOpen, onOpenChange, historyKey, title, itemTit
   
   const isDueForDeletion = (item: HistoryItem): boolean => {
       const savedDate = new Date(item.savedAt);
-      const daysSinceSaved = (new Date().getTime() - savedDate.getTime()) / (1000 * 3600 * 24);
+      const daysSinceSaved = (new Date().getTime() - new Date().getTime()) / (1000 * 3600 * 24);
       return DELETION_THRESHOLD_DAYS - daysSinceSaved <= NOTIFICATION_THRESHOLD_DAYS;
   }
 
@@ -156,7 +156,7 @@ export function HistoryViewer({ isOpen, onOpenChange, historyKey, title, itemTit
                             checked={selectedItems.includes(item.id)}
                             onCheckedChange={(checked) => handleItemSelect(item.id, !!checked)}
                         />
-                        {historyKey === 'ytl_calendar_history' ? <Calendar className="w-4 h-4 text-muted-foreground"/> : <FileText className="w-4 h-4 text-muted-foreground"/>}
+                        {historyKey === 'app_calendar_history' ? <Calendar className="w-4 h-4 text-muted-foreground"/> : <FileText className="w-4 h-4 text-muted-foreground"/>}
                         <Label htmlFor={item.id} className="font-normal flex-1 cursor-pointer">
                             {item[itemTitleKey]}
                         </Label>

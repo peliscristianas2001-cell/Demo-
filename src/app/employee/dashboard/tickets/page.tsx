@@ -46,12 +46,12 @@ export default function EmployeeTicketsPage() {
   useEffect(() => {
     setIsClient(true);
     // Load all data from localStorage or mocks
-    const storedReservations = localStorage.getItem("ytl_reservations");
-    const storedTours = localStorage.getItem("ytl_tours");
-    const storedSellers = localStorage.getItem("ytl_sellers");
-    const storedPassengers = localStorage.getItem("ytl_passengers");
-    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
-    const storedPensions = localStorage.getItem("ytl_pensions");
+    const storedReservations = localStorage.getItem("app_reservations");
+    const storedTours = localStorage.getItem("app_tours");
+    const storedSellers = localStorage.getItem("app_sellers");
+    const storedPassengers = localStorage.getItem("app_passengers");
+    const storedBoardingPoints = localStorage.getItem("app_boarding_points");
+    const storedPensions = localStorage.getItem("app_pensions");
 
 
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations);
@@ -63,12 +63,12 @@ export default function EmployeeTicketsPage() {
 
     // Add storage event listeners to update state on changes from other tabs
     const handleStorageChange = () => {
-        const newStoredReservations = localStorage.getItem("ytl_reservations");
-        const newStoredTours = localStorage.getItem("ytl_tours");
-        const newStoredSellers = localStorage.getItem("ytl_sellers");
-        const newStoredPassengers = localStorage.getItem("ytl_passengers");
-        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
-        const newStoredPensions = localStorage.getItem("ytl_pensions");
+        const newStoredReservations = localStorage.getItem("app_reservations");
+        const newStoredTours = localStorage.getItem("app_tours");
+        const newStoredSellers = localStorage.getItem("app_sellers");
+        const newStoredPassengers = localStorage.getItem("app_passengers");
+        const newStoredBoardingPoints = localStorage.getItem("app_boarding_points");
+        const newStoredPensions = localStorage.getItem("app_pensions");
         setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations);
         setTours(newStoredTours ? JSON.parse(newStoredTours, (key, value) => key === 'date' ? new Date(value) : value) : mockTours);
         setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers);

@@ -102,13 +102,13 @@ export default function ReservationsPage() {
   useEffect(() => {
     setIsClient(true)
     // Load data from localStorage or fall back to mock data
-    const storedReservations = localStorage.getItem("ytl_reservations")
-    const storedTours = localStorage.getItem("ytl_tours")
-    const storedSellers = localStorage.getItem("ytl_sellers")
-    const storedPassengers = localStorage.getItem("ytl_passengers")
-    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points")
-    const storedPensions = localStorage.getItem("ytl_pensions")
-    const storedRoomTypes = localStorage.getItem("ytl_room_types");
+    const storedReservations = localStorage.getItem("app_reservations")
+    const storedTours = localStorage.getItem("app_tours")
+    const storedSellers = localStorage.getItem("app_sellers")
+    const storedPassengers = localStorage.getItem("app_passengers")
+    const storedBoardingPoints = localStorage.getItem("app_boarding_points")
+    const storedPensions = localStorage.getItem("app_pensions")
+    const storedRoomTypes = localStorage.getItem("app_room_types");
     
     setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
     setTours(storedTours ? JSON.parse(storedTours) : mockTours)
@@ -120,13 +120,13 @@ export default function ReservationsPage() {
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
-       const newStoredReservations = localStorage.getItem("ytl_reservations")
-       const newStoredTours = localStorage.getItem("ytl_tours")
-       const newStoredSellers = localStorage.getItem("ytl_sellers")
-       const newStoredPassengers = localStorage.getItem("ytl_passengers")
-       const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points")
-       const newStoredPensions = localStorage.getItem("ytl_pensions")
-       const newStoredRoomTypes = localStorage.getItem("ytl_room_types");
+       const newStoredReservations = localStorage.getItem("app_reservations")
+       const newStoredTours = localStorage.getItem("app_tours")
+       const newStoredSellers = localStorage.getItem("app_sellers")
+       const newStoredPassengers = localStorage.getItem("app_passengers")
+       const newStoredBoardingPoints = localStorage.getItem("app_boarding_points")
+       const newStoredPensions = localStorage.getItem("app_pensions")
+       const newStoredRoomTypes = localStorage.getItem("app_room_types");
        setReservations(newStoredReservations ? JSON.parse(newStoredReservations) : mockReservations)
        setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours)
        setSellers(newStoredSellers ? JSON.parse(newStoredSellers) : mockSellers)
@@ -141,14 +141,14 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     if (isClient) {
-        localStorage.setItem("ytl_reservations", JSON.stringify(reservations));
+        localStorage.setItem("app_reservations", JSON.stringify(reservations));
     }
   }, [reservations, isClient])
 
   // Effect to update local passenger list when a new one is added from the sub-form
   useEffect(() => {
     if (isClient) {
-        localStorage.setItem("ytl_passengers", JSON.stringify(passengers));
+        localStorage.setItem("app_passengers", JSON.stringify(passengers));
     }
   }, [passengers, isClient]);
 

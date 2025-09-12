@@ -24,12 +24,12 @@ export const useGeoAccess = () => {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings | null>(null);
   
   useEffect(() => {
-    const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
+    const storedGeneralSettings = localStorage.getItem("app_general_settings");
     if (storedGeneralSettings) {
       setGeneralSettings(JSON.parse(storedGeneralSettings));
     }
 
-    const storedGeoSettings = localStorage.getItem("ytl_geo_settings");
+    const storedGeoSettings = localStorage.getItem("app_geo_settings");
     if (!storedGeoSettings) {
       // If no settings are defined, everyone is allowed by default
       setStatus("allowed");

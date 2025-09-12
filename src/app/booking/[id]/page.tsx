@@ -43,12 +43,12 @@ const calculateAge = (dob?: Date | string) => {
 }
 
 const generateNextReservationId = () => {
-    const counters = JSON.parse(localStorage.getItem('ytl_reservation_counters') || '{}');
+    const counters = JSON.parse(localStorage.getItem('app_reservation_counters') || '{}');
     const year = new Date().getFullYear().toString().slice(-2);
     const currentCount = counters[year] || 0;
     const nextCount = currentCount + 1;
     counters[year] = nextCount;
-    localStorage.setItem('ytl_reservation_counters', JSON.stringify(counters));
+    localStorage.setItem('app_reservation_counters', JSON.stringify(counters));
     return `R-${year}-${String(nextCount).padStart(3, '0')}`;
 }
 
@@ -82,19 +82,19 @@ export default function BookingPage() {
   
   useEffect(() => {
     setIsClient(true)
-    const storedTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
-    const currentReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
-    const currentSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-    const currentPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+    const storedTours: Tour[] = JSON.parse(localStorage.getItem("app_tours") || JSON.stringify(mockTours));
+    const currentReservations: Reservation[] = JSON.parse(localStorage.getItem("app_reservations") || JSON.stringify(mockReservations));
+    const currentSellers: Seller[] = JSON.parse(localStorage.getItem("app_sellers") || JSON.stringify(mockSellers));
+    const currentPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers));
     
     setReservations(currentReservations);
     setSellers(currentSellers);
     setAllPassengers(currentPassengers);
 
-    const sellerIdFromStorage = localStorage.getItem("ytl_employee_id");
+    const sellerIdFromStorage = localStorage.getItem("app_employee_id");
     if (sellerIdFromStorage) setLoggedInSellerId(sellerIdFromStorage);
     
-    const passengerIdFromStorage = localStorage.getItem("ytl_user_id");
+    const passengerIdFromStorage = localStorage.getItem("app_user_id");
     if (passengerIdFromStorage) {
         const user = currentPassengers.find(p => p.id === passengerIdFromStorage);
         if (user) {
@@ -116,10 +116,10 @@ export default function BookingPage() {
     setTour(foundTour && new Date(foundTour.date) >= new Date() ? foundTour : null);
     
     const handleStorageChange = () => {
-        const newStoredTours: Tour[] = JSON.parse(localStorage.getItem("ytl_tours") || JSON.stringify(mockTours));
-        const newCurrentReservations: Reservation[] = JSON.parse(localStorage.getItem("ytl_reservations") || JSON.stringify(mockReservations));
-        const newCurrentSellers: Seller[] = JSON.parse(localStorage.getItem("ytl_sellers") || JSON.stringify(mockSellers));
-        const newCurrentPassengers: Passenger[] = JSON.parse(localStorage.getItem("ytl_passengers") || JSON.stringify(mockPassengers));
+        const newStoredTours: Tour[] = JSON.parse(localStorage.getItem("app_tours") || JSON.stringify(mockTours));
+        const newCurrentReservations: Reservation[] = JSON.parse(localStorage.getItem("app_reservations") || JSON.stringify(mockReservations));
+        const newCurrentSellers: Seller[] = JSON.parse(localStorage.getItem("app_sellers") || JSON.stringify(mockSellers));
+        const newCurrentPassengers: Passenger[] = JSON.parse(localStorage.getItem("app_passengers") || JSON.stringify(mockPassengers));
         
         setReservations(newCurrentReservations);
         setSellers(newCurrentSellers);
@@ -207,7 +207,7 @@ export default function BookingPage() {
             }
             return finalPassenger;
         });
-        localStorage.setItem("ytl_passengers", JSON.stringify(updatedPassengers));
+        localStorage.setItem("app_passengers", JSON.stringify(updatedPassengers));
         mainPassenger = newPassengerList[0];
         paxTotal = newPassengerList.length;
         insuredIds = insuredGuestIds;
@@ -240,14 +240,14 @@ export default function BookingPage() {
     };
 
     const updatedReservations = [...reservations, newReservation];
-    localStorage.setItem('ytl_reservations', JSON.stringify(updatedReservations));
+    localStorage.setItem('app_reservations', JSON.stringify(updatedReservations));
     window.dispatchEvent(new Event('storage'));
 
 
     toast({ title: "¡Solicitud Enviada!", description: `Tu reserva para ${tour?.destination} ha sido recibida.`, duration: 3000 });
 
     const confirmationData = { reservation: newReservation, tour: tour, seller: sellers.find(s => s.id === sellerToAssign) };
-    sessionStorage.setItem('ytl_last_reservation', JSON.stringify(confirmationData));
+    sessionStorage.setItem('app_last_reservation', JSON.stringify(confirmationData));
     
     router.push('/booking/confirmation');
   }

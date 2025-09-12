@@ -36,8 +36,8 @@ export default function TripsPage() {
 
   useEffect(() => {
     setIsClient(true)
-    const storedTours = localStorage.getItem("ytl_tours")
-    const storedReservations = localStorage.getItem("ytl_reservations")
+    const storedTours = localStorage.getItem("app_tours")
+    const storedReservations = localStorage.getItem("app_reservations")
     
     if (storedTours) {
       setTours(JSON.parse(storedTours, (key, value) => {
@@ -56,7 +56,7 @@ export default function TripsPage() {
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
-      const newStoredTours = localStorage.getItem("ytl_tours")
+      const newStoredTours = localStorage.getItem("app_tours")
        if (newStoredTours) {
           setTours(JSON.parse(newStoredTours, (key, value) => {
             if (key === 'date') return new Date(value);
@@ -71,7 +71,7 @@ export default function TripsPage() {
   
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem("ytl_tours", JSON.stringify(tours));
+      localStorage.setItem("app_tours", JSON.stringify(tours));
     }
   }, [tours, isClient])
 

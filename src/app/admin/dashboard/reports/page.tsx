@@ -83,12 +83,12 @@ export default function ReportsPage() {
 
     useEffect(() => {
         setIsClient(true)
-        const storedTours = localStorage.getItem("ytl_tours")
-        const storedReservations = localStorage.getItem("ytl_reservations")
-        const storedSellers = localStorage.getItem("ytl_sellers")
-        const storedCustomExpenses = localStorage.getItem("ytl_custom_expenses")
-        const storedExternalCommissions = localStorage.getItem("ytl_external_commissions");
-        const storedExcursionIncomes = localStorage.getItem("ytl_excursion_incomes");
+        const storedTours = localStorage.getItem("app_tours")
+        const storedReservations = localStorage.getItem("app_reservations")
+        const storedSellers = localStorage.getItem("app_sellers")
+        const storedCustomExpenses = localStorage.getItem("app_custom_expenses")
+        const storedExternalCommissions = localStorage.getItem("app_external_commissions");
+        const storedExcursionIncomes = localStorage.getItem("app_excursion_incomes");
         
         setTours(storedTours ? JSON.parse(storedTours) : mockTours)
         setReservations(storedReservations ? JSON.parse(storedReservations) : mockReservations)
@@ -103,7 +103,7 @@ export default function ReportsPage() {
         const pastTours = activeTours.filter((t: Tour) => new Date(t.date) < now);
         
         if (pastTours.length > 0) {
-            const reportHistory: HistoryItem[] = JSON.parse(localStorage.getItem("ytl_report_history") || "[]");
+            const reportHistory: HistoryItem[] = JSON.parse(localStorage.getItem("app_report_history") || "[]");
             const newHistoryItems: HistoryItem[] = [];
 
             pastTours.forEach((tour: Tour) => {
@@ -138,10 +138,10 @@ export default function ReportsPage() {
 
             if (newHistoryItems.length > 0) {
                 const updatedHistory = [...reportHistory, ...newHistoryItems];
-                localStorage.setItem("ytl_report_history", JSON.stringify(updatedHistory));
+                localStorage.setItem("app_report_history", JSON.stringify(updatedHistory));
                 // Remove archived tours from active list
                 const remainingTours = activeTours.filter((t: Tour) => new Date(t.date) >= now);
-                localStorage.setItem("ytl_tours", JSON.stringify(remainingTours));
+                localStorage.setItem("app_tours", JSON.stringify(remainingTours));
                 setTours(remainingTours);
                 window.dispatchEvent(new Event('storage'));
                 toast({ title: `${newHistoryItems.length} reporte(s) archivado(s).`, description: "Los viajes pasados se han movido al historial." });
@@ -152,9 +152,9 @@ export default function ReportsPage() {
     
      useEffect(() => {
         if (isClient) {
-            localStorage.setItem("ytl_custom_expenses", JSON.stringify(customExpenses));
-            localStorage.setItem("ytl_external_commissions", JSON.stringify(externalCommissions));
-            localStorage.setItem("ytl_excursion_incomes", JSON.stringify(excursionIncomes));
+            localStorage.setItem("app_custom_expenses", JSON.stringify(customExpenses));
+            localStorage.setItem("app_external_commissions", JSON.stringify(externalCommissions));
+            localStorage.setItem("app_excursion_incomes", JSON.stringify(excursionIncomes));
         }
     }, [customExpenses, externalCommissions, excursionIncomes, isClient]);
 
@@ -432,7 +432,7 @@ export default function ReportsPage() {
         <HistoryViewer
             isOpen={isHistoryOpen}
             onOpenChange={setIsHistoryOpen}
-            historyKey="ytl_report_history"
+            historyKey="app_report_history"
             title="Historial de Reportes"
             itemTitleKey="name"
             downloadFolderNameKey="reportDownloadFolder"

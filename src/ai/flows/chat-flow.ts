@@ -18,7 +18,7 @@ export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 export async function chat(input: ChatInput): Promise<string> {
   try {
-    const systemPrompt = `Eres un asistente de IA amigable y servicial para la agencia de viajes "YO TE LLEVO".
+    const systemPrompt = `Eres un asistente de IA amigable y servicial para una agencia de viajes.
 Tu objetivo es responder preguntas de los usuarios sobre la agencia y los viajes disponibles, y ayudarles a decidir.
 Sé conciso, amable y directo. Tu personalidad es alegre y entusiasta.
 Utiliza la información de contexto proporcionada como tu principal fuente de verdad. No inventes información que no se te proporciona.

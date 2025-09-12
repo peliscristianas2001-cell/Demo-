@@ -63,7 +63,7 @@ function ChangePasswordDialog() {
         return;
     }
 
-    const adminUser = JSON.parse(localStorage.getItem('ytl_employees') || '[]').find((e: Employee) => e.dni === '99999999');
+    const adminUser = JSON.parse(localStorage.getItem('app_employees') || '[]').find((e: Employee) => e.dni === '99999999');
     if (!adminUser) {
         toast({ title: "Error", description: "No se encontró el usuario administrador.", variant: "destructive"});
         return;
@@ -78,9 +78,9 @@ function ChangePasswordDialog() {
     }
 
     // Update local storage password
-    const allEmployees: Employee[] = JSON.parse(localStorage.getItem('ytl_employees') || '[]');
+    const allEmployees: Employee[] = JSON.parse(localStorage.getItem('app_employees') || '[]');
     const updatedEmployees = allEmployees.map(e => e.id === adminUser.id ? { ...e, password: newPassword } : e);
-    localStorage.setItem('ytl_employees', JSON.stringify(updatedEmployees));
+    localStorage.setItem('app_employees', JSON.stringify(updatedEmployees));
     
     toast({ title: "Éxito", description: "Contraseña actualizada."});
     setNewPassword("");
@@ -118,7 +118,7 @@ export default function SettingsPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [layoutConfig, setLayoutConfig] = useState<LayoutConfigState>(() => getLayoutConfig());
-    const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "", calendarDownloadFolder: "Calendarios YO-TE-LLEVO", reportDownloadFolder: "Reportes Gen. YO-TE-LLEVO" });
+    const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({ mainWhatsappNumber: "", calendarDownloadFolder: "Calendarios App", reportDownloadFolder: "Reportes App" });
     const [contactSettings, setContactSettings] = useState<ContactSettings>({});
     const [geoSettings, setGeoSettings] = useState<GeoSettings>({ latitude: -34.6037, longitude: -58.3816, radiusKm: 100 });
     const [boardingPoints, setBoardingPoints] = useState<BoardingPoint[]>([]);
@@ -131,7 +131,7 @@ export default function SettingsPage() {
     const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     useEffect(() => {
-        const storedGeneralSettings = localStorage.getItem("ytl_general_settings");
+        const storedGeneralSettings = localStorage.getItem("app_general_settings");
         if (storedGeneralSettings) {
           const parsed = JSON.parse(storedGeneralSettings);
           setGeneralSettings(parsed);
@@ -140,19 +140,19 @@ export default function SettingsPage() {
           }
         }
         
-        const storedGeoSettings = localStorage.getItem("ytl_geo_settings");
+        const storedGeoSettings = localStorage.getItem("app_geo_settings");
         if (storedGeoSettings) setGeoSettings(JSON.parse(storedGeoSettings));
         
-        const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        const storedBoardingPoints = localStorage.getItem("app_boarding_points");
         setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
-        const storedPensions = localStorage.getItem("ytl_pensions");
+        const storedPensions = localStorage.getItem("app_pensions");
         setPensions(storedPensions ? JSON.parse(storedPensions) : mockPensions);
 
-        const storedRoomTypes = localStorage.getItem("ytl_room_types");
+        const storedRoomTypes = localStorage.getItem("app_room_types");
         setRoomTypes(storedRoomTypes ? JSON.parse(storedRoomTypes) : mockRoomTypes);
         
-        const allEmployees = JSON.parse(localStorage.getItem('ytl_employees') || JSON.stringify(mockEmployees));
+        const allEmployees = JSON.parse(localStorage.getItem('app_employees') || JSON.stringify(mockEmployees));
         const admin = allEmployees.find((e: Employee) => e.dni === '99999999');
         setAdminUser(admin);
 
@@ -160,11 +160,11 @@ export default function SettingsPage() {
       const handleStorageChange = () => {
         // Force a re-read from localStorage when other tabs change it
         setLayoutConfig(getLayoutConfig(true));
-        const newBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        const newBoardingPoints = localStorage.getItem("app_boarding_points");
         setBoardingPoints(newBoardingPoints ? JSON.parse(newBoardingPoints) : mockBoardingPoints);
-        const newPensions = localStorage.getItem("ytl_pensions");
+        const newPensions = localStorage.getItem("app_pensions");
         setPensions(newPensions ? JSON.parse(newPensions) : mockPensions);
-        const newRoomTypes = localStorage.getItem("ytl_room_types");
+        const newRoomTypes = localStorage.getItem("app_room_types");
         setRoomTypes(newRoomTypes ? JSON.parse(newRoomTypes) : mockRoomTypes);
       };
       window.addEventListener('storage', handleStorageChange);
@@ -194,7 +194,7 @@ export default function SettingsPage() {
         }
 
         try {
-          localStorage.setItem("ytl_logo_url", logoPreview);
+          localStorage.setItem("app_logo_url", logoPreview);
           toast({
               title: "¡Éxito!",
               description: "El nuevo logo se ha guardado. Se reflejará en todo el sitio.",
@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
     const handleGeneralSettingsSave = () => {
         const newSettings = { ...generalSettings, contact: contactSettings };
-        localStorage.setItem("ytl_general_settings", JSON.stringify(newSettings));
+        localStorage.setItem("app_general_settings", JSON.stringify(newSettings));
         toast({
             title: "Configuración guardada",
             description: "Los ajustes generales han sido actualizados."
@@ -228,7 +228,7 @@ export default function SettingsPage() {
     }
     
     const handleGeoSettingsSave = () => {
-        localStorage.setItem("ytl_geo_settings", JSON.stringify(geoSettings));
+        localStorage.setItem("app_geo_settings", JSON.stringify(geoSettings));
          toast({
             title: "Zona guardada",
             description: "La zona de servicio ha sido actualizada."
@@ -298,7 +298,7 @@ export default function SettingsPage() {
     
     const handleSaveBoardingPoints = () => {
         const filteredPoints = boardingPoints.filter(p => p.name.trim() !== "");
-        localStorage.setItem("ytl_boarding_points", JSON.stringify(filteredPoints));
+        localStorage.setItem("app_boarding_points", JSON.stringify(filteredPoints));
         setBoardingPoints(filteredPoints);
         toast({ title: "Puntos de embarque guardados." });
         window.dispatchEvent(new Event('storage'));
@@ -318,7 +318,7 @@ export default function SettingsPage() {
     
     const handleSavePensions = () => {
         const filteredPensions = pensions.filter(p => p.name.trim() !== "");
-        localStorage.setItem("ytl_pensions", JSON.stringify(filteredPensions));
+        localStorage.setItem("app_pensions", JSON.stringify(filteredPensions));
         setPensions(filteredPensions);
         toast({ title: "Tipos de pensión guardados." });
         window.dispatchEvent(new Event('storage'));
@@ -338,7 +338,7 @@ export default function SettingsPage() {
     
     const handleSaveRoomTypes = () => {
         const filteredRoomTypes = roomTypes.filter(rt => rt.name.trim() !== "");
-        localStorage.setItem("ytl_room_types", JSON.stringify(filteredRoomTypes));
+        localStorage.setItem("app_room_types", JSON.stringify(filteredRoomTypes));
         setRoomTypes(filteredRoomTypes);
         toast({ title: "Tipos de habitación guardados." });
         window.dispatchEvent(new Event('storage'));
@@ -352,9 +352,9 @@ export default function SettingsPage() {
     
     const updateAdminEmail = (email: string) => {
       if (!adminUser) return;
-      const allEmployees: Employee[] = JSON.parse(localStorage.getItem('ytl_employees') || '[]');
+      const allEmployees: Employee[] = JSON.parse(localStorage.getItem('app_employees') || '[]');
       const updatedEmployees = allEmployees.map(e => e.id === adminUser.id ? { ...e, email } : e);
-      localStorage.setItem('ytl_employees', JSON.stringify(updatedEmployees));
+      localStorage.setItem('app_employees', JSON.stringify(updatedEmployees));
       setAdminUser(prev => prev ? { ...prev, email } : null);
     }
     

@@ -18,10 +18,10 @@ export default function FlyersPage() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
-    const storedTours = localStorage.getItem("ytl_tours")
+    const storedTours = localStorage.getItem("app_tours")
     setTours(storedTours ? JSON.parse(storedTours) : mockTours);
     const handleStorageChange = () => {
-        const newStoredTours = localStorage.getItem("ytl_tours");
+        const newStoredTours = localStorage.getItem("app_tours");
         setTours(newStoredTours ? JSON.parse(newStoredTours) : mockTours);
     };
     window.addEventListener('storage', handleStorageChange);
@@ -29,7 +29,7 @@ export default function FlyersPage() {
   }, [])
   
   useEffect(() => {
-    localStorage.setItem("ytl_tours", JSON.stringify(tours));
+    localStorage.setItem("app_tours", JSON.stringify(tours));
   }, [tours]);
 
 

@@ -56,14 +56,14 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     setIsClient(true)
-    const storedEmployees = localStorage.getItem("ytl_employees")
-    const storedExEmployees = localStorage.getItem("ytl_ex_employees")
+    const storedEmployees = localStorage.getItem("app_employees")
+    const storedExEmployees = localStorage.getItem("app_ex_employees")
     setEmployees(storedEmployees ? JSON.parse(storedEmployees) : mockEmployees)
     setExEmployees(storedExEmployees ? JSON.parse(storedExEmployees) : [])
 
     const handleStorageChange = () => {
-      const newStoredEmployees = localStorage.getItem("ytl_employees")
-      const newStoredExEmployees = localStorage.getItem("ytl_ex_employees")
+      const newStoredEmployees = localStorage.getItem("app_employees")
+      const newStoredExEmployees = localStorage.getItem("app_ex_employees")
       setEmployees(newStoredEmployees ? JSON.parse(newStoredEmployees) : mockEmployees)
       setExEmployees(newStoredExEmployees ? JSON.parse(newStoredExEmployees) : [])
     };
@@ -73,8 +73,8 @@ export default function EmployeesPage() {
   
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem("ytl_employees", JSON.stringify(employees));
-      localStorage.setItem("ytl_ex_employees", JSON.stringify(exEmployees));
+      localStorage.setItem("app_employees", JSON.stringify(employees));
+      localStorage.setItem("app_ex_employees", JSON.stringify(exEmployees));
     }
   }, [employees, exEmployees, isClient])
   

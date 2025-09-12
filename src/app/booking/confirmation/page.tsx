@@ -24,14 +24,14 @@ export default function BookingConfirmationPage() {
     const [mainWhatsapp, setMainWhatsapp] = useState<string>("");
 
     useEffect(() => {
-        const storedData = sessionStorage.getItem('ytl_last_reservation');
+        const storedData = sessionStorage.getItem('app_last_reservation');
         if (storedData) {
             setData(JSON.parse(storedData));
         } else {
             // If there's no data, maybe redirect to home
             router.replace('/');
         }
-        const storedSettings = localStorage.getItem("ytl_general_settings");
+        const storedSettings = localStorage.getItem("app_general_settings");
         if (storedSettings) {
              setMainWhatsapp(JSON.parse(storedSettings).mainWhatsappNumber || "");
         }

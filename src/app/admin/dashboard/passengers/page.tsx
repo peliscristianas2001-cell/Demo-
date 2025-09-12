@@ -65,15 +65,15 @@ export default function PassengersPage() {
   
   useEffect(() => {
     setIsClient(true);
-    const storedPassengers = localStorage.getItem("ytl_passengers");
+    const storedPassengers = localStorage.getItem("app_passengers");
     setPassengers(storedPassengers ? JSON.parse(storedPassengers) : mockPassengers);
-    const storedBoardingPoints = localStorage.getItem("ytl_boarding_points");
+    const storedBoardingPoints = localStorage.getItem("app_boarding_points");
     setBoardingPoints(storedBoardingPoints ? JSON.parse(storedBoardingPoints) : mockBoardingPoints);
 
      const handleStorageChange = () => {
-        const newStoredPassengers = localStorage.getItem("ytl_passengers")
+        const newStoredPassengers = localStorage.getItem("app_passengers")
         setPassengers(newStoredPassengers ? JSON.parse(newStoredPassengers) : mockPassengers)
-        const newStoredBoardingPoints = localStorage.getItem("ytl_boarding_points");
+        const newStoredBoardingPoints = localStorage.getItem("app_boarding_points");
         setBoardingPoints(newStoredBoardingPoints ? JSON.parse(newStoredBoardingPoints) : mockBoardingPoints);
     };
     window.addEventListener('storage', handleStorageChange);
@@ -82,7 +82,7 @@ export default function PassengersPage() {
 
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem("ytl_passengers", JSON.stringify(passengers));
+      localStorage.setItem("app_passengers", JSON.stringify(passengers));
     }
   }, [passengers, isClient]);
 

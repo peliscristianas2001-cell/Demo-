@@ -60,10 +60,10 @@ export default function TripsPage() {
 
   useEffect(() => {
     setIsClient(true)
-    const storedTours = localStorage.getItem("ytl_tours")
-    const storedReservations = localStorage.getItem("ytl_reservations")
-    const storedObservations = localStorage.getItem("ytl_global_observations");
-    const storedCancellationPolicy = localStorage.getItem("ytl_global_cancellation_policy");
+    const storedTours = localStorage.getItem("app_tours")
+    const storedReservations = localStorage.getItem("app_reservations")
+    const storedObservations = localStorage.getItem("app_global_observations");
+    const storedCancellationPolicy = localStorage.getItem("app_global_cancellation_policy");
 
     setGlobalObservations(storedObservations || "");
     setGlobalCancellationPolicy(storedCancellationPolicy || "");
@@ -85,15 +85,15 @@ export default function TripsPage() {
 
     const handleStorageChange = () => {
       setLayoutConfig(getLayoutConfig(true));
-      const newStoredTours = localStorage.getItem("ytl_tours")
+      const newStoredTours = localStorage.getItem("app_tours")
        if (newStoredTours) {
           setTours(JSON.parse(newStoredTours, (key, value) => {
             if (key === 'date') return new Date(value);
             return value;
           }));
         }
-      const newStoredObservations = localStorage.getItem("ytl_global_observations");
-      const newStoredCancellationPolicy = localStorage.getItem("ytl_global_cancellation_policy");
+      const newStoredObservations = localStorage.getItem("app_global_observations");
+      const newStoredCancellationPolicy = localStorage.getItem("app_global_cancellation_policy");
       setGlobalObservations(newStoredObservations || "");
       setGlobalCancellationPolicy(newStoredCancellationPolicy || "");
     };
@@ -104,7 +104,7 @@ export default function TripsPage() {
   
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem("ytl_tours", JSON.stringify(tours));
+      localStorage.setItem("app_tours", JSON.stringify(tours));
     }
   }, [tours, isClient])
 
@@ -168,10 +168,10 @@ export default function TripsPage() {
   
   const handleSaveGlobalText = () => {
     if (globalTextType === 'observations') {
-      localStorage.setItem("ytl_global_observations", globalObservations);
+      localStorage.setItem("app_global_observations", globalObservations);
        toast({ title: "Observaciones guardadas." });
     } else if (globalTextType === 'cancellationPolicy') {
-      localStorage.setItem("ytl_global_cancellation_policy", globalCancellationPolicy);
+      localStorage.setItem("app_global_cancellation_policy", globalCancellationPolicy);
        toast({ title: "Política de cancelación guardada." });
     }
     window.dispatchEvent(new Event('storage'));

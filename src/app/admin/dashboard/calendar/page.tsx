@@ -19,7 +19,7 @@ export default function CalendarPage() {
       <HistoryViewer 
         isOpen={isHistoryOpen} 
         onOpenChange={setIsHistoryOpen} 
-        historyKey="ytl_calendar_history"
+        historyKey="app_calendar_history"
         title="Historial de Calendarios"
         itemTitleKey="name"
         downloadFolderNameKey="calendarDownloadFolder"

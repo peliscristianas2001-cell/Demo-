@@ -10,8 +10,8 @@ export default function EmployeeDashboardPage() {
     const [employeeName, setEmployeeName] = useState('');
 
     useEffect(() => {
-        const employeeId = localStorage.getItem('ytl_employee_id');
-        const employees: Employee[] = JSON.parse(localStorage.getItem('ytl_employees') || JSON.stringify(mockEmployees));
+        const employeeId = localStorage.getItem('app_employee_id');
+        const employees: Employee[] = JSON.parse(localStorage.getItem('app_employees') || JSON.stringify(mockEmployees));
         const currentEmployee = employees.find(s => s.id === employeeId);
         if (currentEmployee) {
             setEmployeeName(currentEmployee.name);

@@ -23,14 +23,14 @@ export const useCalendarBubbles = () => {
 
 
   useEffect(() => {
-    const savedBubbles = localStorage.getItem("calendarBubbles");
+    const savedBubbles = localStorage.getItem("calendarBubblesApp");
     if (savedBubbles) {
       setBubbles(JSON.parse(savedBubbles));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("calendarBubbles", JSON.stringify(bubbles));
+    localStorage.setItem("calendarBubblesApp", JSON.stringify(bubbles));
   }, [bubbles]);
 
   useEffect(() => {

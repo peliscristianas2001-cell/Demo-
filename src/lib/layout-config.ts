@@ -51,10 +51,10 @@ export function getLayoutConfig(forceNew = false): Record<LayoutCategory, Record
   }
 
   if (forceNew) {
-      localStorage.removeItem('ytl_layout_config');
+      localStorage.removeItem('app_layout_config');
   }
 
-  const storedConfig = localStorage.getItem('ytl_layout_config');
+  const storedConfig = localStorage.getItem('app_layout_config');
   
   try {
     if (storedConfig) {
@@ -67,13 +67,13 @@ export function getLayoutConfig(forceNew = false): Record<LayoutCategory, Record
     console.error("Failed to parse layout config from localStorage", e);
   }
   
-  localStorage.setItem('ytl_layout_config', JSON.stringify(defaultLayoutConfig));
+  localStorage.setItem('app_layout_config', JSON.stringify(defaultLayoutConfig));
   return defaultLayoutConfig;
 }
 
 export function saveLayoutConfig(newConfig: Record<LayoutCategory, Record<LayoutItemType, CustomLayoutConfig>>) {
    if (typeof window !== 'undefined') {
-     localStorage.setItem('ytl_layout_config', JSON.stringify(newConfig));
+     localStorage.setItem('app_layout_config', JSON.stringify(newConfig));
      window.dispatchEvent(new Event('storage'));
    }
 }
